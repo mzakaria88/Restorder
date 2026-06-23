@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Order Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        select, input, button { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 10px; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-size: 16px; font-weight: bold;}
+        button:hover { background-color: #218838; }
+        .export-btn { background-color: #007bff; margin-top: 20px;}
+        .export-btn:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+    <h2>New Order</h2>
+
+    <div class="form-group">
+        <label for="productSelect">Select Item</label>
+        <select id="productSelect">
+            <option value="">Loading catalog...</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="qtyInput">Quantity</label>
+        <input type="number" id="qtyInput" placeholder="e.g. 5 or 2.5" step="0.1" min="0.1">
+    </div>
+
+    <button onclick="addToCart()">Add to Order</button>
+
+    <table id="cartTable">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Item Name</th>
+                <th>Variant</th>
+                <th>Qty</th>
+                <th>UOM</th>
+            </tr>
+        </thead>
+        <tbody id="cartBody">
+            </tbody>
+    </table>
+
+    <button class="export-btn" onclick="exportToCSV()">Export Order to CSV</button>
+
+    <script>
+        // Your live Google Sheet published CSV link
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
+        
+        let catalogData = [];
+        let orderCart = [];
+
+        // 1. Fetch the data from Google Sheets when the page loads
+        window.onload = async function() {
+            try {
+                // Fetch the live Google Sheet data directly with the cache-busting trick
+                const response = await fetch(sheetUrl + '&t=' + new Date().getTime());
+                const csvText = await response.text();
+                parseCSV(csvText);
+            } catch (error) {
+                document.getElementById('productSelect').innerHTML = '<option>Error loading data</option>';
+                console.error("Fetch error: ", error);
+            }
+        };
+
+        // 2. Parse the CSV into an array we can use
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            const dropdown = document.getElementById('productSelect');
+            dropdown.innerHTML = '<option value="">-- Choose an item --</option>';
+
+            // Skip header row (i=1 instead of 0)
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const cols = lines[i].split(',');
+                // Assuming columns: SKU, Item Name, Variant, UOM
+                const product = {
+                    sku: cols[0] ? cols[0].trim() : '',
+                    name: cols[1] ? cols[1].trim() : '',
+                    variant: cols[2] ? cols[2].trim() : '',
+                    uom: cols[3] ? cols[3].trim() : ''
+                };
+                
+                // Only add if there is an actual product name
+                if (product.name) {
+                    catalogData.push(product);
+                    // Add to dropdown
+                    const option = document.createElement('option');
+                    option.value = product.sku;
+                    option.text = `${product.name} (${product.variant})`;
+                    dropdown.appendChild(option);
+                }
+            }
+            
+            // Handle empty catalog scenario
+            if (catalogData.length === 0) {
+                 dropdown.innerHTML = '<option value="">Catalog is empty</option>';
+            }
+        }
+
+        // 3. Add the selected item to the cart
+        function addToCart() {
+            const selectedSku = document.getElementById('productSelect').value;
+            const rawQty = parseFloat(document.getElementById('qtyInput').value);
+
+            if (!selectedSku || isNaN(rawQty) || rawQty <= 0) {
+                alert("Please select an item and enter a valid quantity.");
+                return;
+            }
+
+            // Clean up the quantity formatting
+            // Ensures whole numbers don't have decimals, but keeps decimals for fractions
+            const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
+
+            const product = catalogData.find(p => p.sku === selectedSku);
+            
+            // Save to our cart array
+            orderCart.push({
+                sku: product.sku,
+                name: product.name,
+                variant: product.variant,
+                qty: formattedQty,
+                uom: product.uom
+            });
+
+            // Update the visual table
+            renderCart();
+            
+            // Reset quantity input
+            document.getElementById('qtyInput').value = '';
+        }
+
+        // 4. Update the HTML table
+        function renderCart() {
+            const tbody = document.getElementById('cartBody');
+            tbody.innerHTML = '';
+            
+            orderCart.forEach(item => {
+                const row = `<tr>
+                    <td>${item.sku}</td>
+                    <td>${item.name}</td>
+                    <td>${item.variant}</td>
+                    <td>${item.qty}</td>
+                    <td>${item.uom}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // 5. Package the cart into a downloadable CSV
+        function exportToCSV() {
+            if (orderCart.length === 0) {
+                alert("Your order is empty!");
+                return;
+            }
+
+            // Create headers
+            let csvContent = "data:text/csv;charset=utf-8,SKU,Item Name,Variant,Qty,UOM\n";
+
+            // Add rows
+            orderCart.forEach(item => {
+                // Escape commas in names/variants if they exist to prevent CSV breaking
+                const safeName = `"${item.name.replace(/"/g, '""')}"`;
+                const safeVariant = `"${item.variant.replace(/"/g, '""')}"`;
+                
+                let row = `${item.sku},${safeName},${safeVariant},${item.qty},${item.uom}`;
+                csvContent += row + "\n";
+            });
+
+            // Trigger download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "New_Order.csv");
+            document.body.appendChild(link); 
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

@@ -97,10 +97,16 @@
 
         .table-header-actions h3 { margin: 0; }
 
+        .table-container {
+            width: 100%;
+            overflow-x: auto; /* Prevents table stretching on mobile */
+        }
+
         table { 
             width: 100%; 
             border-collapse: collapse; 
             font-size: 0.95rem; 
+            min-width: 400px; /* Ensure table elements don't crush completely */
         }
         
         th, td { 
@@ -152,13 +158,35 @@
             padding: 10px 12px;
             cursor: pointer;
             border-bottom: 1px solid var(--border);
+            border-left: 4px solid transparent; /* Placeholder for active border */
+            transition: all 0.15s ease;
         }
         
         .autocomplete-items div:last-child { border-bottom: none; }
-        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--bg-color); }
         
-        .item-name { font-weight: 600; color: var(--text-main); }
+        /* Elevated Highlight Styling */
+        .autocomplete-items div:hover, .autocomplete-items div.active { 
+            background-color: #EEF2FF; 
+            border-left: 4px solid var(--primary);
+            padding-left: 8px; /* Offset the 4px border so text stays aligned */
+        }
+        
+        .item-name { font-weight: 600; color: var(--text-main); transition: color 0.15s ease; }
+        
+        /* Make the item name text pop when highlighted */
+        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name {
+            color: var(--primary-hover);
+        }
+
         .item-uom { font-size: 0.85em; color: var(--text-muted); margin-left: 4px; }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .input-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -187,20 +215,20 @@
             <button class="btn-sm btn-danger btn-outline" onclick="clearAllItems()">Clear Order</button>
         </div>
 
-        <table id="cartTable">
-            <thead>
-                <tr>
-                    <th>SKU</th>
-                    <th>Item Name</th>
-                    <th>Variant</th>
-                    <th>Qty</th>
-                    <th>UOM</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="cartBody">
+        <div class="table-container">
+            <table id="cartTable">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Qty</th>
+                        <th>UOM</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="cartBody">
                 </tbody>
-        </table>
+            </table>
+        </div>
 
         <button class="export-btn" onclick="exportToCSV()">Export Order to CSV</button>
     </div>
@@ -210,6 +238,7 @@
         
         let catalogData = [];
         let orderCart = [];
+        let currentFocus = -1;
 
         window.onload = async function() {
             try {
@@ -260,43 +289,139 @@
         const autocompleteList = document.getElementById('autocomplete-list');
         const selectedSkuInput = document.getElementById('selectedSku');
 
+        // Levenshtein distance for fuzzy matching typos
+        function levenshtein(a, b) {
+            const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+            for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                    if (a[i - 1] === b[j - 1]) matrix[i][j] = matrix[i - 1][j - 1];
+                    else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+                }
+            }
+            return matrix[a.length][b.length];
+        }
+
+        // Generate match score (Highly Tolerant Subsequence & Typo Algorithm)
+        function getMatchScore(query, text) {
+            query = query.toLowerCase().trim();
+            text = text.toLowerCase();
+            
+            if (!query) return 0;
+            
+            if (text === query) return 100; // Perfect match
+            if (text.startsWith(query)) return 90; // Perfect start priority
+            
+            const words = text.split(/\s+/);
+            if (words.some(w => w.startsWith(query))) return 80; // Word boundary match
+            
+            if (text.includes(query)) return 70; // Substring match
+
+            // 1. Subsequence match (e.g., "thpth" matches "tahu putih")
+            let qIdx = 0;
+            for (let i = 0; i < text.length; i++) {
+                if (query[qIdx] === text[i]) qIdx++;
+                if (qIdx === query.length) return 60; // Tolerant subsequence match
+            }
+
+            // 2. High-tolerance Typo matching (Levenshtein)
+            if (query.length > 2) {
+                // Allow up to 2 typos for medium queries, 3 for longer queries
+                const maxTypos = query.length <= 5 ? 2 : 3;
+                
+                // Check whole words against query
+                for (let w of words) {
+                    let dist = levenshtein(query, w);
+                    if (dist <= maxTypos) return 50 - dist; 
+                    
+                    // Check prefix of the word (e.g. typing "nagnka" for "nangka")
+                    let wordPrefix = w.substring(0, query.length);
+                    if (wordPrefix.length >= query.length - maxTypos) {
+                        let prefixDist = levenshtein(query, wordPrefix);
+                        if (prefixDist <= maxTypos) return 40 - prefixDist;
+                    }
+                }
+                
+                // Check against the beginning of the entire text string
+                let textPrefix = text.substring(0, query.length);
+                let textDist = levenshtein(query, textPrefix);
+                if (textDist <= maxTypos) return 30 - textDist;
+            }
+            
+            return 0; // No match
+        }
+
         // Search Input Logic
         searchInput.addEventListener('input', function() {
             const val = this.value;
             autocompleteList.innerHTML = ''; 
             selectedSkuInput.value = ''; 
+            currentFocus = -1;
 
             if (!val) return false;
 
-            const matches = catalogData.filter(item => {
-                const searchString = `${item.name} ${item.variant} ${item.uom}`.toLowerCase();
-                return searchString.includes(val.toLowerCase());
-            });
+            // Score, filter, and sort matches
+            let scoredMatches = catalogData.map(item => {
+                const score = getMatchScore(val, item.name);
+                return { item, score };
+            }).filter(m => m.score > 0);
 
-            matches.forEach((item, index) => {
+            scoredMatches.sort((a, b) => b.score - a.score);
+
+            scoredMatches.forEach((match, index) => {
                 const optionDiv = document.createElement("div");
-                if (index === 0) optionDiv.classList.add('active'); // Highlight first by default
+                if (index === 0) {
+                    optionDiv.classList.add('active'); // Highlight first by default
+                    currentFocus = 0;
+                }
                 
-                optionDiv.innerHTML = `<span class="item-name">${item.name}</span> <span class="item-uom">(${item.uom})</span>`;
+                optionDiv.innerHTML = `<span class="item-name">${match.item.name}</span> <span class="item-uom">(${match.item.uom})</span>`;
                 
                 optionDiv.addEventListener("click", function() {
-                    selectItem(item);
+                    selectItem(match.item);
                 });
                 
                 autocompleteList.appendChild(optionDiv);
             });
         });
 
-        // Keydown mapping for Enter Key
+        // Keydown mapping for Up, Down, Enter, Tab
         searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const firstOption = autocompleteList.querySelector('div');
-                if (firstOption) {
-                    firstOption.click();
+            const items = autocompleteList.getElementsByTagName('div');
+            
+            if (e.key === 'ArrowDown') {
+                currentFocus++;
+                addActive(items);
+            } else if (e.key === 'ArrowUp') {
+                currentFocus--;
+                addActive(items);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (items.length > 0) {
+                    e.preventDefault(); // Prevent tab from jumping to next field immediately
+                    if (currentFocus > -1) {
+                        items[currentFocus].click();
+                    } else {
+                        items[0].click();
+                    }
                 }
             }
         });
+
+        function addActive(items) {
+            if (!items) return false;
+            removeActive(items);
+            if (currentFocus >= items.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = items.length - 1;
+            items[currentFocus].classList.add('active');
+            items[currentFocus].scrollIntoView({ block: 'nearest' });
+        }
+
+        function removeActive(items) {
+            for (let i = 0; i < items.length; i++) {
+                items[i].classList.remove('active');
+            }
+        }
 
         qtyInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -356,16 +481,14 @@
             tbody.innerHTML = '';
             
             if (orderCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #6B7280; padding: 20px;">No items added yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #6B7280; padding: 20px;">No items added yet.</td></tr>`;
                 return;
             }
 
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${item.sku}</td>
                     <td>${item.name}</td>
-                    <td>${item.variant}</td>
                     <td id="qty-cell-${index}">${item.qty}</td>
                     <td>${item.uom}</td>
                     <td class="actions-cell" id="action-cell-${index}">
@@ -430,6 +553,7 @@
                 return;
             }
 
+            // Export still utilizes SKU and Variant data internally
             let csvContent = "data:text/csv;charset=utf-8,SKU,Item Name,Variant,Qty,UOM\n";
 
             orderCart.forEach(item => {

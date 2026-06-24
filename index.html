@@ -481,7 +481,14 @@
             tbody.innerHTML = '';
             
             if (orderCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #6B7280; padding: 20px;">No items added yet.</td></tr>`;
+                tbody.innerHTML = `<tr>
+                    <td colspan="4" style="text-align: center; color: #6B7280; padding: 40px 20px;">
+                        <img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" 
+                             alt="Empty Cart" 
+                             style="width: 150px; display: block; margin: 0 auto 15px auto; opacity: 0.8;">
+                        No items added yet.
+                    </td>
+                </tr>`;
                 return;
             }
 

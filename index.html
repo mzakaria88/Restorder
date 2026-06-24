@@ -560,13 +560,24 @@
                 return;
             }
 
-            // Export still utilizes SKU and Variant data internally
-            let csvContent = "data:text/csv;charset=utf-8,SKU,Item Name,Variant,Qty,UOM\n";
+            // Updated CSV formatting
+            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom\n";
+
+            // Helper function to sanitize strings
+            const sanitize = (str) => {
+                if (!str) return "";
+                // Remove quotes completely and replace commas with dots
+                return String(str).replace(/"/g, "").replace(/,/g, ".");
+            };
 
             orderCart.forEach(item => {
-                const safeName = `"${item.name.replace(/"/g, '""')}"`;
-                const safeVariant = `"${item.variant.replace(/"/g, '""')}"`;
-                let row = `${item.sku},${safeName},${safeVariant},${item.qty},${item.uom}`;
+                const safeName = sanitize(item.name);
+                const safeVariant = sanitize(item.variant);
+                const safeSku = sanitize(item.sku);
+                const safeQty = sanitize(item.qty);
+                const safeUom = sanitize(item.uom);
+
+                let row = `${safeName},${safeVariant},${safeSku},${safeQty},${safeUom}`;
                 csvContent += row + "\n";
             });
 

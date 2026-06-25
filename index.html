@@ -39,11 +39,62 @@
         .main-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 1.5rem;
         }
 
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         h2 { margin: 0; color: var(--text-main); font-size: 1.5rem;}
+
+        /* Customer Section Styles */
+        .customer-section {
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .customer-label { font-weight: 600; color: var(--text-muted); }
+        
+        #customerDisplay {
+            color: var(--primary);
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        
+        #customerDisplay:hover { color: var(--primary-hover); }
+
+        #customerEditBtn {
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        #customerEditBtn:hover { opacity: 1; }
+
+        #customerInputContainer {
+            display: none;
+            position: relative;
+        }
+
+        #customerInput {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            width: 200px;
+            outline: none;
+        }
+        #customerInput:focus { border-color: var(--primary); }
 
         .input-row {
             display: grid;
@@ -51,6 +102,7 @@
             gap: 15px;
             align-items: end;
             margin-bottom: 1.5rem;
+            margin-top: 1rem;
         }
 
         .form-group { position: relative; display: flex; flex-direction: column; }
@@ -167,6 +219,7 @@
             border-bottom: 1px solid var(--border);
             border-left: 4px solid transparent; 
             transition: all 0.15s ease;
+            font-size: 0.95rem;
         }
         
         .autocomplete-items div:last-child { border-bottom: none; }
@@ -253,7 +306,7 @@
         .history-item:hover { border-color: var(--primary); }
         .history-item-details { display: flex; flex-direction: column; gap: 4px; }
         .history-item-time { font-weight: 600; font-size: 0.95rem; }
-        .history-item-count { font-size: 0.85rem; color: var(--text-muted); }
+        .history-item-sub { font-size: 0.85rem; color: var(--text-muted); }
 
         /* Mobile Adjustments */
         @media (max-width: 600px) {
@@ -268,7 +321,21 @@
 
     <div class="container">
         <div class="main-header">
-            <h2>RestOrder by NPN</h2>
+            <div class="header-left">
+                <h2>RestOrder by NPN</h2>
+                
+                <div class="customer-section">
+                    <span class="customer-label">Customer:</span>
+                    <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
+                    <span id="customerEditBtn" style="display:none;" onclick="openCustomerSearch()">✏️</span>
+                    
+                    <div id="customerInputContainer">
+                        <input type="text" id="customerInput" placeholder="Search customer..." autocomplete="off">
+                        <div id="customer-autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                </div>
+            </div>
+
             <button class="btn-sm btn-outline" onclick="openHistoryPopup()">🕒 History</button>
         </div>
 
@@ -324,30 +391,50 @@
     </div>
 
     <script>
-        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
+        // --- Configuration URLs ---
+        const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
+        // 👇 REPLACE THIS WITH YOUR CUSTOMER GOOGLE SHEET CSV URL 👇
+        const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         
         let catalogData = [];
+        let customerDataList = [];
+        
         let orderCart = [];
-        let currentFocus = -1;
+        let currentCustomer = null;
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
+        
+        let currentFocusItem = -1;
+        let currentFocusCustomer = -1;
 
         window.onload = async function() {
+            // Fetch Items
             try {
-                const response = await fetch(sheetUrl + '&t=' + new Date().getTime());
+                const response = await fetch(itemSheetUrl + '&t=' + new Date().getTime());
                 if (!response.ok) throw new Error("Network response failed");
                 const csvText = await response.text();
-                parseCSV(csvText);
-
-                if (catalogData.length === 0) setupMockData();
+                parseItemCSV(csvText);
+                if (catalogData.length === 0) setupMockItemData();
             } catch (error) {
-                setupMockData(); 
+                setupMockItemData(); 
+            }
+
+            // Fetch Customers
+            try {
+                if(!customerSheetUrl) throw new Error("No URL provided");
+                const response = await fetch(customerSheetUrl + '&t=' + new Date().getTime());
+                if (!response.ok) throw new Error("Network response failed");
+                const csvText = await response.text();
+                parseCustomerCSV(csvText);
+                if (customerDataList.length === 0) setupMockCustomerData();
+            } catch (error) {
+                setupMockCustomerData();
             }
         };
 
-        function parseCSV(text) {
+        // --- Data Parsers ---
+        function parseItemCSV(text) {
             catalogData = []; 
             const lines = text.split('\n');
-            
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const cols = lines[i].split(',');
@@ -364,22 +451,34 @@
             if (catalogData.length > 0) {
                 searchInput.placeholder = "Type to search items...";
                 searchInput.disabled = false;
-                searchInput.focus();
             } else {
                 searchInput.placeholder = "Catalog is empty";
             }
         }
 
-        function setupMockData() {
-            const mockCSV = `SKU,Item Name,Variant,UOM\nN-001,nangka utk dimasak,Curah,kg\nT-001,tahu putih,Premium,pcs\nT-002,tahu curah,Standard,kg\nB-001,bawang merah,Brebes,kg\nA-001,ayam potong,Utuh,ekor\nC-001,cabai merah besar,Segar,kg\nC-002,cabai rawit merah,Super,kg\nB-002,bawang putih,Kating,kg\nS-001,santan kelapa,Murni,liter\nD-001,daging sapi,Rendang,kg\nB-003,beras,Pandan Wangi,kg\nM-001,minyak goreng,Kemasan,pouch\nT-003,telur ayam,Negeri,kg\nD-002,daun jeruk,Segar,ikat\nK-001,kecap manis,Refill,pouch`;
-            parseCSV(mockCSV);
+        function parseCustomerCSV(text) {
+            customerDataList = [];
+            const lines = text.split('\n');
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const cols = lines[i].split(',');
+                // Assuming Name is the first column in the Customer CSV. Adjust index if needed.
+                const customerName = cols[0] ? cols[0].trim() : ''; 
+                if (customerName) customerDataList.push(customerName);
+            }
         }
 
-        const searchInput = document.getElementById('searchInput');
-        const qtyInput = document.getElementById('qtyInput');
-        const autocompleteList = document.getElementById('autocomplete-list');
-        const selectedSkuInput = document.getElementById('selectedSku');
+        function setupMockItemData() {
+            const mockCSV = `SKU,Item Name,Variant,UOM\nN-001,nangka utk dimasak,Curah,kg\nT-001,tahu putih,Premium,pcs\nT-002,tahu curah,Standard,kg\nB-001,bawang merah,Brebes,kg\nA-001,ayam potong,Utuh,ekor\nC-001,cabai merah besar,Segar,kg\nC-002,cabai rawit merah,Super,kg\nB-002,bawang putih,Kating,kg\nS-001,santan kelapa,Murni,liter\nD-001,daging sapi,Rendang,kg\nB-003,beras,Pandan Wangi,kg\nM-001,minyak goreng,Kemasan,pouch\nT-003,telur ayam,Negeri,kg\nD-002,daun jeruk,Segar,ikat\nK-001,kecap manis,Refill,pouch`;
+            parseItemCSV(mockCSV);
+        }
 
+        function setupMockCustomerData() {
+            const mockCSV = `Customer Name\nLampoh Pamulang\nLampoh Bintaro\nLampoh Kemang\nLampoh Vittoria\nLampoh Cireundeu\nBento Pamulang\nDaphubu Pamulang`;
+            parseCustomerCSV(mockCSV);
+        }
+
+        // --- Helper for Autocomplete ---
         function levenshtein(a, b) {
             const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
             for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
@@ -398,13 +497,11 @@
             text = text.toLowerCase();
             
             if (!query) return 0;
-            
             if (text === query) return 100;
             if (text.startsWith(query)) return 90;
             
             const words = text.split(/\s+/);
             if (words.some(w => w.startsWith(query))) return 80; 
-            
             if (text.includes(query)) return 70;
 
             let qIdx = 0;
@@ -415,31 +512,139 @@
 
             if (query.length > 2) {
                 const maxTypos = query.length <= 5 ? 2 : 3;
-                
                 for (let w of words) {
                     let dist = levenshtein(query, w);
                     if (dist <= maxTypos) return 50 - dist; 
-                    
                     let wordPrefix = w.substring(0, query.length);
                     if (wordPrefix.length >= query.length - maxTypos) {
                         let prefixDist = levenshtein(query, wordPrefix);
                         if (prefixDist <= maxTypos) return 40 - prefixDist;
                     }
                 }
-                
                 let textPrefix = text.substring(0, query.length);
                 let textDist = levenshtein(query, textPrefix);
                 if (textDist <= maxTypos) return 30 - textDist;
             }
-            
             return 0; 
         }
+
+        function addActive(items, focusVar) {
+            if (!items) return focusVar;
+            for (let i = 0; i < items.length; i++) items[i].classList.remove('active');
+            if (focusVar >= items.length) focusVar = 0;
+            if (focusVar < 0) focusVar = items.length - 1;
+            items[focusVar].classList.add('active');
+            items[focusVar].scrollIntoView({ block: 'nearest' });
+            return focusVar;
+        }
+
+
+        // --- Customer Autocomplete Logic ---
+        const customerInput = document.getElementById('customerInput');
+        const customerAutocompleteList = document.getElementById('customer-autocomplete-list');
+        const customerDisplay = document.getElementById('customerDisplay');
+        const customerEditBtn = document.getElementById('customerEditBtn');
+        const customerInputContainer = document.getElementById('customerInputContainer');
+
+        function openCustomerSearch() {
+            customerDisplay.style.display = 'none';
+            customerEditBtn.style.display = 'none';
+            customerInputContainer.style.display = 'block';
+            customerInput.value = '';
+            customerInput.focus();
+            
+            // Show all customers initially when opened
+            populateCustomerDropdown('');
+        }
+
+        function selectCustomer(name) {
+            currentCustomer = name;
+            customerDisplay.innerText = name;
+            customerDisplay.style.display = 'inline-block';
+            customerDisplay.style.textDecoration = 'none';
+            customerDisplay.style.color = 'var(--text-main)';
+            customerEditBtn.style.display = 'inline-block';
+            
+            customerInputContainer.style.display = 'none';
+            customerAutocompleteList.innerHTML = '';
+        }
+
+        function populateCustomerDropdown(query) {
+            customerAutocompleteList.innerHTML = '';
+            currentFocusCustomer = -1;
+
+            let matches = [];
+            if (!query) {
+                // If empty, show top 15 results
+                matches = customerDataList.slice(0, 15).map(name => ({ name, score: 100 }));
+            } else {
+                matches = customerDataList.map(name => {
+                    return { name, score: getMatchScore(query, name) };
+                }).filter(m => m.score > 0);
+                matches.sort((a, b) => b.score - a.score);
+            }
+
+            matches.forEach((match, index) => {
+                const optionDiv = document.createElement("div");
+                if (index === 0 && query) { // auto-focus first if typing
+                    optionDiv.classList.add('active'); 
+                    currentFocusCustomer = 0;
+                }
+                
+                optionDiv.innerHTML = `<span class="item-name">${match.name}</span>`;
+                optionDiv.addEventListener("click", function() {
+                    selectCustomer(match.name);
+                });
+                
+                customerAutocompleteList.appendChild(optionDiv);
+            });
+        }
+
+        customerInput.addEventListener('input', function() {
+            populateCustomerDropdown(this.value);
+        });
+
+        customerInput.addEventListener('keydown', function(e) {
+            const items = customerAutocompleteList.getElementsByTagName('div');
+            
+            if (e.key === 'ArrowDown') {
+                currentFocusCustomer++;
+                currentFocusCustomer = addActive(items, currentFocusCustomer);
+            } else if (e.key === 'ArrowUp') {
+                currentFocusCustomer--;
+                currentFocusCustomer = addActive(items, currentFocusCustomer);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (items.length > 0) {
+                    e.preventDefault(); 
+                    if (currentFocusCustomer > -1) {
+                        items[currentFocusCustomer].click();
+                    } else {
+                        items[0].click();
+                    }
+                }
+            } else if (e.key === 'Escape') {
+                // Cancel edit
+                if (currentCustomer) {
+                    selectCustomer(currentCustomer);
+                } else {
+                    customerInputContainer.style.display = 'none';
+                    customerDisplay.style.display = 'inline-block';
+                }
+            }
+        });
+
+
+        // --- Item Autocomplete Logic ---
+        const searchInput = document.getElementById('searchInput');
+        const qtyInput = document.getElementById('qtyInput');
+        const autocompleteList = document.getElementById('autocomplete-list');
+        const selectedSkuInput = document.getElementById('selectedSku');
 
         searchInput.addEventListener('input', function() {
             const val = this.value;
             autocompleteList.innerHTML = ''; 
             selectedSkuInput.value = ''; 
-            currentFocus = -1;
+            currentFocusItem = -1;
 
             if (!val) return false;
 
@@ -454,7 +659,7 @@
                 const optionDiv = document.createElement("div");
                 if (index === 0) {
                     optionDiv.classList.add('active'); 
-                    currentFocus = 0;
+                    currentFocusItem = 0;
                 }
                 
                 optionDiv.innerHTML = `<span class="item-name">${match.item.name}</span> <span class="item-uom">(${match.item.uom})</span>`;
@@ -471,37 +676,22 @@
             const items = autocompleteList.getElementsByTagName('div');
             
             if (e.key === 'ArrowDown') {
-                currentFocus++;
-                addActive(items);
+                currentFocusItem++;
+                currentFocusItem = addActive(items, currentFocusItem);
             } else if (e.key === 'ArrowUp') {
-                currentFocus--;
-                addActive(items);
+                currentFocusItem--;
+                currentFocusItem = addActive(items, currentFocusItem);
             } else if (e.key === 'Enter' || e.key === 'Tab') {
                 if (items.length > 0) {
                     e.preventDefault(); 
-                    if (currentFocus > -1) {
-                        items[currentFocus].click();
+                    if (currentFocusItem > -1) {
+                        items[currentFocusItem].click();
                     } else {
                         items[0].click();
                     }
                 }
             }
         });
-
-        function addActive(items) {
-            if (!items) return false;
-            removeActive(items);
-            if (currentFocus >= items.length) currentFocus = 0;
-            if (currentFocus < 0) currentFocus = items.length - 1;
-            items[currentFocus].classList.add('active');
-            items[currentFocus].scrollIntoView({ block: 'nearest' });
-        }
-
-        function removeActive(items) {
-            for (let i = 0; i < items.length; i++) {
-                items[i].classList.remove('active');
-            }
-        }
 
         qtyInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
@@ -517,14 +707,30 @@
             qtyInput.focus();
         }
 
+        // Global click listener to close dropdowns
         document.addEventListener("click", function (e) {
             if (e.target !== searchInput) autocompleteList.innerHTML = '';
             
-            // Close modal when clicking outside content
+            if (e.target !== customerInput && 
+                e.target !== customerDisplay && 
+                e.target !== customerEditBtn) {
+                customerAutocompleteList.innerHTML = '';
+                if (customerInputContainer.style.display === 'block') {
+                    if (currentCustomer) {
+                        selectCustomer(currentCustomer); // Restore previous state
+                    } else {
+                        customerInputContainer.style.display = 'none';
+                        customerDisplay.style.display = 'inline-block';
+                    }
+                }
+            }
+
             const modal = document.getElementById('historyModal');
             if (e.target === modal) closeHistoryPopup();
         });
 
+
+        // --- Cart Logic ---
         function addToCart() {
             const selectedSku = document.getElementById('selectedSku').value;
             const rawQty = parseFloat(qtyInput.value);
@@ -644,11 +850,17 @@
                 return;
             }
 
-            // Save to Transaction History
+            if (!currentCustomer) {
+                const proceed = confirm("No customer selected. Do you want to proceed anyway?");
+                if (!proceed) return;
+            }
+
+            // Save to Transaction History (including customer)
             const timestamp = new Date().toLocaleString();
             transactionHistory.push({
                 timestamp: timestamp,
-                cart: JSON.parse(JSON.stringify(orderCart)) // Deep copy
+                customer: currentCustomer || "No Customer",
+                cart: JSON.parse(JSON.stringify(orderCart)) 
             });
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
 
@@ -670,10 +882,14 @@
                 csvContent += row + "\n";
             });
 
+            // Name file based on customer if exists
+            const safeCustomerName = currentCustomer ? currentCustomer.replace(/[^a-z0-9]/gi, '_') : "New";
+            const fileName = `Order_${safeCustomerName}.csv`;
+
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "New_Order.csv");
+            link.setAttribute("download", fileName);
             document.body.appendChild(link); 
             link.click();
             document.body.removeChild(link);
@@ -698,11 +914,11 @@
                 return;
             }
 
-            // Clone array and reverse so newest show at the top
             const displayHistory = [...transactionHistory].reverse();
 
             displayHistory.forEach((transaction, reversedIndex) => {
                 const originalIndex = transactionHistory.length - 1 - reversedIndex;
+                const custName = transaction.customer || "No Customer";
                 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'history-item';
@@ -710,7 +926,7 @@
                 itemDiv.innerHTML = `
                     <div class="history-item-details">
                         <span class="history-item-time">${transaction.timestamp}</span>
-                        <span class="history-item-count">${transaction.cart.length} item(s)</span>
+                        <span class="history-item-sub">👤 ${custName} • 📦 ${transaction.cart.length} item(s)</span>
                     </div>
                     <button class="btn-sm btn-outline" onclick="loadHistoryItem(${originalIndex})">Load</button>
                 `;
@@ -726,8 +942,20 @@
                 }
             }
             
-            // Deep copy the cart to avoid direct reference mutations
-            orderCart = JSON.parse(JSON.stringify(transactionHistory[index].cart));
+            const loadedTransaction = transactionHistory[index];
+            orderCart = JSON.parse(JSON.stringify(loadedTransaction.cart));
+            
+            // Restore customer state
+            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") {
+                selectCustomer(loadedTransaction.customer);
+            } else {
+                currentCustomer = null;
+                customerDisplay.innerText = "click here";
+                customerDisplay.style.color = "var(--primary)";
+                customerDisplay.style.textDecoration = "underline";
+                customerEditBtn.style.display = "none";
+            }
+
             renderCart();
             closeHistoryPopup();
         }

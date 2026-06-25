@@ -62,7 +62,7 @@
 
         .customer-label { font-weight: 600; color: var(--text-muted); }
         
-        #customerDisplay {
+        #customerDisplay, #deliveryDisplay {
             color: var(--primary);
             font-weight: 500;
             cursor: pointer;
@@ -70,18 +70,18 @@
             text-underline-offset: 2px;
         }
         
-        #customerDisplay:hover { color: var(--primary-hover); }
+        #customerDisplay:hover, #deliveryDisplay:hover { color: var(--primary-hover); }
 
-        #customerEditBtn {
+        #customerEditBtn, #deliveryEditBtn {
             cursor: pointer;
             font-size: 0.85rem;
             color: var(--text-muted);
             opacity: 0.7;
             transition: opacity 0.2s;
         }
-        #customerEditBtn:hover { opacity: 1; }
+        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; }
 
-        #customerInputContainer {
+        #customerInputContainer, #deliveryInputContainer {
             display: none;
             position: relative;
         }
@@ -324,14 +324,27 @@
             <div class="header-left">
                 <h2>RestOrder by NPN</h2>
                 
-                <div class="customer-section">
-                    <span class="customer-label">Customer:</span>
-                    <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
-                    <span id="customerEditBtn" style="display:none;" onclick="openCustomerSearch()">✏️</span>
-                    
-                    <div id="customerInputContainer">
-                        <input type="text" id="customerInput" placeholder="Search customer..." autocomplete="off">
-                        <div id="customer-autocomplete-list" class="autocomplete-items"></div>
+                <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 4px;">
+                    <div class="customer-section">
+                        <span class="customer-label">Customer:</span>
+                        <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
+                        <span id="customerEditBtn" style="display:none;" onclick="openCustomerSearch()">✏️</span>
+                        
+                        <div id="customerInputContainer">
+                            <input type="text" id="customerInput" placeholder="Search customer..." autocomplete="off">
+                            <div id="customer-autocomplete-list" class="autocomplete-items"></div>
+                        </div>
+                    </div>
+
+                    <div class="customer-section">
+                        <span class="customer-label">Delivery date:</span>
+                        <span id="deliveryDisplay" onclick="openDeliveryEdit()"></span>
+                        <span id="deliveryEditBtn" onclick="openDeliveryEdit()">✏️</span>
+                        
+                        <div id="deliveryInputContainer" style="display: none; align-items: center; gap: 6px;">
+                            <input type="date" id="deliveryInput" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; outline: none; font-family: inherit;">
+                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 7px 10px;" onclick="saveDeliveryDate()">Save</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -386,14 +399,13 @@
                 <button class="close-btn" onclick="closeHistoryPopup()">&times;</button>
             </div>
             <div id="historyList" class="history-list">
-                </div>
+            </div>
         </div>
     </div>
 
     <script>
         // --- Configuration URLs ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
-        // 👇 REPLACE THIS WITH YOUR CUSTOMER GOOGLE SHEET CSV URL 👇
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         
         let catalogData = [];
@@ -405,6 +417,65 @@
         
         let currentFocusItem = -1;
         let currentFocusCustomer = -1;
+
+        // --- Delivery Date Management ---
+        function getTomorrowDateString() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const y = tomorrow.getFullYear();
+            const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const d = String(tomorrow.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDateDisplay(dateString) {
+            if (!dateString) return "";
+            const parts = dateString.split('-');
+            if (parts.length !== 3) return dateString;
+            const dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            return `${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
+        }
+
+        let currentDeliveryDate = getTomorrowDateString();
+        
+        const deliveryDisplay = document.getElementById('deliveryDisplay');
+        const deliveryEditBtn = document.getElementById('deliveryEditBtn');
+        const deliveryInputContainer = document.getElementById('deliveryInputContainer');
+        const deliveryInput = document.getElementById('deliveryInput');
+
+        function updateDeliveryDisplay() {
+            deliveryDisplay.innerText = formatDateDisplay(currentDeliveryDate);
+        }
+
+        function openDeliveryEdit() {
+            deliveryDisplay.style.display = 'none';
+            deliveryEditBtn.style.display = 'none';
+            deliveryInputContainer.style.display = 'flex';
+            deliveryInput.value = currentDeliveryDate;
+            deliveryInput.focus();
+        }
+
+        function saveDeliveryDate() {
+            if (deliveryInput.value) {
+                currentDeliveryDate = deliveryInput.value;
+            }
+            deliveryInputContainer.style.display = 'none';
+            deliveryDisplay.style.display = 'inline-block';
+            deliveryEditBtn.style.display = 'inline-block';
+            updateDeliveryDisplay();
+        }
+
+        deliveryInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') saveDeliveryDate();
+            if (e.key === 'Escape') {
+                deliveryInputContainer.style.display = 'none';
+                deliveryDisplay.style.display = 'inline-block';
+                deliveryEditBtn.style.display = 'inline-block';
+            }
+        });
+
+        updateDeliveryDisplay(); // Initialize date display on load
 
         window.onload = async function() {
             // Fetch Items
@@ -462,7 +533,6 @@
             for (let i = 1; i < lines.length; i++) {
                 if (!lines[i].trim()) continue;
                 const cols = lines[i].split(',');
-                // Assuming Name is the first column in the Customer CSV. Adjust index if needed.
                 const customerName = cols[0] ? cols[0].trim() : ''; 
                 if (customerName) customerDataList.push(customerName);
             }
@@ -538,7 +608,6 @@
             return focusVar;
         }
 
-
         // --- Customer Autocomplete Logic ---
         const customerInput = document.getElementById('customerInput');
         const customerAutocompleteList = document.getElementById('customer-autocomplete-list');
@@ -552,8 +621,6 @@
             customerInputContainer.style.display = 'block';
             customerInput.value = '';
             customerInput.focus();
-            
-            // Show all customers initially when opened
             populateCustomerDropdown('');
         }
 
@@ -575,7 +642,6 @@
 
             let matches = [];
             if (!query) {
-                // If empty, show top 15 results
                 matches = customerDataList.slice(0, 15).map(name => ({ name, score: 100 }));
             } else {
                 matches = customerDataList.map(name => {
@@ -586,7 +652,7 @@
 
             matches.forEach((match, index) => {
                 const optionDiv = document.createElement("div");
-                if (index === 0 && query) { // auto-focus first if typing
+                if (index === 0 && query) { 
                     optionDiv.classList.add('active'); 
                     currentFocusCustomer = 0;
                 }
@@ -623,7 +689,6 @@
                     }
                 }
             } else if (e.key === 'Escape') {
-                // Cancel edit
                 if (currentCustomer) {
                     selectCustomer(currentCustomer);
                 } else {
@@ -632,7 +697,6 @@
                 }
             }
         });
-
 
         // --- Item Autocomplete Logic ---
         const searchInput = document.getElementById('searchInput');
@@ -711,24 +775,33 @@
         document.addEventListener("click", function (e) {
             if (e.target !== searchInput) autocompleteList.innerHTML = '';
             
+            // Handle Customer Outside Click
             if (e.target !== customerInput && 
                 e.target !== customerDisplay && 
                 e.target !== customerEditBtn) {
                 customerAutocompleteList.innerHTML = '';
                 if (customerInputContainer.style.display === 'block') {
                     if (currentCustomer) {
-                        selectCustomer(currentCustomer); // Restore previous state
+                        selectCustomer(currentCustomer); 
                     } else {
                         customerInputContainer.style.display = 'none';
                         customerDisplay.style.display = 'inline-block';
                     }
                 }
             }
+            
+            // Handle Delivery Date Outside Click
+            if (deliveryInputContainer.style.display === 'flex') {
+                if (!deliveryInputContainer.contains(e.target) && e.target !== deliveryDisplay && e.target !== deliveryEditBtn) {
+                    deliveryInputContainer.style.display = 'none';
+                    deliveryDisplay.style.display = 'inline-block';
+                    deliveryEditBtn.style.display = 'inline-block';
+                }
+            }
 
             const modal = document.getElementById('historyModal');
             if (e.target === modal) closeHistoryPopup();
         });
-
 
         // --- Cart Logic ---
         function addToCart() {
@@ -855,11 +928,12 @@
                 if (!proceed) return;
             }
 
-            // Save to Transaction History (including customer)
+            // Save to Transaction History
             const timestamp = new Date().toLocaleString();
             transactionHistory.push({
                 timestamp: timestamp,
                 customer: currentCustomer || "No Customer",
+                deliveryDate: currentDeliveryDate,
                 cart: JSON.parse(JSON.stringify(orderCart)) 
             });
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
@@ -882,9 +956,35 @@
                 csvContent += row + "\n";
             });
 
-            // Name file based on customer if exists
-            const safeCustomerName = currentCustomer ? currentCustomer.replace(/[^a-z0-9]/gi, '_') : "New";
-            const fileName = `Order_${safeCustomerName}.csv`;
+            // Format export file name logic
+            const safeCustomerName = currentCustomer || "New";
+
+            // 1. Format Delivery Date to: ddmmmyy (e.g. 26Jun26)
+            let deliveryFormatted = "UnknownDate";
+            if (currentDeliveryDate) {
+                const dParts = currentDeliveryDate.split('-'); // Format is always YYYY-MM-DD
+                if (dParts.length === 3) {
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const dd = dParts[2];
+                    const mmm = months[parseInt(dParts[1], 10) - 1]; // Parse month to get array index
+                    const yy = dParts[0].substring(2); // Get last 2 digits of year
+                    deliveryFormatted = `${dd}${mmm}${yy}`;
+                }
+            }
+
+            // 2. Format Timestamp to: YYYYMMDD HH:MM:SS
+            const now = new Date();
+            const tYYYY = now.getFullYear();
+            const tMM = String(now.getMonth() + 1).padStart(2, '0');
+            const tDD = String(now.getDate()).padStart(2, '0');
+            const tHH = String(now.getHours()).padStart(2, '0');
+            const tMin = String(now.getMinutes()).padStart(2, '0');
+            const tSS = String(now.getSeconds()).padStart(2, '0');
+            
+            const timestampFormatted = `${tYYYY}${tMM}${tDD} ${tHH}:${tMin}:${tSS}`;
+
+            // Combine into the requested format
+            const fileName = `${safeCustomerName} for ${deliveryFormatted} - ${timestampFormatted}.csv`;
 
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
@@ -919,6 +1019,7 @@
             displayHistory.forEach((transaction, reversedIndex) => {
                 const originalIndex = transactionHistory.length - 1 - reversedIndex;
                 const custName = transaction.customer || "No Customer";
+                const delDateStr = transaction.deliveryDate ? formatDateDisplay(transaction.deliveryDate) : "Unknown Date";
                 
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'history-item';
@@ -926,7 +1027,7 @@
                 itemDiv.innerHTML = `
                     <div class="history-item-details">
                         <span class="history-item-time">${transaction.timestamp}</span>
-                        <span class="history-item-sub">👤 ${custName} • 📦 ${transaction.cart.length} item(s)</span>
+                        <span class="history-item-sub">👤 ${custName} • 📅 ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
                     </div>
                     <button class="btn-sm btn-outline" onclick="loadHistoryItem(${originalIndex})">Load</button>
                 `;
@@ -955,6 +1056,14 @@
                 customerDisplay.style.textDecoration = "underline";
                 customerEditBtn.style.display = "none";
             }
+            
+            // Restore delivery date
+            if (loadedTransaction.deliveryDate) {
+                currentDeliveryDate = loadedTransaction.deliveryDate;
+            } else {
+                currentDeliveryDate = getTomorrowDateString();
+            }
+            updateDeliveryDisplay();
 
             renderCart();
             closeHistoryPopup();

@@ -36,7 +36,14 @@
             max-width: 800px;
         }
 
-        h2 { margin-top: 0; margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.5rem;}
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h2 { margin: 0; color: var(--text-main); font-size: 1.5rem;}
 
         .input-row {
             display: grid;
@@ -99,14 +106,14 @@
 
         .table-container {
             width: 100%;
-            overflow-x: auto; /* Prevents table stretching on mobile */
+            overflow-x: auto; 
         }
 
         table { 
             width: 100%; 
             border-collapse: collapse; 
             font-size: 0.95rem; 
-            min-width: 400px; /* Ensure table elements don't crush completely */
+            min-width: 400px; 
         }
         
         th, td { 
@@ -158,27 +165,95 @@
             padding: 10px 12px;
             cursor: pointer;
             border-bottom: 1px solid var(--border);
-            border-left: 4px solid transparent; /* Placeholder for active border */
+            border-left: 4px solid transparent; 
             transition: all 0.15s ease;
         }
         
         .autocomplete-items div:last-child { border-bottom: none; }
         
-        /* Elevated Highlight Styling */
         .autocomplete-items div:hover, .autocomplete-items div.active { 
             background-color: #EEF2FF; 
             border-left: 4px solid var(--primary);
-            padding-left: 8px; /* Offset the 4px border so text stays aligned */
+            padding-left: 8px; 
         }
         
         .item-name { font-weight: 600; color: var(--text-main); transition: color 0.15s ease; }
         
-        /* Make the item name text pop when highlighted */
         .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name {
             color: var(--primary-hover);
         }
 
         .item-uom { font-size: 0.85em; color: var(--text-muted); margin-left: 4px; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 { margin: 0; }
+
+        .close-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .close-btn:hover { color: var(--danger); background: transparent; }
+
+        .history-list {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .history-item:hover { border-color: var(--primary); }
+        .history-item-details { display: flex; flex-direction: column; gap: 4px; }
+        .history-item-time { font-weight: 600; font-size: 0.95rem; }
+        .history-item-count { font-size: 0.85rem; color: var(--text-muted); }
 
         /* Mobile Adjustments */
         @media (max-width: 600px) {
@@ -192,7 +267,10 @@
 <body>
 
     <div class="container">
-        <h2>RestOrder by NPN</h2>
+        <div class="main-header">
+            <h2>RestOrder by NPN</h2>
+            <button class="btn-sm btn-outline" onclick="openHistoryPopup()">🕒 History</button>
+        </div>
 
         <div class="input-row">
             <div class="form-group">
@@ -219,6 +297,7 @@
             <table id="cartTable">
                 <thead>
                     <tr>
+                        <th style="width: 40px; text-align: center;">No.</th>
                         <th>Item Name</th>
                         <th>Qty</th>
                         <th>UOM</th>
@@ -233,12 +312,24 @@
         <button class="export-btn" onclick="exportToCSV()">Export Order to CSV</button>
     </div>
 
+    <div id="historyModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Transaction History</h3>
+                <button class="close-btn" onclick="closeHistoryPopup()">&times;</button>
+            </div>
+            <div id="historyList" class="history-list">
+                </div>
+        </div>
+    </div>
+
     <script>
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         
         let catalogData = [];
         let orderCart = [];
         let currentFocus = -1;
+        let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
 
         window.onload = async function() {
             try {
@@ -289,7 +380,6 @@
         const autocompleteList = document.getElementById('autocomplete-list');
         const selectedSkuInput = document.getElementById('selectedSku');
 
-        // Levenshtein distance for fuzzy matching typos
         function levenshtein(a, b) {
             const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
             for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
@@ -303,39 +393,33 @@
             return matrix[a.length][b.length];
         }
 
-        // Generate match score (Highly Tolerant Subsequence & Typo Algorithm)
         function getMatchScore(query, text) {
             query = query.toLowerCase().trim();
             text = text.toLowerCase();
             
             if (!query) return 0;
             
-            if (text === query) return 100; // Perfect match
-            if (text.startsWith(query)) return 90; // Perfect start priority
+            if (text === query) return 100;
+            if (text.startsWith(query)) return 90;
             
             const words = text.split(/\s+/);
-            if (words.some(w => w.startsWith(query))) return 80; // Word boundary match
+            if (words.some(w => w.startsWith(query))) return 80; 
             
-            if (text.includes(query)) return 70; // Substring match
+            if (text.includes(query)) return 70;
 
-            // 1. Subsequence match (e.g., "thpth" matches "tahu putih")
             let qIdx = 0;
             for (let i = 0; i < text.length; i++) {
                 if (query[qIdx] === text[i]) qIdx++;
-                if (qIdx === query.length) return 60; // Tolerant subsequence match
+                if (qIdx === query.length) return 60;
             }
 
-            // 2. High-tolerance Typo matching (Levenshtein)
             if (query.length > 2) {
-                // Allow up to 2 typos for medium queries, 3 for longer queries
                 const maxTypos = query.length <= 5 ? 2 : 3;
                 
-                // Check whole words against query
                 for (let w of words) {
                     let dist = levenshtein(query, w);
                     if (dist <= maxTypos) return 50 - dist; 
                     
-                    // Check prefix of the word (e.g. typing "nagnka" for "nangka")
                     let wordPrefix = w.substring(0, query.length);
                     if (wordPrefix.length >= query.length - maxTypos) {
                         let prefixDist = levenshtein(query, wordPrefix);
@@ -343,16 +427,14 @@
                     }
                 }
                 
-                // Check against the beginning of the entire text string
                 let textPrefix = text.substring(0, query.length);
                 let textDist = levenshtein(query, textPrefix);
                 if (textDist <= maxTypos) return 30 - textDist;
             }
             
-            return 0; // No match
+            return 0; 
         }
 
-        // Search Input Logic
         searchInput.addEventListener('input', function() {
             const val = this.value;
             autocompleteList.innerHTML = ''; 
@@ -361,7 +443,6 @@
 
             if (!val) return false;
 
-            // Score, filter, and sort matches
             let scoredMatches = catalogData.map(item => {
                 const score = getMatchScore(val, item.name);
                 return { item, score };
@@ -372,7 +453,7 @@
             scoredMatches.forEach((match, index) => {
                 const optionDiv = document.createElement("div");
                 if (index === 0) {
-                    optionDiv.classList.add('active'); // Highlight first by default
+                    optionDiv.classList.add('active'); 
                     currentFocus = 0;
                 }
                 
@@ -386,7 +467,6 @@
             });
         });
 
-        // Keydown mapping for Up, Down, Enter, Tab
         searchInput.addEventListener('keydown', function(e) {
             const items = autocompleteList.getElementsByTagName('div');
             
@@ -398,7 +478,7 @@
                 addActive(items);
             } else if (e.key === 'Enter' || e.key === 'Tab') {
                 if (items.length > 0) {
-                    e.preventDefault(); // Prevent tab from jumping to next field immediately
+                    e.preventDefault(); 
                     if (currentFocus > -1) {
                         items[currentFocus].click();
                     } else {
@@ -439,9 +519,12 @@
 
         document.addEventListener("click", function (e) {
             if (e.target !== searchInput) autocompleteList.innerHTML = '';
+            
+            // Close modal when clicking outside content
+            const modal = document.getElementById('historyModal');
+            if (e.target === modal) closeHistoryPopup();
         });
 
-        // Cart Logic
         function addToCart() {
             const selectedSku = document.getElementById('selectedSku').value;
             const rawQty = parseFloat(qtyInput.value);
@@ -473,7 +556,7 @@
             searchInput.value = '';
             selectedSkuInput.value = '';
             qtyInput.value = '';
-            searchInput.focus(); // Loop back to start
+            searchInput.focus(); 
         }
 
         function renderCart() {
@@ -482,7 +565,7 @@
             
             if (orderCart.length === 0) {
                 tbody.innerHTML = `<tr>
-                    <td colspan="4" style="text-align: center; color: #6B7280; padding: 40px 20px;">
+                    <td colspan="5" style="text-align: center; color: #6B7280; padding: 40px 20px;">
                         <img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" 
                              alt="Empty Cart" 
                              style="width: 150px; display: block; margin: 0 auto 15px auto; opacity: 0.8;">
@@ -495,6 +578,7 @@
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td style="text-align: center;">${index + 1}</td>
                     <td>${item.name}</td>
                     <td id="qty-cell-${index}">${item.qty}</td>
                     <td>${item.uom}</td>
@@ -526,7 +610,7 @@
 
             qtyCell.innerHTML = `<input type="number" class="inline-edit-input" id="edit-qty-${index}" value="${currentQty}" step="0.1" min="0.1">`;
             actionCell.innerHTML = `
-                <button class="btn-sm" style="background-color: #10B981;" onclick="saveItem(${index})">Save</button>
+                <button class="btn-sm" style="background-color: #10B981; color: white; border: none;" onclick="saveItem(${index})">Save</button>
                 <button class="btn-sm btn-outline" onclick="renderCart()">Cancel</button>
             `;
 
@@ -560,13 +644,18 @@
                 return;
             }
 
-            // Updated CSV formatting
+            // Save to Transaction History
+            const timestamp = new Date().toLocaleString();
+            transactionHistory.push({
+                timestamp: timestamp,
+                cart: JSON.parse(JSON.stringify(orderCart)) // Deep copy
+            });
+            localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+
             let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom\n";
 
-            // Helper function to sanitize strings
             const sanitize = (str) => {
                 if (!str) return "";
-                // Remove quotes completely and replace commas with dots
                 return String(str).replace(/"/g, "").replace(/,/g, ".");
             };
 
@@ -590,7 +679,60 @@
             document.body.removeChild(link);
         }
 
-        // Initial render to show empty state
+        // --- History Modal Functions ---
+        function openHistoryPopup() {
+            document.getElementById('historyModal').style.display = 'flex';
+            populateHistoryList();
+        }
+
+        function closeHistoryPopup() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        function populateHistoryList() {
+            const listContainer = document.getElementById('historyList');
+            listContainer.innerHTML = '';
+
+            if (transactionHistory.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No previous transactions found.</p>';
+                return;
+            }
+
+            // Clone array and reverse so newest show at the top
+            const displayHistory = [...transactionHistory].reverse();
+
+            displayHistory.forEach((transaction, reversedIndex) => {
+                const originalIndex = transactionHistory.length - 1 - reversedIndex;
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'history-item';
+                
+                itemDiv.innerHTML = `
+                    <div class="history-item-details">
+                        <span class="history-item-time">${transaction.timestamp}</span>
+                        <span class="history-item-count">${transaction.cart.length} item(s)</span>
+                    </div>
+                    <button class="btn-sm btn-outline" onclick="loadHistoryItem(${originalIndex})">Load</button>
+                `;
+                
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        function loadHistoryItem(index) {
+            if (orderCart.length > 0) {
+                if (!confirm("Loading a previous transaction will replace your current cart. Continue?")) {
+                    return;
+                }
+            }
+            
+            // Deep copy the cart to avoid direct reference mutations
+            orderCart = JSON.parse(JSON.stringify(transactionHistory[index].cart));
+            renderCart();
+            closeHistoryPopup();
+        }
+
+        // Initial render
         renderCart();
     </script>
 </body>

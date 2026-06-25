@@ -33,7 +33,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             width: 100%;
-            max-width: 800px;
+            max-width: 900px; /* Widened slightly to accommodate the new Note column comfortably */
         }
 
         .main-header {
@@ -165,7 +165,7 @@
             width: 100%; 
             border-collapse: collapse; 
             font-size: 0.95rem; 
-            min-width: 400px; 
+            min-width: 500px; 
         }
         
         th, td { 
@@ -193,6 +193,16 @@
             padding: 6px;
             font-size: 0.9rem;
             margin-right: 8px;
+        }
+
+        /* Note Column Truncation Style */
+        .note-cell {
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
 
         .export-btn { width: 100%; margin-top: 2rem; padding: 12px; font-size: 1.1rem; }
@@ -381,6 +391,7 @@
                         <th>Item Name</th>
                         <th>Qty</th>
                         <th>UOM</th>
+                        <th>Note</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -827,7 +838,8 @@
                 name: product.name,
                 variant: product.variant,
                 qty: formattedQty,
-                uom: product.uom
+                uom: product.uom,
+                note: "" // Note initialization
             });
 
             renderCart();
@@ -844,7 +856,7 @@
             
             if (orderCart.length === 0) {
                 tbody.innerHTML = `<tr>
-                    <td colspan="5" style="text-align: center; color: #6B7280; padding: 40px 20px;">
+                    <td colspan="6" style="text-align: center; color: #6B7280; padding: 40px 20px;">
                         <img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" 
                              alt="Empty Cart" 
                              style="width: 150px; display: block; margin: 0 auto 15px auto; opacity: 0.8;">
@@ -861,8 +873,10 @@
                     <td>${item.name}</td>
                     <td id="qty-cell-${index}">${item.qty}</td>
                     <td>${item.uom}</td>
+                    <td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td>
                     <td class="actions-cell" id="action-cell-${index}">
                         <button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button>
+                        <button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button>
                         <button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button>
                     </td>
                 `;
@@ -903,6 +917,16 @@
             });
         }
 
+        // --- Note Edit Function ---
+        function editNote(index) {
+            const currentNote = orderCart[index].note || "";
+            const newNote = prompt(`Enter note for ${orderCart[index].name}:`, currentNote);
+            if (newNote !== null) {
+                orderCart[index].note = newNote.trim();
+                renderCart();
+            }
+        }
+
         function saveItem(index) {
             const editInput = document.getElementById(`edit-qty-${index}`);
             const rawQty = parseFloat(editInput.value);
@@ -938,7 +962,8 @@
             });
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
 
-            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom\n";
+            // Updated headers with the "note" column
+            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom,note\n";
 
             const sanitize = (str) => {
                 if (!str) return "";
@@ -951,8 +976,9 @@
                 const safeSku = sanitize(item.sku);
                 const safeQty = sanitize(item.qty);
                 const safeUom = sanitize(item.uom);
+                const safeNote = sanitize(item.note || ""); // Ensure empty string fallback
 
-                let row = `${safeName},${safeVariant},${safeSku},${safeQty},${safeUom}`;
+                let row = `${safeName},${safeVariant},${safeSku},${safeQty},${safeUom},${safeNote}`;
                 csvContent += row + "\n";
             });
 

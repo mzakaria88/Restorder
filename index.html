@@ -4,82 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RestOrder by NPN</title>
+    <!-- Premium Modern Font Link -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4F46E5;
-            --primary-hover: #4338CA;
-            --danger: #EF4444;
-            --danger-hover: #DC2828;
-            --bg-color: #F3F4F6;
-            --card-bg: #FFFFFF;
-            --text-main: #111827;
-            --text-muted: #6B7280;
-            --border: #E5E7EB;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #f43f5e;
+            --danger-hover: #e11d48;
+            --danger-light: #fff1f2;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
         }
 
         body { 
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-main); 
-            padding: 2rem 1rem; 
+            padding: 1rem; /* Heavily reduced top/bottom canvas padding */
             margin: 0;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
             background-color: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.25rem 1.75rem; /* Compacted vertical inside padding */
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgb(0 0 0 / 0.01);
             width: 100%;
-            max-width: 900px; /* Widened slightly to accommodate the new Note column comfortably */
+            max-width: 950px;
         }
 
+        /* App Branding & Header */
         .main-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem; /* Reduced from 2.5rem */
+            padding-bottom: 0.75rem; /* Reduced from 1.5rem */
+            border-bottom: 1px dashed var(--border);
         }
 
         .header-left {
             display: flex;
             flex-direction: column;
             gap: 8px;
+            flex: 1;
         }
 
-        h2 { margin: 0; color: var(--text-main); font-size: 1.5rem;}
+        h2 { 
+            margin: 0; 
+            color: var(--text-main); 
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        h2::after {
+            content: "App";
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 1px 6px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
 
-        /* Customer Section Styles */
+        /* Metadata Pill Section Styles */
+        .meta-chips {
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+            margin-top: 2px;
+        }
+
         .customer-section {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 6px;
             position: relative;
+            background-color: var(--bg-color);
+            padding: 4px 12px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+        
+        .customer-section:hover {
+            border-color: var(--text-muted);
         }
 
-        .customer-label { font-weight: 600; color: var(--text-muted); }
+        .customer-label { 
+            font-weight: 600; 
+            color: var(--text-muted); 
+            text-transform: uppercase;
+            font-size: 0.725rem;
+            letter-spacing: 0.02em;
+        }
         
         #customerDisplay, #deliveryDisplay {
             color: var(--primary);
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            text-decoration: underline;
-            text-underline-offset: 2px;
+            text-decoration: none;
+            transition: color 0.2s ease;
         }
         
         #customerDisplay:hover, #deliveryDisplay:hover { color: var(--primary-hover); }
 
         #customerEditBtn, #deliveryEditBtn {
             cursor: pointer;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            font-size: 0.8rem;
+            filter: grayscale(100%);
+            opacity: 0.6;
+            transition: opacity 0.2s, filter 0.2s;
         }
-        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; }
+        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; filter: grayscale(0%); }
 
         #customerInputContainer, #deliveryInputContainer {
             display: none;
@@ -87,213 +150,283 @@
         }
 
         #customerInput {
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 0.9rem;
-            width: 200px;
+            padding: 2px 8px;
+            border: 1px solid var(--primary);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            width: 170px;
             outline: none;
+            font-family: inherit;
         }
-        #customerInput:focus { border-color: var(--primary); }
 
+        /* Order Entry Form Row */
         .input-row {
             display: grid;
-            grid-template-columns: 2fr 1fr auto;
-            gap: 15px;
+            grid-template-columns: 2.5fr 1fr auto;
+            gap: 14px;
             align-items: end;
-            margin-bottom: 1.5rem;
-            margin-top: 1rem;
+            margin-bottom: 1.25rem; /* Reduced from 2.5rem to pull table up */
+            background: var(--bg-color);
+            padding: 1rem 1.25rem; /* Slimmed down inner padding */
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
         }
 
         .form-group { position: relative; display: flex; flex-direction: column; }
         
-        label { font-weight: 600; margin-bottom: 6px; font-size: 0.875rem; color: var(--text-main); }
+        label { 
+            font-weight: 600; 
+            margin-bottom: 6px; 
+            font-size: 0.825rem; 
+            color: var(--text-main); 
+        }
         
         input { 
-            padding: 10px 12px; 
+            padding: 9px 12px; /* Marginally scaled input block size down */
             border: 1px solid var(--border); 
-            border-radius: 6px; 
-            font-size: 1rem; 
+            border-radius: var(--radius-sm); 
+            font-size: 0.925rem; 
+            font-family: inherit;
+            color: var(--text-main);
+            background-color: var(--card-bg);
             transition: border-color 0.2s, box-shadow 0.2s;
             outline: none;
+            box-shadow: var(--shadow-sm);
         }
         
         input:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15), var(--shadow-sm);
+        }
+        
+        input::placeholder {
+            color: #94a3b8;
         }
 
+        /* Global Dynamic Buttons */
         button { 
-            padding: 10px 16px; 
+            padding: 9px 16px; 
             background-color: var(--primary); 
             color: white; 
             border: none; 
-            border-radius: 6px; 
+            border-radius: var(--radius-sm); 
             cursor: pointer; 
-            font-size: 1rem; 
-            font-weight: 500;
-            transition: background-color 0.2s;
+            font-size: 0.925rem; 
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         
-        button:hover { background-color: var(--primary-hover); }
-        button:disabled { background-color: #9CA3AF; cursor: not-allowed; }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        button:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
 
         .btn-danger { background-color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger-hover); }
         
-        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .btn-outline:hover { background-color: var(--bg-color); }
+        .btn-outline { 
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border); 
+            color: var(--text-main);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-outline:hover { background-color: var(--bg-color); color: var(--text-main); border-color: var(--text-muted); }
 
-        .btn-sm { padding: 6px 10px; font-size: 0.875rem; }
+        .btn-sm { padding: 4px 10px; font-size: 0.825rem; border-radius: var(--radius-sm); height: 28px; }
 
+        /* Dynamic Table Controls Layout */
         .table-header-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem; /* Tight gap above layout list table */
         }
 
-        .table-header-actions h3 { margin: 0; }
+        .table-header-actions h3 { 
+            margin: 0; 
+            font-size: 1.15rem; 
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
 
+        /* Table Architecture Styling */
         .table-container {
             width: 100%;
             overflow-x: auto; 
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            background-color: var(--card-bg);
         }
 
         table { 
             width: 100%; 
-            border-collapse: collapse; 
-            font-size: 0.95rem; 
-            min-width: 500px; 
+            border-collapse: separate; 
+            border-spacing: 0;
+            font-size: 0.925rem; 
+            min-width: 600px; 
         }
         
         th, td { 
-            border-bottom: 1px solid var(--border); 
-            padding: 12px 8px; 
+            padding: 10px 14px; /* Reduced cell height padding to fit more rows */
             text-align: left; 
+            border-bottom: 1px solid var(--border);
         }
         
         th { 
-            background-color: var(--bg-color); 
+            background-color: #f8fafc; 
             color: var(--text-muted); 
             font-weight: 600; 
             text-transform: uppercase; 
-            font-size: 0.75rem; 
+            font-size: 0.725rem; 
             letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
         }
 
         .actions-cell {
             display: flex;
-            gap: 8px;
+            gap: 4px;
         }
 
         .inline-edit-input {
-            width: 80px;
-            padding: 6px;
-            font-size: 0.9rem;
-            margin-right: 8px;
+            width: 65px;
+            padding: 2px 6px;
+            font-size: 0.875rem;
+            margin-right: 4px;
+            box-shadow: none;
         }
 
-        /* Note Column Truncation Style */
         .note-cell {
-            max-width: 120px;
+            max-width: 150px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             color: var(--text-muted);
             font-size: 0.85rem;
+            font-style: italic;
         }
 
-        .export-btn { width: 100%; margin-top: 2rem; padding: 12px; font-size: 1.1rem; }
+        /* Accent Layout Footers */
+        .export-btn { 
+            width: 100%; 
+            margin-top: 1.5rem; /* Compressed spacing */
+            padding: 11px; 
+            font-size: 1rem; 
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+            border-radius: var(--radius-md);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+        .export-btn:hover {
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+            transform: translateY(-1px);
+        }
 
-        /* Autocomplete Styles */
+        /* Beautiful Autocomplete Popups */
         .autocomplete-items {
             position: absolute;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: var(--radius-md);
             z-index: 99;
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 250px;
+            max-height: 240px;
             overflow-y: auto;
             background-color: var(--card-bg);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05);
             margin-top: 4px;
+            padding: 4px;
         }
         
         .autocomplete-items div {
-            padding: 10px 12px;
+            padding: 8px 12px;
             cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            border-left: 4px solid transparent; 
+            border-radius: var(--radius-sm);
             transition: all 0.15s ease;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         
-        .autocomplete-items div:last-child { border-bottom: none; }
+        .autocomplete-items div:last-child { margin-bottom: 0; }
         
         .autocomplete-items div:hover, .autocomplete-items div.active { 
-            background-color: #EEF2FF; 
-            border-left: 4px solid var(--primary);
-            padding-left: 8px; 
-        }
-        
-        .item-name { font-weight: 600; color: var(--text-main); transition: color 0.15s ease; }
-        
-        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name {
+            background-color: var(--primary-light); 
             color: var(--primary-hover);
+            padding-left: 14px; 
         }
+        
+        .item-name { font-weight: 500; color: var(--text-main); }
+        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name { color: var(--primary); }
+        .item-uom { font-size: 0.775rem; color: var(--text-muted); background: var(--bg-color); padding: 1px 5px; border-radius: 4px; font-weight: 600; }
 
-        .item-uom { font-size: 0.85em; color: var(--text-muted); margin-left: 4px; }
-
-        /* Modal Styles */
+        /* Sleek Modern Modal Windows */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(15, 23, 42, 0.4);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease-out;
         }
 
         .modal-content {
             background-color: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
+            padding: 1.75rem;
+            border-radius: var(--radius-lg);
             width: 90%;
-            max-width: 500px;
+            max-width: 530px;
             max-height: 80vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+            border: 1px solid var(--border);
         }
 
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
 
-        .modal-header h3 { margin: 0; }
+        .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;}
 
         .close-btn {
-            background: transparent;
+            background: var(--bg-color);
             color: var(--text-muted);
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
             padding: 0;
+            font-size: 1.15rem;
+            cursor: pointer;
             line-height: 1;
+            box-shadow: none;
         }
 
-        .close-btn:hover { color: var(--danger); background: transparent; }
+        .close-btn:hover { color: var(--danger); background: var(--danger-light); transform: none;}
 
         .history-list {
             overflow-y: auto;
@@ -301,6 +434,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            padding-right: 4px;
         }
 
         .history-item {
@@ -309,21 +443,30 @@
             align-items: center;
             padding: 12px;
             border: 1px solid var(--border);
-            border-radius: 8px;
-            transition: border-color 0.2s;
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+            background-color: var(--bg-color);
         }
 
-        .history-item:hover { border-color: var(--primary); }
+        .history-item:hover { border-color: var(--primary); background-color: var(--card-bg); box-shadow: var(--shadow-sm); }
         .history-item-details { display: flex; flex-direction: column; gap: 4px; }
-        .history-item-time { font-weight: 600; font-size: 0.95rem; }
-        .history-item-sub { font-size: 0.85rem; color: var(--text-muted); }
+        .history-item-time { font-weight: 600; font-size: 0.925rem; color: var(--text-main); }
+        .history-item-sub { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center;}
 
-        /* Mobile Adjustments */
-        @media (max-width: 600px) {
-            .input-row {
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        /* Mobile Dynamic Adjustments */
+        @media (max-width: 680px) {
+            body { padding: 0.5rem; }
+            .container { padding: 1rem; }
+            .main-header { flex-direction: column; gap: 12px; align-items: stretch; }
+            .main-header button { align-self: flex-start; }
+            .input-row { grid-template-columns: 1fr; gap: 12px; padding: 0.75rem; }
+            button { width: 100%; }
+            .btn-sm { width: auto; }
+            .actions-cell { width: max-content; }
         }
     </style>
 </head>
@@ -334,7 +477,7 @@
             <div class="header-left">
                 <h2>RestOrder by NPN</h2>
                 
-                <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-top: 4px;">
+                <div class="meta-chips">
                     <div class="customer-section">
                         <span class="customer-label">Customer:</span>
                         <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
@@ -347,13 +490,13 @@
                     </div>
 
                     <div class="customer-section">
-                        <span class="customer-label">Delivery date:</span>
+                        <span class="customer-label">Delivery:</span>
                         <span id="deliveryDisplay" onclick="openDeliveryEdit()"></span>
                         <span id="deliveryEditBtn" onclick="openDeliveryEdit()">✏️</span>
                         
                         <div id="deliveryInputContainer" style="display: none; align-items: center; gap: 6px;">
-                            <input type="date" id="deliveryInput" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem; outline: none; font-family: inherit;">
-                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 7px 10px;" onclick="saveDeliveryDate()">Save</button>
+                            <input type="date" id="deliveryInput" style="padding: 2px 6px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; outline: none; font-family: inherit;">
+                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 0 10px;" onclick="saveDeliveryDate()">Save</button>
                         </div>
                     </div>
                 </div>
@@ -387,12 +530,12 @@
             <table id="cartTable">
                 <thead>
                     <tr>
-                        <th style="width: 40px; text-align: center;">No.</th>
+                        <th style="width: 50px; text-align: center;">No.</th>
                         <th>Item Name</th>
-                        <th>Qty</th>
-                        <th>UOM</th>
+                        <th style="width: 90px;">Qty</th>
+                        <th style="width: 80px;">UOM</th>
                         <th>Note</th>
-                        <th>Actions</th>
+                        <th style="width: 150px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="cartBody">
@@ -737,7 +880,7 @@
                     currentFocusItem = 0;
                 }
                 
-                optionDiv.innerHTML = `<span class="item-name">${match.item.name}</span> <span class="item-uom">(${match.item.uom})</span>`;
+                optionDiv.innerHTML = `<span class="item-name">${match.item.name}</span> <span class="item-uom">${match.item.uom}</span>`;
                 
                 optionDiv.addEventListener("click", function() {
                     selectItem(match.item);
@@ -856,11 +999,11 @@
             
             if (orderCart.length === 0) {
                 tbody.innerHTML = `<tr>
-                    <td colspan="6" style="text-align: center; color: #6B7280; padding: 40px 20px;">
+                    <td colspan="6" style="text-align: center; color: #6b7280; padding: 40px 20px;">
                         <img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" 
                              alt="Empty Cart" 
-                             style="width: 150px; display: block; margin: 0 auto 15px auto; opacity: 0.8;">
-                        No items added yet.
+                             style="width: 100px; display: block; margin: 0 auto 12px auto; opacity: 0.5; filter: grayscale(30%);">
+                        <span style="font-weight: 500; font-size: 0.9rem; color: var(--text-muted);">No items added to this order yet.</span>
                     </td>
                 </tr>`;
                 return;
@@ -869,15 +1012,15 @@
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td style="text-align: center;">${index + 1}</td>
-                    <td>${item.name}</td>
-                    <td id="qty-cell-${index}">${item.qty}</td>
-                    <td>${item.uom}</td>
+                    <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
+                    <td style="font-weight: 600; color: var(--text-main);">${item.name}</td>
+                    <td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td>
+                    <td><span style="font-size: 0.775rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${item.uom}</span></td>
                     <td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td>
                     <td class="actions-cell" id="action-cell-${index}">
                         <button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button>
                         <button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button>
-                        <button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button>
+                        <button class="btn-sm btn-danger btn-outline" style="color: var(--danger);" onclick="deleteItem(${index})">🗑</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -903,7 +1046,7 @@
 
             qtyCell.innerHTML = `<input type="number" class="inline-edit-input" id="edit-qty-${index}" value="${currentQty}" step="0.1" min="0.1">`;
             actionCell.innerHTML = `
-                <button class="btn-sm" style="background-color: #10B981; color: white; border: none;" onclick="saveItem(${index})">Save</button>
+                <button class="btn-sm" style="background-color: var(--success); color: white; border: none;" onclick="saveItem(${index})">Save</button>
                 <button class="btn-sm btn-outline" onclick="renderCart()">Cancel</button>
             `;
 
@@ -961,7 +1104,8 @@
                 cart: JSON.parse(JSON.stringify(orderCart)) 
             });
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-
+			sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart);
+			
             // Updated headers with the "note" column
             let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom,note\n";
 
@@ -1036,7 +1180,7 @@
             listContainer.innerHTML = '';
 
             if (transactionHistory.length === 0) {
-                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No previous transactions found.</p>';
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-weight: 500;">No previous transactions found.</p>';
                 return;
             }
 
@@ -1097,6 +1241,40 @@
 
         // Initial render
         renderCart();
+		// --- Secure Telegram Notification Logic ---
+// Paste the Web App URL you just copied from Google Apps Script
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
+
+// Your Chat ID is safe to leave in the HTML. It just tells the script who to send the message to.
+const TELEGRAM_CHAT_ID = '-1004295283262';
+
+function sendTelegramOrderAlert(customer, deliveryDate, cart) {
+    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+
+    let message = `🚨 *New Order Saved!*\n`;
+    message += `👤 *Customer:* ${customer || "No Customer"}\n`;
+    message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n\n`;
+    message += `📦 *Items:*\n`;
+
+    cart.forEach((item, index) => {
+        message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}`;
+        if (item.note) message += ` _(Note: ${item.note})_`;
+        message += `\n`;
+    });
+    
+    // We send this to Google Apps Script, NOT directly to Telegram
+    fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 
+            // Using text/plain prevents browsers from blocking the request (CORS errors)
+            'Content-Type': 'text/plain' 
+        },
+        body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message
+        })
+    }).catch(err => console.error("Failed to route message through Google Script", err));
+	}
     </script>
 </body>
 </html>

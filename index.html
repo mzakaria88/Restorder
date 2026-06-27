@@ -251,13 +251,28 @@
             return `${y}-${m}-${d}`;
         }
 
-        function formatDateDisplay(dateString) {
+		function formatDateDisplay(dateString) {
             if (!dateString) return "";
+            
+            let dLocal;
+            
+            // Check if it's our simple YYYY-MM-DD format
             const parts = dateString.split('-');
-            if (parts.length !== 3) return dateString;
-            const dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            if (parts.length === 3 && parts[0].length === 4) {
+                dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+                // Otherwise, read the full timestamp from the database
+                dLocal = new Date(dateString);
+            }
+
+            // Fallback if the date is broken
+            if (isNaN(dLocal.getTime())) return dateString;
+
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            return `${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
+            
+            // Returns: Day Date Month Year (e.g., Sunday 28 June 2026)
+            return `${days[dLocal.getDay()]} ${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
         }
 
         let currentDeliveryDate = getTomorrowDateString();
@@ -650,20 +665,30 @@
         function openHistoryPopup() { document.getElementById('historyModal').style.display = 'flex'; populateHistoryList(); }
         function closeHistoryPopup() { document.getElementById('historyModal').style.display = 'none'; }
 
-        function populateHistoryList() {
-            const listContainer = document.getElementById('historyList'); listContainer.innerHTML = '';
-            if (transactionHistory.length === 0) { listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-weight: 500;">No previous transactions found.</p>'; return; }
+		function populateHistoryList() {
+            const listContainer = document.getElementById('historyList'); 
+            listContainer.innerHTML = '';
+            
+            if (transactionHistory.length === 0) { 
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-weight: 500;">No previous transactions found.</p>'; 
+                return; 
+            }
+            
             const displayHistory = [...transactionHistory].reverse();
 
             displayHistory.forEach((transaction, reversedIndex) => {
                 const originalIndex = transactionHistory.length - 1 - reversedIndex;
                 const custName = transaction.customer || "No Customer";
                 const delDateStr = transaction.deliveryDate ? formatDateDisplay(transaction.deliveryDate) : "Unknown Date";
-                const itemDiv = document.createElement('div'); itemDiv.className = 'history-item';
+                
+                const itemDiv = document.createElement('div'); 
+                itemDiv.className = 'history-item';
+                
+                // Added "Delivery on:" right after the calendar icon
                 itemDiv.innerHTML = `
                     <div class="history-item-details">
                         <span class="history-item-time">${transaction.timestamp}</span>
-                        <span class="history-item-sub">👤 ${custName} • 📅 ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
+                        <span class="history-item-sub">👤 ${custName} • 📅 Delivery on: ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
                     </div>
                     <button class="btn-sm btn-outline" onclick="loadHistoryItem(${originalIndex})">Load</button>
                 `;

@@ -621,22 +621,27 @@
             if (!dateString) return "";
             
             let dLocal;
-            const parts = dateString.split('-');
-            // Check if it's our simple YYYY-MM-DD format
-            if (parts.length === 3 && parts[0].length === 4) {
+            
+            // Strictly check if it is exactly YYYY-MM-DD (10 characters)
+            if (dateString.length === 10 && dateString.indexOf('-') === 4) {
+                const parts = dateString.split('-');
                 dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
             } else {
-                // Otherwise, read the full timestamp from the database
+                // Otherwise, let JavaScript parse the full ISO timestamp safely
                 dLocal = new Date(dateString);
             }
 
-            // Fallback if the date is broken
+            // Fallback if the date is completely broken
             if (isNaN(dLocal.getTime())) return dateString;
 
-            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             
-            return `${days[dLocal.getDay()]} ${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
+            // Format into short display: DD MMM YYYY (e.g., 22 Jul 2029)
+            const dd = String(dLocal.getDate()).padStart(2, '0');
+            const mmm = months[dLocal.getMonth()];
+            const yyyy = dLocal.getFullYear();
+            
+            return `${dd} ${mmm} ${yyyy}`;
         }
 
         let currentDeliveryDate = getTomorrowDateString();
@@ -655,10 +660,9 @@
             deliveryEditBtn.style.display = 'none';
             deliveryInputContainer.style.display = 'flex';
             
-            // Safely convert any date string format into strictly YYYY-MM-DD for the HTML calendar
             let isoDate = currentDeliveryDate;
-            const parts = currentDeliveryDate.split('-');
-            if (!(parts.length === 3 && parts[0].length === 4)) {
+            // Only convert if it's NOT already YYYY-MM-DD
+            if (currentDeliveryDate.length !== 10) {
                 const d = new Date(currentDeliveryDate);
                 if (!isNaN(d.getTime())) {
                     const yyyy = d.getFullYear();
@@ -1182,12 +1186,11 @@
             });
 
 		const safeCustomerName = currentCustomer || "New";
-            let deliveryFormatted = "UnknownDate";
-            
+			let deliveryFormatted = "UnknownDate";
             if (currentDeliveryDate) {
                 let dObj;
-                const parts = currentDeliveryDate.split('-');
-                if (parts.length === 3 && parts[0].length === 4) {
+                if (currentDeliveryDate.length === 10 && currentDeliveryDate.indexOf('-') === 4) {
+                    const parts = currentDeliveryDate.split('-');
                     dObj = new Date(parts[0], parts[1] - 1, parts[2]);
                 } else {
                     dObj = new Date(currentDeliveryDate);

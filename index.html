@@ -240,7 +240,7 @@
         const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbyrPvMpFQWX5w-G9YZctb8jxVnWPtClAqnyYFkTyaLaV0KVeKfKvTmMDBPdbXZGu3s/exec';
         
         // PASTE YOUR NEW RE-DEPLOYED SCRIPT ID HERE:
-        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbymqLkLB0OdV2ndqOrT2cIVvRXFl-BjK9R76J_I-yPXAP9K1z_eFrfkMumDs2KW0i4/exec';
+        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzFMSOLEqRnawcP3_uHY-NbZQj3N9L0gEoOjII363emt4MM0Xv19obQmwK8_GqSntk/exec';
         
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
         const TELEGRAM_CHAT_ID = '-1004295283262';
@@ -365,13 +365,16 @@
                 }
             } catch (error) { console.error(error); }
 
-            if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
+            // PULL LIVE HISTORY FROM YOUR LAMPOH GOOGLE SHEET
+            if (GAS_SHEET_SYNC_URL && !GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
                 try {
-                    const response = await fetch(GAS_DB_URL);
+                    const response = await fetch(GAS_SHEET_SYNC_URL);
                     const data = await response.json();
+                    
                     if (data && Array.isArray(data) && data.length > 0) {
                         transactionHistory = data;
                         localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                        console.log("Successfully loaded history from Database.");
                     }
                 } catch (error) {
                     console.error("Failed to load history from DB, using local cache", error);

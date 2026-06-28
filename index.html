@@ -644,6 +644,8 @@
                 cart: JSON.parse(JSON.stringify(orderCart)) 
             };
 
+            syncOrderToLampohSheet(transactionData);
+
             if (isUpdate) {
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) transactionHistory[idx] = transactionData;

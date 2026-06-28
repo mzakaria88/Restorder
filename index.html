@@ -57,8 +57,14 @@
         #customerInputContainer, #deliveryInputContainer { display: none; position: relative; }
         #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; width: 170px; outline: none; font-family: inherit; }
 
-        /* Edit Mode UI */
-        .edit-mode-container { display: none; flex-direction: column; align-items: center; justify-content: center; flex: 1.5; text-align: center; padding: 0 10px; }
+        /* Edit Mode UI - Updated Sticky Behavior */
+        .edit-mode-container { 
+            display: none; flex-direction: column; align-items: center; justify-content: center; 
+            text-align: center; padding: 12px 20px; margin-bottom: 1.25rem; 
+            background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px);
+            border: 1px dashed var(--danger); border-radius: var(--radius-md); 
+            position: sticky; top: 12px; z-index: 100; box-shadow: var(--shadow-lg); 
+        }
         .edit-mode-label { font-size: 0.75rem; font-weight: 700; color: var(--danger); margin-bottom: 4px; letter-spacing: 0.02em; }
         .edit-mode-pill { background-color: var(--danger-light); border: 1px solid var(--danger); color: var(--danger); border-radius: 50px; padding: 4px 14px; font-size: 0.775rem; font-weight: 600; cursor: pointer; box-shadow: none; transition: all 0.2s ease; width: fit-content; }
         .edit-mode-pill:hover { background-color: #ffe4e6; transform: translateY(-1px); }
@@ -119,7 +125,10 @@
         .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); transition: all 0.2s ease; background-color: var(--bg-color); }
         .history-item:hover { border-color: var(--primary); background-color: var(--card-bg); box-shadow: var(--shadow-sm); }
-        .history-item-details { display: flex; flex-direction: column; gap: 4px; }
+        
+        /* History Clickable Elements styling */
+        .history-item-details { display: flex; flex-direction: column; gap: 4px; cursor: pointer; flex: 1; transition: color 0.2s; }
+        .history-item-details:hover .history-item-time { color: var(--primary); }
         .history-item-time { font-weight: 600; font-size: 0.925rem; color: var(--text-main); }
         .history-item-sub { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center;}
 
@@ -130,7 +139,6 @@
             .container { padding: 1rem; }
             .main-header { flex-direction: column; gap: 12px; align-items: stretch; }
             .header-right { justify-content: flex-start; } 
-            .edit-mode-container { order: 3; width: 100%; margin-top: 6px; padding-top: 12px; border-top: 1px dashed var(--border); }
             .input-row { grid-template-columns: 1fr; gap: 12px; padding: 0.75rem; }
             button { width: 100%; }
             .btn-sm { width: auto; }
@@ -170,14 +178,15 @@
                 </div>
             </div>
 
-            <div id="editModeContainer" class="edit-mode-container">
-                <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
-                <button onclick="resetAppUI()" class="edit-mode-pill">Buat pesanan baru saja</button>
-            </div>
-
             <div class="header-right">
                 <button class="btn-sm btn-outline" onclick="openHistoryPopup()">🕒 History</button>
             </div>
+        </div>
+
+        <!-- Moved Edit Mode box here to allow layout stickiness across the app container -->
+        <div id="editModeContainer" class="edit-mode-container">
+            <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
+            <button onclick="resetAppUI()" class="edit-mode-pill">Buat pesanan baru saja</button>
         </div>
 
         <div class="input-row">
@@ -233,15 +242,11 @@
     </div>
 
     <script>
-
         // --- Configuration URLs ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
-        const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbyrPvMpFQWX5w-G9YZctb8jxVnWPtClAqnyYFkTyaLaV0KVeKfKvTmMDBPdbXZGu3s/exec';
-        
-        // PASTE YOUR NEW RE-DEPLOYED SCRIPT ID HERE:
-        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzFMSOLEqRnawcP3_uHY-NbZQj3N9L0gEoOjII363emt4MM0Xv19obQmwK8_GqSntk/exec';
-        
+        const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbwwhyj9WDNlcy14GBMUcgRyOVBtaAgdIMI7nz-Prl0b31NOxHJ1FGwUTKwFOgSUBC8/exec';
+        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbymqLkLB0OdV2ndqOrT2cIVvRXFl-BjK9R76J_I-yPXAP9K1z_eFrfkMumDs2KW0i4/exec';
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
         const TELEGRAM_CHAT_ID = '-1004295283262';
 
@@ -365,12 +370,11 @@
                 }
             } catch (error) { console.error(error); }
 
-            // PULL LIVE HISTORY FROM YOUR LAMPOH GOOGLE SHEET
+            // Loading system pull history straight from Google Spreadsheet sync script endpoint
             if (GAS_SHEET_SYNC_URL && !GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
                 try {
                     const response = await fetch(GAS_SHEET_SYNC_URL);
                     const data = await response.json();
-                    
                     if (data && Array.isArray(data) && data.length > 0) {
                         transactionHistory = data;
                         localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
@@ -659,7 +663,7 @@
 
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
 
-            // CALL THE SYNC FUNCTION HERE
+            // Sync payloads directly into the dedicated dynamic Lampoh sheet sync backend
             syncOrderToLampohSheet(transactionData);
 
             if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
@@ -676,7 +680,7 @@
             sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart);
             resetAppUI();
         }
-        
+
         function openHistoryPopup() { document.getElementById('historyModal').style.display = 'flex'; populateHistoryList(); }
         function closeHistoryPopup() { document.getElementById('historyModal').style.display = 'none'; }
 
@@ -690,14 +694,16 @@
                 const custName = transaction.customer || "No Customer";
                 const delDateStr = transaction.deliveryDate ? formatDateDisplay(transaction.deliveryDate) : "Unknown Date";
                 const itemDiv = document.createElement('div'); itemDiv.className = 'history-item';
+                
+                // Load button is swapped to the left side of CSV, details block triggers load on click
                 itemDiv.innerHTML = `
-                    <div class="history-item-details">
+                    <div class="history-item-details" onclick="loadHistoryItem(${originalIndex})" title="Klik untuk load/edit pesanan">
                         <span class="history-item-time">${transaction.timestamp}</span>
                         <span class="history-item-sub">👤 ${custName} • 📅 Delivery on: ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
                     </div>
                     <div class="actions-cell">
-                        <button class="btn-sm btn-success" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                         <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
+                        <button class="btn-sm btn-success" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                     </div>
                 `;
                 listContainer.appendChild(itemDiv);

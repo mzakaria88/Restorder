@@ -617,13 +617,26 @@
             return `${y}-${m}-${d}`;
         }
 
-        function formatDateDisplay(dateString) {
+		function formatDateDisplay(dateString) {
             if (!dateString) return "";
+            
+            let dLocal;
             const parts = dateString.split('-');
-            if (parts.length !== 3) return dateString;
-            const dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            // Check if it's our simple YYYY-MM-DD format
+            if (parts.length === 3 && parts[0].length === 4) {
+                dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+                // Otherwise, read the full timestamp from the database
+                dLocal = new Date(dateString);
+            }
+
+            // Fallback if the date is broken
+            if (isNaN(dLocal.getTime())) return dateString;
+
+            const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            return `${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
+            
+            return `${days[dLocal.getDay()]} ${dLocal.getDate()} ${months[dLocal.getMonth()]} ${dLocal.getFullYear()}`;
         }
 
         let currentDeliveryDate = getTomorrowDateString();
@@ -637,11 +650,25 @@
             deliveryDisplay.innerText = formatDateDisplay(currentDeliveryDate);
         }
 
-        function openDeliveryEdit() {
+		function openDeliveryEdit() {
             deliveryDisplay.style.display = 'none';
             deliveryEditBtn.style.display = 'none';
             deliveryInputContainer.style.display = 'flex';
-            deliveryInput.value = currentDeliveryDate;
+            
+            // Safely convert any date string format into strictly YYYY-MM-DD for the HTML calendar
+            let isoDate = currentDeliveryDate;
+            const parts = currentDeliveryDate.split('-');
+            if (!(parts.length === 3 && parts[0].length === 4)) {
+                const d = new Date(currentDeliveryDate);
+                if (!isNaN(d.getTime())) {
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    isoDate = `${yyyy}-${mm}-${dd}`;
+                }
+            }
+            
+            deliveryInput.value = isoDate;
             deliveryInput.focus();
         }
 
@@ -1154,13 +1181,24 @@
                 csvContent += `${sanitize(item.name)},${sanitize(item.variant)},${sanitize(item.sku)},${sanitize(item.qty)},${sanitize(item.uom)},${sanitize(item.note || "")}\n`;
             });
 
-            const safeCustomerName = currentCustomer || "New";
+		const safeCustomerName = currentCustomer || "New";
             let deliveryFormatted = "UnknownDate";
+            
             if (currentDeliveryDate) {
-                const dParts = currentDeliveryDate.split('-'); 
-                if (dParts.length === 3) {
+                let dObj;
+                const parts = currentDeliveryDate.split('-');
+                if (parts.length === 3 && parts[0].length === 4) {
+                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    dObj = new Date(currentDeliveryDate);
+                }
+                
+                if (!isNaN(dObj.getTime())) {
                     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    deliveryFormatted = `${dParts[2]}${months[parseInt(dParts[1], 10) - 1]}${dParts[0].substring(2)}`;
+                    const dd = String(dObj.getDate()).padStart(2, '0');
+                    const mmm = months[dObj.getMonth()];
+                    const yy = String(dObj.getFullYear()).substring(2);
+                    deliveryFormatted = `${dd}${mmm}${yy}`;
                 }
             }
             

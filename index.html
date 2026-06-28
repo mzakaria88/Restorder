@@ -233,23 +233,15 @@
     </div>
 
     <script>
-        function syncOrderToLampohSheet(transactionData) {
-            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
-    
-            fetch(GAS_SHEET_SYNC_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(transactionData)
-             })
-            .then(() => console.log("Successfully synced to Lampoh Drive Folder."))
-            .catch(err => console.error("Sheet sync failed", err));
-        }
+
         // --- Configuration URLs ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbwwhyj9WDNlcy14GBMUcgRyOVBtaAgdIMI7nz-Prl0b31NOxHJ1FGwUTKwFOgSUBC8/exec';
-        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbxdHi11TbZPTP_5j3dAwuBTSwE6i8I5POlO9VUktTfCYjFXbSZ4XKg3tDo7fIgKl90/exec'
+        
+        // PASTE YOUR NEW RE-DEPLOYED SCRIPT ID HERE:
+        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbymqLkLB0OdV2ndqOrT2cIVvRXFl-BjK9R76J_I-yPXAP9K1z_eFrfkMumDs2KW0i4/exec';
+        
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
         const TELEGRAM_CHAT_ID = '-1004295283262';
 
@@ -262,6 +254,19 @@
         
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
         let currentOrderNumber = null;
+
+        // Dedicated sync function with proper endpoint payload structures
+        function syncOrderToLampohSheet(transactionData) {
+            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
+    
+            fetch(GAS_SHEET_SYNC_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(transactionData)
+             })
+            .then(res => console.log("Google Sheet sync payload dispatched successfully."))
+            .catch(err => console.error("Sheet sync failed", err));
+        }
 
         function getTomorrowDateString() {
             const tomorrow = new Date();

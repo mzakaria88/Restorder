@@ -640,7 +640,7 @@
 
             const isUpdate = !!currentOrderNumber;
             if (!isUpdate) { currentOrderNumber = generateOrderNumber(); }
-        
+
             const transactionData = {
                 orderNumber: currentOrderNumber,
                 timestamp: new Date().toLocaleString(),
@@ -653,13 +653,12 @@
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) transactionHistory[idx] = transactionData;
             } else { transactionHistory.push(transactionData); }
-        
+
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-        
-            // 1. Sync to your New Spreadsheet App (The Lampoh Folder Script)
+
+            // CALL THE SYNC FUNCTION HERE
             syncOrderToLampohSheet(transactionData);
-        
-            // 2. Old Database CSV Sync
+
             if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
                 fetch(GAS_DB_URL, {
                     method: 'POST',
@@ -670,10 +669,11 @@
             } else {
                 alert("⚠️ Warning: Your Database URL is not set. Order is only saved locally!");
             }
-        
+
             sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart);
             resetAppUI();
         }
+        
         function openHistoryPopup() { document.getElementById('historyModal').style.display = 'flex'; populateHistoryList(); }
         function closeHistoryPopup() { document.getElementById('historyModal').style.display = 'none'; }
 

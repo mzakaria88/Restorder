@@ -750,12 +750,9 @@
             }).catch(err => console.error("Failed to route message through Google Script", err));
         }
 
-function generateSuratJalan(historyIndex) {
+        function generateSuratJalan(historyIndex) {
             const { jsPDF } = window.jspdf;
-            // Set default margins to 10mm (half of typical 20mm margins)
-            const doc = new jsPDF({
-                margin: [10, 14, 10, 14] // [top, left, bottom, right]
-            });
+            const doc = new jsPDF();
             
             // Fetch transaction from historical record passed by action click
             const transaction = transactionHistory[historyIndex];
@@ -767,35 +764,34 @@ function generateSuratJalan(historyIndex) {
             // --- Header Predefined Template Blocks ---
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(20);
-            // Moved up from Y=20 to Y=12 to halve top margin
-            doc.text("SURAT JALAN", 14, 12);
+            doc.text("SURAT JALAN", 14, 20);
 
-            // Left Side Block: Company Info (Moved up accordingly)
+            // Left Side Block: Company Info
             doc.setFontSize(11);
-            doc.text("NIAGA PANGAN NUSANTARA", 14, 22);
+            doc.text("NIAGA PANGAN NUSANTARA", 14, 32);
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(9);
             doc.setTextColor(80, 80, 80);
-            doc.text("No. Telp/WA: 082188881492", 14, 27);
-            doc.text("Jl. Lele Raya No. 43", 14, 32);
-            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 37);
-            doc.text("Kota Tangerang Selatan", 14, 42);
+            doc.text("No. Telp/WA: 082188881492", 14, 37);
+            doc.text("Jl. Lele Raya No. 43", 14, 42);
+            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 47);
+            doc.text("Kota Tangerang Selatan", 14, 52);
 
-            // Right Side Block: Dynamic Meta Info (Moved up accordingly)
+            // Right Side Block: Dynamic Meta Info
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text("Tanggal Kirim:", 130, 22);
+            doc.text("Tanggal Kirim:", 130, 32);
             doc.setFont("Helvetica", "normal");
-            doc.text(deliveryFormattedDate, 160, 22);
+            doc.text(deliveryFormattedDate, 160, 32);
 
             doc.setFont("Helvetica", "bold");
-            doc.text("Kepada Yth. Tuan / Toko:", 130, 32);
+            doc.text("Kepada Yth. Tuan / Toko:", 130, 42);
             doc.setFont("Helvetica", "normal");
             
             // Wrap text for customer field context blocks if length overflows standard line rules
             const customerLines = doc.splitTextToSize(customerName, 65);
-            doc.text(customerLines, 130, 37);
+            doc.text(customerLines, 130, 47);
 
             // Reset font structure colors
             doc.setTextColor(0, 0, 0);
@@ -810,9 +806,9 @@ function generateSuratJalan(historyIndex) {
                     item.qty,
                     item.uom,
                     item.name,
-                    item.note || "", 
-                    "",              
-                    ""               
+                    item.note || "", // dynamic template column mappings
+                    "",              // Qty Diterima (Predefined left blank)
+                    ""               // Kondisi (Predefined left blank)
                 ];
                 tableRows.push(rowData);
             });
@@ -820,7 +816,7 @@ function generateSuratJalan(historyIndex) {
             doc.autoTable({
                 head: [tableColumn],
                 body: tableRows,
-                startY: 50, // Moved up from 62 since header elements are higher up
+                startY: 62,
                 theme: 'grid',
                 headStyles: {
                     fillColor: [240, 242, 245],
@@ -831,17 +827,17 @@ function generateSuratJalan(historyIndex) {
                 },
                 styles: {
                     fontSize: 9,
-                    cellPadding: 4,
+                    cellPadding: 1,
                     overflow: 'linebreak'
                 },
                 columnStyles: {
-                    0: { cellWidth: 10 },  
-                    1: { cellWidth: 15 },  
-                    2: { cellWidth: 15 },  
-                    3: { cellWidth: 65 },  
-                    4: { cellWidth: 35 },  
-                    5: { cellWidth: 25 },  
-                    6: { cellWidth: 25 }   
+                    0: { cellWidth: 10 },  // No.
+                    1: { cellWidth: 12 },  // QTY
+                    2: { cellWidth: 15 },  // UOM
+                    3: { cellWidth: 65 },  // Item Name handles long strings auto-wrapped
+                    4: { cellWidth: 35 },  // Note column
+                    5: { cellWidth: 24 },  // QTY Diterima
+                    6: { cellWidth: 25 }   // Kondisi
                 }
             });
 
@@ -849,14 +845,13 @@ function generateSuratJalan(historyIndex) {
             const finalY = doc.lastAutoTable.finalY;
             const pageHeight = doc.internal.pageSize.height;
 
-            // Halved bottom buffer check: changed from (finalY + 45 > pageHeight) 
-            // to allow signatures to print much closer to the edge (up to 20mm from bottom edge)
+            // Page handling verification: if signature element hits near bottom bounds, trigger layout append adjustments
             let currentY;
-            if (finalY + 25 > pageHeight - 20) {
+            if (finalY + 45 > pageHeight) {
                 doc.addPage();
-                currentY = 15; // Top margin for signature on new page is also halved
+                currentY = 25;
             } else {
-                currentY = finalY + 10; // Reduced gap between table and signature block from 20 to 10
+                currentY = finalY + 20;
             }
 
             doc.setFont("Helvetica", "normal");
@@ -864,8 +859,8 @@ function generateSuratJalan(historyIndex) {
             doc.text("Tanda Terima,", 25, currentY);
             doc.text("Hormat Kami,", 145, currentY);
 
-            doc.text("(......................................)", 15, currentY + 18); // Reduced spacing from 25 to 18
-            doc.text("(......................................)", 135, currentY + 18);
+            doc.text("(......................................)", 15, currentY + 25);
+            doc.text("(......................................)", 135, currentY + 25);
 
             // Trigger document asset pipeline delivery save payload download
             const fileSafeName = customerName.replace(/[^a-z0-9]/gi, '_').toLowerCase();

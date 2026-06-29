@@ -145,6 +145,8 @@
             .actions-cell { width: max-content; }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -745,6 +747,52 @@
                 body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
             }).catch(err => console.error("Failed to route message through Google Script", err));
         }
+        function generateSuratJalan() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // 1. Add Static Header
+    doc.setFontSize(18);
+    doc.text("SURAT JALAN", 105, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text(`Customer: ${currentCustomer}`, 20, 40);
+    doc.text(`Date: ${currentDeliveryDate}`, 20, 50);
+
+    // 2. Define Table Columns and Rows
+    const tableColumn = ["No.", "QTY", "UOM", "Item Name", "Qty Diterima", "Kondisi"];
+    const tableRows = [];
+
+    cart.forEach((item, index) => {
+        const rowData = [
+            index + 1,
+            item.qty,
+            item.uom,
+            item.name,
+            "", // Qty Diterima (blank)
+            ""  // Kondisi (blank)
+        ];
+        tableRows.push(rowData);
+    });
+
+    // 3. Generate the Table (AutoTable handles row wrapping automatically)
+    doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 70, // Position where the table starts below the header
+        theme: 'grid',
+        styles: { cellWidth: 'wrap' }, // Handles long text overflow
+    });
+
+    // 4. Add Footer with Signature (Relative to table end)
+    const finalY = doc.lastAutoTable.finalY; // Gets the Y coordinate of the last table row
+    doc.text("Tanda Terima", 30, finalY + 20);
+    doc.text("Hormat Kami", 150, finalY + 20);
+    doc.text("(..........................)", 30, finalY + 40);
+    doc.text("(..........................)", 150, finalY + 40);
+
+    // 5. Download
+    doc.save(`Surat_Jalan_${currentCustomer}.pdf`);
+}
     </script>
 </body>
 </html>

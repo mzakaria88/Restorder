@@ -341,38 +341,38 @@
         updateDeliveryDisplay(); 
 
         window.onload = async function() {
-// --- OPTION 2: Apps Script JSON Fetcher ---
-// Find your current window.onload (around line 345) and replace it with this:
+            try {
+                const response = await fetch(itemSheetUrl + '&t=' + new Date().getTime());
+                if (response.ok) {
+                    const csvText = await response.text();
+                    parseItemCSV(csvText);
+                }
+            } catch (error) { console.error(error); }
 
-window.onload = function() {
-    // 1. Insert your actual Apps Script Web App URL here
-    // Make sure it ends in /exec
-    const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbzFMSOLEqRnawcP3_uHY-NbZQj3N9L0gEoOjII363emt4MM0Xv19obQmwK8_GqSntk/exec";
+            try {
+                if(customerSheetUrl) {
+                    const response = await fetch(customerSheetUrl + '&t=' + new Date().getTime());
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        parseCustomerCSV(csvText);
+                    }
+                }
+            } catch (error) { console.error(error); }
 
-    console.log("Fetching order history from Apps Script database...");
-
-    fetch(gasWebAppUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
+            if (GAS_SHEET_SYNC_URL && !GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
+                try {
+                    const response = await fetch(GAS_SHEET_SYNC_URL);
+                    const data = await response.json();
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        transactionHistory = data;
+                        localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                        console.log("Successfully loaded history from Database.");
+                    }
+                } catch (error) {
+                    console.error("Failed to load history from DB, using local cache", error);
+                }
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Order History Loaded Successfully:", data);
-            
-            // 2. Apps Script already sends the perfect array structure. 
-            // We just assign it directly to your global variable.
-            transactionHistory = data;
-        })
-        .catch(error => {
-            console.error("Error loading history:", error);
-            // Fallback: ensure the app doesn't crash if the database fails to load
-            transactionHistory = [];
-        });
-        
-    // (Optional) Add any other app initialization logic here
-};
+        };
 
         function parseItemCSV(text) {
             catalogData = []; 

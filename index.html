@@ -648,7 +648,7 @@
 
             if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
                 fetch(GAS_DB_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(transactionData)
                 }).catch(err => console.error("Database sync failed", err));
             } else {

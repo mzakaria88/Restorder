@@ -20,21 +20,21 @@
         body { 
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-main); 
-            padding: 0.5rem; margin: 0; display: flex; justify-content: center;
+            padding: 1rem; margin: 0; display: flex; justify-content: center;
             align-items: flex-start; min-height: 100vh; line-height: 1.4;
             -webkit-font-smoothing: antialiased;
         }
 
         .container {
-            background-color: var(--card-bg); padding: 0.75rem 1.75rem;
+            background-color: var(--card-bg); padding: 1.25rem 1.75rem;
             border-radius: var(--radius-lg); box-shadow: var(--shadow-lg), 0 0 0 1px rgb(0 0 0 / 0.01);
             width: 100%; max-width: 950px; position: relative;
         }
 
         .main-header { 
             display: flex; justify-content: space-between; align-items: flex-start; 
-            margin-bottom: 0.5rem; /* Reduced from 1rem */
-            padding-bottom: 0.5rem; /* Reduced from 0.75rem */
+            margin-bottom: 0.5rem; 
+            padding-bottom: 0.5rem; 
             border-bottom: 1px dashed var(--border); 
         }
         .header-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
@@ -62,17 +62,15 @@
         #customerInputContainer, #deliveryInputContainer { display: none; position: relative; }
         #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; width: 170px; outline: none; font-family: inherit; }
 
-        /* --- STICKY PANEL WRAPPER --- */
         .sticky-panel {
             position: sticky; 
-            top: -1px; /* Sticks precisely to the top of the viewport */
+            top: -1px; 
             z-index: 100;
-            background-color: var(--card-bg); /* Opaque background hides scrolled content */
+            background-color: var(--card-bg); 
             padding: 0.75rem 0;
             margin-bottom: 0.5rem;
         }
 
-        /* Sticky Edit Mode UI */
         .edit-mode-container { 
             display: none; flex-direction: column; align-items: center; justify-content: center; 
             text-align: center; padding: 12px 20px; margin-bottom: 0.75rem; 
@@ -131,7 +129,7 @@
         .item-uom { font-size: 0.775rem; color: var(--text-muted); background: var(--bg-color); padding: 1px 5px; border-radius: 4px; font-weight: 600; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
-        .modal-content { background-color: var(--card-bg); padding: 1.75rem; border-radius: var(--radius-lg); width: 95%; max-width: 580px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); border: 1px solid var(--border); }
+        .modal-content { background-color: var(--card-bg); padding: 1.75rem; border-radius: var(--radius-lg); width: 95%; max-width: 620px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); border: 1px solid var(--border); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
         .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;}
         .close-btn { background: var(--bg-color); color: var(--text-muted); border-radius: 50%; width: 28px; height: 28px; padding: 0; font-size: 1.15rem; cursor: pointer; line-height: 1; box-shadow: none; }
@@ -250,8 +248,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Transaction History</h3>
-                <button class="close-btn" onclick="closeHistoryPopup()">&times;</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="toggleConsolidateBtn" class="btn-sm btn-outline" style="color: var(--primary); font-weight: 600;" onclick="toggleConsolidationMode()">📦 Consolidate</button>
+                    <button class="close-btn" onclick="closeHistoryPopup()">&times;</button>
+                </div>
             </div>
+
+            <div id="consolidationActions" style="display: none; padding: 8px 12px; background: var(--primary-light); margin-bottom: 10px; border-radius: var(--radius-md); justify-content: space-between; align-items: center; border: 1px solid rgba(79, 70, 229, 0.2);">
+                <span style="font-size: 0.825rem; font-weight: 600; color: var(--primary);">Select orders below</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-sm btn-success" style="height: 28px;" onclick="generateConsolidatedPDF()">Download PDF</button>
+                    <button class="btn-sm btn-outline" style="height: 28px;" onclick="cancelConsolidationMode()">Cancel</button>
+                </div>
+            </div>
+
             <div id="historyList" class="history-list">
             </div>
         </div>
@@ -275,6 +285,7 @@
         
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
         let currentOrderNumber = null;
+        let isConsolidationMode = false;
 
         function syncOrderToLampohSheet(transactionData) {
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
@@ -580,7 +591,6 @@
             searchInput.value = ''; selectedSkuInput.value = ''; qtyInput.value = ''; 
             searchInput.focus(); 
 
-            // Scroll gently to the bottom to reveal the new item
             setTimeout(() => {
                 window.scrollTo({ 
                     top: document.body.scrollHeight, 
@@ -684,7 +694,34 @@
         }
         
         function openHistoryPopup() { document.getElementById('historyModal').style.display = 'flex'; populateHistoryList(); }
-        function closeHistoryPopup() { document.getElementById('historyModal').style.display = 'none'; }
+        
+        function closeHistoryPopup() { 
+            document.getElementById('historyModal').style.display = 'none'; 
+            cancelConsolidationMode();
+        }
+
+        function toggleConsolidationMode() {
+            isConsolidationMode = true;
+            document.getElementById('consolidationActions').style.display = 'flex';
+            document.getElementById('toggleConsolidateBtn').style.display = 'none';
+            populateHistoryList();
+        }
+
+        function cancelConsolidationMode() {
+            isConsolidationMode = false;
+            document.getElementById('consolidationActions').style.display = 'none';
+            document.getElementById('toggleConsolidateBtn').style.display = 'block';
+            populateHistoryList();
+        }
+
+        function handleHistoryRowClick(index) {
+            if (isConsolidationMode) {
+                const cb = document.querySelector(`.consolidate-checkbox[data-index="${index}"]`);
+                if (cb) cb.checked = !cb.checked;
+            } else {
+                loadHistoryItem(index);
+            }
+        }
 
         function populateHistoryList() {
             const listContainer = document.getElementById('historyList'); listContainer.innerHTML = '';
@@ -697,19 +734,117 @@
                 const delDateStr = transaction.deliveryDate ? formatDateDisplay(transaction.deliveryDate) : "Unknown Date";
                 const itemDiv = document.createElement('div'); itemDiv.className = 'history-item';
                 
+                let checkBlock = '';
+                if (isConsolidationMode) {
+                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${originalIndex}" style="margin-right: 12px; width: 16px; height: 16px; cursor: pointer;" onclick="event.stopPropagation();">`;
+                }
+
+                let actionsBlock = '';
+                if (!isConsolidationMode) {
+                    actionsBlock = `
+                        <div class="actions-cell">
+                            <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
+                            <button class="btn-sm btn-success" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
+                            <button class="btn-sm btn-outline" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
+                        </div>
+                    `;
+                }
+                
                 itemDiv.innerHTML = `
-                    <div class="history-item-details" onclick="loadHistoryItem(${originalIndex})" title="Klik untuk load/edit pesanan">
-                        <span class="history-item-time">${transaction.timestamp}</span>
-                        <span class="history-item-sub">👤 ${custName} • 📅 Delivery on: ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
+                    <div style="display: flex; align-items: center; flex: 1; width: 100%;" onclick="handleHistoryRowClick(${originalIndex})">
+                        ${checkBlock}
+                        <div class="history-item-details" title="${isConsolidationMode ? 'Click to select this record' : 'Klik untuk load/edit pesanan'}">
+                            <span class="history-item-time">${transaction.timestamp}</span>
+                            <span class="history-item-sub">👤 ${custName} • 📅 Delivery on: ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
+                        </div>
                     </div>
-                    <div class="actions-cell">
-                        <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
-                        <button class="btn-sm btn-success" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
-                        <button class="btn-sm btn-outline" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
-                    </div>
+                    ${actionsBlock}
                 `;
                 listContainer.appendChild(itemDiv);
             });
+        }
+
+        function generateConsolidatedPDF() {
+            const checkboxes = document.querySelectorAll('.consolidate-checkbox:checked');
+            if (checkboxes.length === 0) { alert("Please check at least one order to consolidate."); return; }
+
+            const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
+            const selectedTx = selectedIndices.map(idx => transactionHistory[idx]);
+            
+            // Build collection metrics
+            const uniqueCustomers = [...new Set(selectedTx.map(t => t.customer || "No Customer"))];
+            let itemMatrix = {};
+
+            selectedTx.forEach(tx => {
+                const currentCust = tx.customer || "No Customer";
+                tx.cart.forEach(cartItem => {
+                    if (!itemMatrix[cartItem.name]) {
+                        itemMatrix[cartItem.name] = {
+                            name: cartItem.name,
+                            uom: cartItem.uom,
+                            customerQtys: {},
+                            notes: []
+                        };
+                    }
+                    let val = parseFloat(cartItem.qty) || 0;
+                    if (!itemMatrix[cartItem.name].customerQtys[currentCust]) {
+                        itemMatrix[cartItem.name].customerQtys[currentCust] = 0;
+                    }
+                    itemMatrix[cartItem.name].customerQtys[currentCust] += val;
+                    
+                    if (cartItem.note && cartItem.note.trim()) {
+                        itemMatrix[cartItem.name].notes.push(`${currentCust}: ${cartItem.note.trim()}`);
+                    }
+                });
+            });
+
+            // Set layout architecture values
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("REKAPITULASI ORDER GABUNGAN", 14, 15);
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 14, 20);
+
+            // Configure dynamic schema structure
+            const tableHeaders = ["No.", "Item Name", ...uniqueCustomers, "Total Qty", "Note"];
+            const tableRows = [];
+
+            Object.values(itemMatrix).forEach((item, index) => {
+                let rowSum = 0;
+                let formattedName = `${item.name} (${item.uom})`;
+                let nestedRow = [index + 1, formattedName];
+
+                uniqueCustomers.forEach(cust => {
+                    let quantityVal = item.customerQtys[cust] || 0;
+                    if (quantityVal > 0) {
+                        nestedRow.push(Number.isInteger(quantityVal) ? quantityVal.toString() : quantityVal.toFixed(2));
+                        rowSum += quantityVal;
+                    } else {
+                        nestedRow.push("-");
+                    }
+                });
+
+                nestedRow.push(Number.isInteger(rowSum) ? rowSum.toString() : rowSum.toFixed(2));
+                nestedRow.push(item.notes.join("; ") || "-");
+                tableRows.push(nestedRow);
+            });
+
+            doc.autoTable({
+                head: [tableHeaders],
+                body: tableRows,
+                startY: 25,
+                theme: 'grid',
+                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak' }
+            });
+
+            doc.save(`Consolidated_Orders_${new Date().toISOString().slice(0, 10)}.pdf`);
+            cancelConsolidationMode();
+            closeHistoryPopup();
         }
 
         function downloadHistoryCSV(index) {
@@ -759,141 +894,4 @@
             currentOrderNumber = loadedTransaction.orderNumber;
             document.getElementById('editModeLabel').innerText = `Edit Mode for ${currentOrderNumber}`;
             document.getElementById('editModeContainer').style.display = 'flex';
-            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loadedTransaction.customer); } 
-            else { currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.color = "var(--primary)"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; }
-            currentDeliveryDate = loadedTransaction.deliveryDate ? loadedTransaction.deliveryDate : getTomorrowDateString();
-            updateDeliveryDisplay(); renderCart(); closeHistoryPopup();
-        }
-
-        renderCart();
-
-        function sendTelegramOrderAlert(customer, deliveryDate, cart) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
-            let message = `🚨 *New Order Saved!*\n👤 *Customer:* ${customer || "No Customer"}\n📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n\n📦 *Items:*\n`;
-            cart.forEach((item, index) => { message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; });
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
-            }).catch(err => console.error("Failed to route message through Google Script", err));
-        }
-
-        function generateSuratJalan(historyIndex) {
-            const { jsPDF } = window.jspdf;
-            
-            // Set margins to 75% of baseline standard sizes (15mm layout setup)
-            const doc = new jsPDF({
-                margin: [15, 14, 15, 14] 
-            });
-            
-            const transaction = transactionHistory[historyIndex];
-            if (!transaction) return;
-
-            const customerName = transaction.customer || "No Customer";
-            const deliveryFormattedDate = formatDateDisplay(transaction.deliveryDate);
-
-            // --- Header Layout ---
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(20);
-            doc.text("SURAT JALAN", 14, 15);
-
-            // Left Side: Company Identity Header
-            doc.setFontSize(11);
-            doc.text("NIAGA PANGAN NUSANTARA", 14, 26);
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(9);
-            doc.setTextColor(80, 80, 80);
-            doc.text("No. Telp/WA: 082188881492", 14, 31);
-            doc.text("Jl. Lele Raya No. 43", 14, 36);
-            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 41);
-            doc.text("Kota Tangerang Selatan", 14, 46);
-
-            // Right Side: Meta Block Layout
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.text("Tanggal Kirim:", 130, 26);
-            doc.setFont("Helvetica", "normal");
-            doc.text(deliveryFormattedDate, 160, 26);
-
-            doc.setFont("Helvetica", "bold");
-            doc.text("Kepada Yth. Tuan / Toko:", 130, 36);
-            doc.setFont("Helvetica", "normal");
-            
-            const customerLines = doc.splitTextToSize(customerName, 65);
-            doc.text(customerLines, 130, 41);
-
-            // Reset baseline formatting color metrics
-            doc.setTextColor(0, 0, 0);
-
-            // --- Table Configuration Setup ---
-            const tableColumn = ["No.", "QTY", "UOM", "Item Name", "Note", "QTY Diterima", "Kondisi"];
-            const tableRows = [];
-
-            transaction.cart.forEach((item, index) => {
-                const rowData = [
-                    index + 1,
-                    item.qty,
-                    item.uom,
-                    item.name,
-                    item.note || "", 
-                    "",             
-                    ""               
-                ];
-                tableRows.push(rowData);
-            });
-
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: 54, 
-                theme: 'grid',
-                headStyles: {
-                    fillColor: [240, 242, 245],
-                    textColor: [15, 23, 42],
-                    fontStyle: 'bold',
-                    fontSize: 9,
-                    halign: 'left'
-                },
-                styles: {
-                    fontSize: 9,
-                    cellPadding: 1,
-                    overflow: 'linebreak'
-                },
-                columnStyles: {
-                    0: { cellWidth: 10 },  
-                    1: { cellWidth: 14 },  
-                    2: { cellWidth: 15 },  
-                    3: { cellWidth: 65 },  
-                    4: { cellWidth: 34 },  
-                    5: { cellWidth: 24 },  
-                    6: { cellWidth: 25 }   
-                }
-            });
-
-            // --- Footer Layout Spaced Tightly Underneath the Final Row ---
-            const finalY = doc.lastAutoTable.finalY;
-            const pageHeight = doc.internal.pageSize.height;
-
-            // Page validation boundary fallback calculations
-            let currentY;
-            if (finalY + 30 > pageHeight - 15) {
-                doc.addPage();
-                currentY = 20; 
-            } else {
-                currentY = finalY + 8; // Sits highly up under the baseline grid layout
-            }
-
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(10);
-            doc.text("Tanda Terima,", 25, currentY);
-            doc.text("Hormat Kami,", 145, currentY);
-
-            doc.text("(......................................)", 15, currentY + 20);
-            doc.text("(......................................)", 135, currentY + 20);
-
-            const fileSafeName = customerName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            doc.save(`SJ_${fileSafeName}.pdf`);
-        }
-    </script>
-</body>
-</html>
+            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loaded

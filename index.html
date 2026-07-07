@@ -263,6 +263,36 @@
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
         let currentOrderNumber = null;
 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrS09J8PFth43zZf1AF8VpTaGll-ZxElRlRo0hTJE6N_3gKa8tV0CTiJAThjEvlQ/exec";
+
+    function syncOrderToCloud(orderData) {
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // CRITICAL: Tells the browser not to block the redirect
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(() => {
+        console.log("Order dispatched to Google Sheets successfully.");
+        // Note: Because of no-cors, you won't get a readable JSON response back here, 
+        // but the data WILL appear in your spreadsheet.
+    })
+    .catch(error => console.error("Error syncing to cloud:", error));
+    }
+        function loadOrderHistoryFromCloud() {
+    // GET requests do not require no-cors, allowing you to read the JSON response
+    fetch(SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Cloud Order History Loaded:", data);
+            // Replace your local history array with this 'data'
+            // Render your history UI
+        })
+        .catch(error => console.error("Error loading history:", error));
+}
+
         function syncOrderToLampohSheet(transactionData) {
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
             fetch(GAS_SHEET_SYNC_URL, {

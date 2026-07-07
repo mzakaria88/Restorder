@@ -28,10 +28,15 @@
         .container {
             background-color: var(--card-bg); padding: 1.25rem 1.75rem;
             border-radius: var(--radius-lg); box-shadow: var(--shadow-lg), 0 0 0 1px rgb(0 0 0 / 0.01);
-            width: 100%; max-width: 950px;
+            width: 100%; max-width: 950px; position: relative;
         }
 
-        .main-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px dashed var(--border); }
+        .main-header { 
+            display: flex; justify-content: space-between; align-items: flex-start; 
+            margin-bottom: 0.5rem; /* Reduced from 1rem */
+            padding-bottom: 0.5rem; /* Reduced from 0.75rem */
+            border-bottom: 1px dashed var(--border); 
+        }
         .header-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
         .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; }
 
@@ -57,19 +62,28 @@
         #customerInputContainer, #deliveryInputContainer { display: none; position: relative; }
         #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; width: 170px; outline: none; font-family: inherit; }
 
+        /* --- STICKY PANEL WRAPPER --- */
+        .sticky-panel {
+            position: sticky; 
+            top: -1px; /* Sticks precisely to the top of the viewport */
+            z-index: 100;
+            background-color: var(--card-bg); /* Opaque background hides scrolled content */
+            padding: 0.75rem 0;
+            margin-bottom: 0.5rem;
+        }
+
         /* Sticky Edit Mode UI */
         .edit-mode-container { 
             display: none; flex-direction: column; align-items: center; justify-content: center; 
-            text-align: center; padding: 12px 20px; margin-bottom: 1.25rem; 
-            background-color: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px);
+            text-align: center; padding: 12px 20px; margin-bottom: 0.75rem; 
+            background-color: rgba(255, 255, 255, 0.95);
             border: 1px dashed var(--danger); border-radius: var(--radius-md); 
-            position: sticky; top: 12px; z-index: 100; box-shadow: var(--shadow-lg); 
         }
         .edit-mode-label { font-size: 0.75rem; font-weight: 700; color: var(--danger); margin-bottom: 4px; letter-spacing: 0.02em; }
         .edit-mode-pill { background-color: var(--danger-light); border: 1px solid var(--danger); color: var(--danger); border-radius: 50px; padding: 4px 14px; font-size: 0.775rem; font-weight: 600; cursor: pointer; box-shadow: none; transition: all 0.2s ease; width: fit-content; }
         .edit-mode-pill:hover { background-color: #ffe4e6; transform: translateY(-1px); }
 
-        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 14px; align-items: end; margin-bottom: 1.25rem; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 14px; align-items: end; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
         .form-group { position: relative; display: flex; flex-direction: column; }
         label { font-weight: 600; margin-bottom: 6px; font-size: 0.825rem; color: var(--text-main); }
         input { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.925rem; font-family: inherit; color: var(--text-main); background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; outline: none; box-shadow: var(--shadow-sm); }
@@ -107,7 +121,7 @@
         .export-btn { width: 100%; margin-top: 1.5rem; padding: 11px; font-size: 1rem; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%); border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15); }
         .export-btn:hover { box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25); transform: translateY(-1px); }
 
-        .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 99; top: 100%; left: 0; right: 0; max-height: 240px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05); margin-top: 4px; padding: 4px; }
+        .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: 100%; left: 0; right: 0; max-height: 240px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05); margin-top: 4px; padding: 4px; }
         .autocomplete-items:empty { display: none; border: none; padding: 0; }
         .autocomplete-items div { padding: 8px 12px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s ease; font-size: 0.9rem; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; }
         .autocomplete-items div:last-child { margin-bottom: 0; }
@@ -118,8 +132,6 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
         .modal-content { background-color: var(--card-bg); padding: 1.75rem; border-radius: var(--radius-lg); width: 95%; max-width: 580px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); border: 1px solid var(--border); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
-        .modal-content { background-color: var(--card-bg); padding: 1.75rem; border-radius: var(--radius-lg); width: 95%; max-width: 580px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); border: 1px solid var(--border); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
         .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;}
         .close-btn { background: var(--bg-color); color: var(--text-muted); border-radius: 50%; width: 28px; height: 28px; padding: 0; font-size: 1.15rem; cursor: pointer; line-height: 1; box-shadow: none; }
@@ -128,7 +140,6 @@
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); transition: all 0.2s ease; background-color: var(--bg-color); }
         .history-item:hover { border-color: var(--primary); background-color: var(--card-bg); box-shadow: var(--shadow-sm); }
         
-        /* Clickable History Rows */
         .history-item-details { display: flex; flex-direction: column; gap: 4px; cursor: pointer; flex: 1; transition: color 0.2s; }
         .history-item-details:hover .history-item-time { color: var(--primary); }
         .history-item-time { font-weight: 600; font-size: 0.925rem; color: var(--text-main); }
@@ -187,25 +198,27 @@
             </div>
         </div>
 
-        <div id="editModeContainer" class="edit-mode-container">
-            <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
-            <button onclick="resetAppUI()" class="edit-mode-pill">Buat pesanan baru saja</button>
-        </div>
-
-        <div class="input-row">
-            <div class="form-group">
-                <label for="searchInput">Search Item</label>
-                <input type="text" id="searchInput" placeholder="Loading catalog..." disabled autocomplete="off">
-                <input type="hidden" id="selectedSku">
-                <div id="autocomplete-list" class="autocomplete-items"></div>
+        <div class="sticky-panel">
+            <div id="editModeContainer" class="edit-mode-container">
+                <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
+                <button onclick="resetAppUI()" class="edit-mode-pill">Buat pesanan baru saja</button>
             </div>
 
-            <div class="form-group">
-                <label for="qtyInput">Quantity</label>
-                <input type="number" id="qtyInput" placeholder="0.0" step="0.1" min="0.1">
-            </div>
+            <div class="input-row">
+                <div class="form-group">
+                    <label for="searchInput">Search Item</label>
+                    <input type="text" id="searchInput" placeholder="Loading catalog..." disabled autocomplete="off">
+                    <input type="hidden" id="selectedSku">
+                    <div id="autocomplete-list" class="autocomplete-items"></div>
+                </div>
 
-            <button onclick="addToCart()" id="addBtn">Add Item</button>
+                <div class="form-group">
+                    <label for="qtyInput">Quantity</label>
+                    <input type="number" id="qtyInput" placeholder="0.0" step="0.1" min="0.1">
+                </div>
+
+                <button onclick="addToCart()" id="addBtn">Add Item</button>
+            </div>
         </div>
 
         <div class="table-header-actions">
@@ -267,7 +280,7 @@
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
             fetch(GAS_SHEET_SYNC_URL, {
                 method: 'POST',
-                mode: 'no-cors', // <-- Add this to bypass the browser's CORS block
+                mode: 'no-cors', 
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(transactionData)
              })
@@ -558,10 +571,22 @@
             const rawQty = parseFloat(qtyInput.value);
             if (!selectedSku) { alert("Please select an item from the search results."); searchInput.focus(); return; }
             if (isNaN(rawQty) || rawQty <= 0) { alert("Please enter a valid quantity."); qtyInput.focus(); return; }
+            
             const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
             const product = catalogData.find(p => p.sku === selectedSku);
             orderCart.push({ sku: product.sku, name: product.name, variant: product.variant, qty: formattedQty, uom: product.uom, note: "" });
-            renderCart(); searchInput.value = ''; selectedSkuInput.value = ''; qtyInput.value = ''; searchInput.focus(); 
+            
+            renderCart(); 
+            searchInput.value = ''; selectedSkuInput.value = ''; qtyInput.value = ''; 
+            searchInput.focus(); 
+
+            // Scroll gently to the bottom to reveal the new item
+            setTimeout(() => {
+                window.scrollTo({ 
+                    top: document.body.scrollHeight, 
+                    behavior: 'smooth' 
+                });
+            }, 50);
         }
 
         function renderCart() {
@@ -811,7 +836,7 @@
                     item.uom,
                     item.name,
                     item.note || "", 
-                    "",              
+                    "",             
                     ""               
                 ];
                 tableRows.push(rowData);

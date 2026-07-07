@@ -894,4 +894,137 @@
             currentOrderNumber = loadedTransaction.orderNumber;
             document.getElementById('editModeLabel').innerText = `Edit Mode for ${currentOrderNumber}`;
             document.getElementById('editModeContainer').style.display = 'flex';
-            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loaded
+            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loadedTransaction.customer); } 
+            else { currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.color = "var(--primary)"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; }
+            currentDeliveryDate = loadedTransaction.deliveryDate ? loadedTransaction.deliveryDate : getTomorrowDateString();
+            updateDeliveryDisplay(); renderCart(); closeHistoryPopup();
+        }
+
+        renderCart();
+
+        function sendTelegramOrderAlert(customer, deliveryDate, cart) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+            let message = `🚨 *New Order Saved!*\n👤 *Customer:* ${customer || "No Customer"}\n📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n\n📦 *Items:*\n`;
+            cart.forEach((item, index) => { message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; });
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
+            }).catch(err => console.error("Failed to route message through Google Script", err));
+        }
+
+        function generateSuratJalan(historyIndex) {
+            const { jsPDF } = window.jspdf;
+            
+            const doc = new jsPDF({
+                margin: [15, 14, 15, 14] 
+            });
+            
+            const transaction = transactionHistory[historyIndex];
+            if (!transaction) return;
+
+            const customerName = transaction.customer || "No Customer";
+            const deliveryFormattedDate = formatDateDisplay(transaction.deliveryDate);
+
+            // --- Header Layout ---
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text("SURAT JALAN", 14, 15);
+
+            // Left Side: Company Identity Header
+            doc.setFontSize(11);
+            doc.text("NIAGA PANGAN NUSANTARA", 14, 26);
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(80, 80, 80);
+            doc.text("No. Telp/WA: 082188881492", 14, 31);
+            doc.text("Jl. Lele Raya No. 43", 14, 36);
+            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 41);
+            doc.text("Kota Tangerang Selatan", 14, 46);
+
+            // Right Side: Meta Block Layout
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text("Tanggal Kirim:", 130, 26);
+            doc.setFont("Helvetica", "normal");
+            doc.text(deliveryFormattedDate, 160, 26);
+
+            doc.setFont("Helvetica", "bold");
+            doc.text("Kepada Yth. Tuan / Toko:", 130, 36);
+            doc.setFont("Helvetica", "normal");
+            
+            const customerLines = doc.splitTextToSize(customerName, 65);
+            doc.text(customerLines, 130, 41);
+
+            doc.setTextColor(0, 0, 0);
+
+            // --- Table Configuration Setup ---
+            const tableColumn = ["No.", "QTY", "UOM", "Item Name", "Note", "QTY Diterima", "Kondisi"];
+            const tableRows = [];
+
+            transaction.cart.forEach((item, index) => {
+                const rowData = [
+                    index + 1,
+                    item.qty,
+                    item.uom,
+                    item.name,
+                    item.note || "", 
+                    "",             
+                    ""               
+                ];
+                tableRows.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 54, 
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [240, 242, 245],
+                    textColor: [15, 23, 42],
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    halign: 'left'
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 1,
+                    overflow: 'linebreak'
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },  
+                    1: { cellWidth: 14 },  
+                    2: { cellWidth: 15 },  
+                    3: { cellWidth: 65 },  
+                    4: { cellWidth: 34 },  
+                    5: { cellWidth: 24 },  
+                    6: { cellWidth: 25 }   
+                }
+            });
+
+            const finalY = doc.lastAutoTable.finalY;
+            const pageHeight = doc.internal.pageSize.height;
+
+            let currentY;
+            if (finalY + 30 > pageHeight - 15) {
+                doc.addPage();
+                currentY = 20; 
+            } else {
+                currentY = finalY + 8; 
+            }
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text("Tanda Terima,", 25, currentY);
+            doc.text("Hormat Kami,", 145, currentY);
+
+            doc.text("(......................................)", 15, currentY + 20);
+            doc.text("(......................................)", 135, currentY + 20);
+
+            const fileSafeName = customerName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            doc.save(`SJ_${fileSafeName}.pdf`);
+        }
+    </script>
+</body>
+</html>

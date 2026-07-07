@@ -267,6 +267,7 @@
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
             fetch(GAS_SHEET_SYNC_URL, {
                 method: 'POST',
+                mode: 'no-cors', // <-- Add this to bypass the browser's CORS block
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(transactionData)
              })

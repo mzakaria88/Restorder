@@ -249,9 +249,9 @@
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbyrPvMpFQWX5w-G9YZctb8jxVnWPtClAqnyYFkTyaLaV0KVeKfKvTmMDBPdbXZGu3s/exec';
-        const GAS_SHEET_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzFMSOLEqRnawcP3_uHY-NbZQj3N9L0gEoOjII363emt4MM0Xv19obQmwK8_GqSntk/exec';
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
         const TELEGRAM_CHAT_ID = '-1004295283262';
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrS09J8PFth43zZf1AF8VpTaGll-ZxElRlRo0hTJE6N_3gKa8tV0CTiJAThjEvlQ/exec";
 
         let catalogData = [];
         let customerDataList = [];
@@ -263,47 +263,6 @@
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
         let currentOrderNumber = null;
 
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrS09J8PFth43zZf1AF8VpTaGll-ZxElRlRo0hTJE6N_3gKa8tV0CTiJAThjEvlQ/exec";
-
-    function syncOrderToCloud(orderData) {
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // CRITICAL: Tells the browser not to block the redirect
-        headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(() => {
-        console.log("Order dispatched to Google Sheets successfully.");
-        // Note: Because of no-cors, you won't get a readable JSON response back here, 
-        // but the data WILL appear in your spreadsheet.
-    })
-    .catch(error => console.error("Error syncing to cloud:", error));
-    }
-        function loadOrderHistoryFromCloud() {
-    // GET requests do not require no-cors, allowing you to read the JSON response
-    fetch(SCRIPT_URL)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Cloud Order History Loaded:", data);
-            // Replace your local history array with this 'data'
-            // Render your history UI
-        })
-        .catch(error => console.error("Error loading history:", error));
-}
-
-        function syncOrderToLampohSheet(transactionData) {
-            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
-            fetch(GAS_SHEET_SYNC_URL, {
-                method: 'POST',
-                mode: 'no-cors', // <-- Add this to bypass the browser's CORS block
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(transactionData)
-             })
-            .then(res => console.log("Google Sheet sync payload dispatched successfully."))
-            .catch(err => console.error("Sheet sync failed", err));
-        }
 
         function getTomorrowDateString() {
             const tomorrow = new Date();
@@ -899,6 +858,35 @@
             const fileSafeName = customerName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             doc.save(`SJ_${fileSafeName}.pdf`);
         }
+
+    function syncOrderToCloud(orderData) {
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // CRITICAL: Tells the browser not to block the redirect
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(() => {
+        console.log("Order dispatched to Google Sheets successfully.");
+        // Note: Because of no-cors, you won't get a readable JSON response back here, 
+        // but the data WILL appear in your spreadsheet.
+    })
+    .catch(error => console.error("Error syncing to cloud:", error));
+    }
+        function loadOrderHistoryFromCloud() {
+    // GET requests do not require no-cors, allowing you to read the JSON response
+    fetch(SCRIPT_URL)
+        .then(response => response.json())
+        .then(data => {
+            console.log("Cloud Order History Loaded:", data);
+            // Replace your local history array with this 'data'
+            // Render your history UI
+        })
+        .catch(error => console.error("Error loading history:", error));
+}
+
     </script>
 </body>
 </html>

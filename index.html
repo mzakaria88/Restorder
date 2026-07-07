@@ -81,7 +81,7 @@
         .edit-mode-pill { background-color: var(--danger-light); border: 1px solid var(--danger); color: var(--danger); border-radius: 50px; padding: 4px 14px; font-size: 0.775rem; font-weight: 600; cursor: pointer; box-shadow: none; transition: all 0.2s ease; width: fit-content; }
         .edit-mode-pill:hover { background-color: #ffe4e6; transform: translateY(-1px); }
 
-        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 14px; align-items: end; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 14px; align-items: end; margin-bottom: 1.25rem; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
         .form-group { position: relative; display: flex; flex-direction: column; }
         label { font-weight: 600; margin-bottom: 6px; font-size: 0.825rem; color: var(--text-main); }
         input { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.925rem; font-family: inherit; color: var(--text-main); background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; outline: none; box-shadow: var(--shadow-sm); }
@@ -99,7 +99,7 @@
         .btn-success:hover { background-color: var(--success-hover); }
         
         .btn-outline { background-color: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); box-shadow: var(--shadow-sm); }
-        .btn-outline:hover { background-color: var(--bg-color); color: var(--text-main); border-color: var(--text-muted); }
+        .btn-outline:hover { background-color: var(--bg-color); color: var(--text-main); border-color: var(--text-muted); border-color: var(--text-muted); }
         .btn-sm { padding: 4px 10px; font-size: 0.825rem; border-radius: var(--radius-sm); height: 28px; }
 
         .table-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -641,7 +641,7 @@
             transactionHistory.forEach(order => {
                 if (order.orderNumber && order.orderNumber.startsWith("RO" + datePrefix)) {
                     const nPart = parseInt(order.orderNumber.substring(6, 10), 10);
-                    if (nPart > maxN) maxN = nPart;
+                    if (nPart > maxN) nPart;
                 }
             });
             const chars = "ABCDEFGHJKMNPQRSTUVWXYZ"; 
@@ -771,7 +771,6 @@
             const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
             const selectedTx = selectedIndices.map(idx => transactionHistory[idx]);
             
-            // Build collection metrics
             const uniqueCustomers = [...new Set(selectedTx.map(t => t.customer || "No Customer"))];
             let itemMatrix = {};
 
@@ -798,7 +797,6 @@
                 });
             });
 
-            // Set layout architecture values
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
@@ -809,9 +807,26 @@
             doc.setFontSize(9);
             doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 14, 20);
 
-            // Configure dynamic schema structure
             const tableHeaders = ["No.", "Item Name", ...uniqueCustomers, "Total Qty", "Note"];
             const tableRows = [];
+
+            // Intelligent string line wrap helper for multi-line rendering inside table cells
+            const wrapText = (str, max) => {
+                if (!str || str.length <= max) return str;
+                const words = str.split(' ');
+                let lines = [];
+                let current = '';
+                words.forEach(w => {
+                    if ((current + w).length > max) {
+                        lines.push(current.trim());
+                        current = w + ' ';
+                    } else {
+                        current += w + ' ';
+                    }
+                });
+                if (current.trim()) lines.push(current.trim());
+                return lines.join('\n');
+            };
 
             Object.values(itemMatrix).forEach((item, index) => {
                 let rowSum = 0;
@@ -829,7 +844,11 @@
                 });
 
                 nestedRow.push(Number.isInteger(rowSum) ? rowSum.toString() : rowSum.toFixed(2));
-                nestedRow.push(item.notes.join("; ") || "-");
+                
+                // Wrap note string elegantly if longer than ~30 characters
+                const rawNotes = item.notes.join("; ") || "-";
+                nestedRow.push(rawNotes !== "-" ? wrapText(rawNotes, 30) : "-");
+                
                 tableRows.push(nestedRow);
             });
 

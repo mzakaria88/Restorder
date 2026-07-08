@@ -9,7 +9,7 @@
         /* Modern Monochrome & High-Contrast Palette */
         :root {
             --primary: #18181b; /* Zinc 900 */
-            --primary-hover: #27272a; 
+            --primary-hover: #3f3f46; /* Lighter on hover for more contrast */
             --primary-light: #f4f4f5;
             --success: #10b981; 
             --success-hover: #059669; 
@@ -116,17 +116,19 @@
 
         /* --- Buttons --- */
         button { padding: 0 14px; height: 32px; background-color: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.825rem; font-weight: 500; font-family: inherit; transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm); }
-        button:hover { background-color: var(--primary-hover); }
-        button:active { transform: scale(0.98); }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:active { transform: scale(0.98); box-shadow: none; }
         button:disabled { background-color: #e4e4e7; color: #a1a1aa; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .btn-danger { background-color: var(--card-bg); color: var(--danger); border: 1px solid var(--danger); box-shadow: none; }
-        .btn-danger:hover { background-color: var(--danger-light); }
+        .btn-danger:hover { background-color: var(--danger-light); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1); }
+        
         .btn-success { background-color: var(--success); color: white; }
-        .btn-success:hover { background-color: var(--success-hover); }
+        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); }
         
         .btn-outline { background-color: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); box-shadow: var(--shadow-sm); }
-        .btn-outline:hover { background-color: var(--primary-light); border-color: #d4d4d8; }
+        .btn-outline:hover { background-color: var(--border); border-color: var(--text-muted); color: var(--primary); transform: translateY(-1px); }
+        
         .btn-sm { padding: 0 8px; font-size: 0.75rem; height: 26px; font-weight: 500; }
 
         /* --- Table Layout --- */
@@ -147,15 +149,20 @@
 
         /* --- Submit Button --- */
         .export-btn { width: 100%; margin-top: 1rem; height: 42px; font-size: 0.9rem; font-weight: 600; background-color: var(--primary); border-radius: var(--radius-md); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .export-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .export-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
 
         /* --- Autocomplete --- */
         .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: calc(100% + 4px); left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-md); padding: 4px; }
         .autocomplete-items:empty { display: none; border: none; padding: 0; }
         .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
-        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--primary-light); color: var(--text-main); }
+        
+        /* More pronounced active/hover state for dropdown items */
+        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--text-main); color: var(--card-bg); }
         .item-name { font-weight: 500; color: var(--text-main); }
+        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name { color: var(--card-bg); }
+        
         .item-uom { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border-radius: 3px; font-weight: 500; border: 1px solid var(--border); }
+        .autocomplete-items div:hover .item-uom, .autocomplete-items div.active .item-uom { background: var(--primary-hover); color: var(--card-bg); border-color: var(--primary-hover); }
 
         /* --- Modal --- */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(9, 9, 11, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(3px); animation: fadeIn 0.15s ease-out; }
@@ -167,7 +174,9 @@
         
         .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); transition: all 0.15s ease; background-color: var(--card-bg); }
-        .history-item:hover { border-color: #a1a1aa; box-shadow: var(--shadow-sm); }
+        
+        /* More pronounced active/hover state for history items */
+        .history-item:hover { border-color: var(--text-main); box-shadow: var(--shadow-md); transform: translateY(-1px); }
         
         .history-item-details { display: flex; flex-direction: column; gap: 2px; cursor: pointer; flex: 1; transition: color 0.2s; }
         .history-item-details:hover .history-item-time { color: var(--primary); }
@@ -305,9 +314,7 @@
         </div>
     </div>
 
-    <!-- JS Logic Remains 100% Untouched -->
     <script>
-        // --- Configuration URLs ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbyrPvMpFQWX5w-G9YZctb8jxVnWPtClAqnyYFkTyaLaV0KVeKfKvTmMDBPdbXZGu3s/exec';
@@ -334,7 +341,7 @@
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(transactionData)
              })
-            .then(res => console.log("Google Sheet sync payload dispatched successfully."))
+            .then(res => console.log("Google Sheet sync payload dispatched."))
             .catch(err => console.error("Sheet sync failed", err));
         }
 
@@ -429,10 +436,9 @@
                     if (data && Array.isArray(data) && data.length > 0) {
                         transactionHistory = data;
                         localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-                        console.log("Successfully loaded history from Database.");
                     }
                 } catch (error) {
-                    console.error("Failed to load history from DB, using local cache", error);
+                    console.error("Failed to load history from DB", error);
                 }
             }
         };
@@ -641,7 +647,8 @@
         function renderCart() {
             const tbody = document.getElementById('cartBody'); tbody.innerHTML = '';
             if (orderCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 20px;"><span style="font-weight: 500; font-size: 0.85rem;">No items added to this order yet.</span></td></tr>`;
+                /* RESTORED IMAGE with modern styling */
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 20px;"><img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" style="width: 80px; display: block; margin: 0 auto 12px auto; opacity: 0.3; filter: grayscale(100%);"><span style="font-weight: 500; font-size: 0.85rem;">No items added to this order yet.</span></td></tr>`;
                 return;
             }
             orderCart.forEach((item, index) => {
@@ -782,7 +789,7 @@
                     actionsBlock = `
                         <div class="actions-cell">
                             <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
-                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--success);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
+                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--border);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
                             <button class="btn-sm btn-outline" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                         </div>
                     `;

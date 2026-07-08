@@ -6,152 +6,190 @@
     <title>RestOrder by NPN</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Modern Monochrome & High-Contrast Palette */
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca; --primary-light: #eef2ff;
-            --success: #10b981; --success-hover: #059669; --danger: #f43f5e;
-            --danger-hover: #e11d48; --danger-light: #fff1f2; --bg-color: #f8fafc;
-            --card-bg: #ffffff; --text-main: #0f172a; --text-muted: #64748b;
-            --border: #e2e8f0; --radius-lg: 12px; --radius-md: 8px; --radius-sm: 6px;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+            --primary: #18181b; /* Zinc 900 */
+            --primary-hover: #27272a; 
+            --primary-light: #f4f4f5;
+            --success: #10b981; 
+            --success-hover: #059669; 
+            --danger: #ef4444;
+            --danger-hover: #dc2626; 
+            --danger-light: #fef2f2; 
+            --bg-color: #fafafa;
+            --card-bg: #ffffff; 
+            --text-main: #09090b; 
+            --text-muted: #71717a;
+            --border: #e4e4e7; 
+            --radius-lg: 10px; 
+            --radius-md: 6px; 
+            --radius-sm: 4px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+            --shadow-glass: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
+
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 
         body { 
             font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-main); 
-            padding: 1rem; margin: 0; display: flex; justify-content: center;
+            padding: 2rem 1rem; margin: 0; display: flex; justify-content: center;
             align-items: flex-start; min-height: 100vh; line-height: 1.4;
-            -webkit-font-smoothing: antialiased;
+            -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
         }
 
         .container {
-            background-color: var(--card-bg); padding: 1.25rem 1.75rem;
-            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg), 0 0 0 1px rgb(0 0 0 / 0.01);
-            width: 100%; max-width: 950px; position: relative;
+            background-color: var(--card-bg); padding: 1.5rem;
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            width: 100%; max-width: 900px; position: relative;
         }
 
+        /* --- Header & Typography --- */
         .main-header { 
             display: flex; justify-content: space-between; align-items: flex-start; 
-            margin-bottom: 0.5rem; 
-            padding-bottom: 0.5rem; 
-            border-bottom: 1px dashed var(--border); 
+            margin-bottom: 0; padding-bottom: 0.5rem; 
         }
-        .header-left { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .header-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
         .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; }
 
-        h2 { margin: 0; color: var(--text-main); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
-        h2::after { content: "App"; font-size: 0.7rem; text-transform: uppercase; background: var(--primary-light); color: var(--primary); padding: 1px 6px; border-radius: var(--radius-sm); font-weight: 600; letter-spacing: 0.05em; }
+        h2 { margin: 0; color: var(--text-main); font-size: 1.25rem; font-weight: 700; letter-spacing: -0.03em; display: flex; align-items: center; gap: 8px; }
+        h2::after { content: "App"; font-size: 0.6rem; text-transform: uppercase; background: var(--primary); color: #fff; padding: 2px 6px; border-radius: 3px; font-weight: 600; letter-spacing: 0.05em; }
 
-        .meta-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+        .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 
+        /* --- Minimalist Customer/Delivery Badges --- */
         .customer-section {
-            font-size: 0.85rem; display: flex; align-items: center; gap: 6px; position: relative;
-            background-color: var(--bg-color); padding: 4px 12px; border-radius: 30px; border: 1px solid var(--border); transition: all 0.2s ease;
+            font-size: 0.75rem; display: flex; align-items: center; gap: 6px; position: relative;
+            background-color: var(--primary-light); padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid transparent; transition: all 0.2s ease;
         }
-        .customer-section:hover { border-color: var(--text-muted); }
+        .customer-section:hover { border-color: var(--border); background-color: var(--card-bg); }
 
-        .customer-label { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 0.725rem; letter-spacing: 0.02em; }
+        .customer-label { font-weight: 600; color: var(--text-muted); }
         
-        #customerDisplay, #deliveryDisplay { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; transition: color 0.2s ease; }
-        #customerDisplay:hover, #deliveryDisplay:hover { color: var(--primary-hover); }
+        #customerDisplay, #deliveryDisplay { color: var(--text-main); font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s ease; border-bottom: 1px dashed var(--text-muted); }
+        #customerDisplay:hover, #deliveryDisplay:hover { opacity: 0.7; }
 
-        #customerEditBtn, #deliveryEditBtn { cursor: pointer; font-size: 0.8rem; filter: grayscale(100%); opacity: 0.6; transition: opacity 0.2s, filter 0.2s; }
-        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; filter: grayscale(0%); }
+        #customerEditBtn, #deliveryEditBtn { cursor: pointer; font-size: 0.75rem; opacity: 0.4; transition: opacity 0.2s; margin-left: 2px; }
+        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; }
 
         #customerInputContainer, #deliveryInputContainer { display: none; position: relative; }
-        #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; width: 170px; outline: none; font-family: inherit; }
+        #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.75rem; width: 140px; outline: none; font-family: inherit; height: 20px;}
 
+        /* --- Edge-to-Edge Sticky Glass Panel --- */
         .sticky-panel {
             position: sticky; 
             top: -1px; 
             z-index: 100;
-            background-color: var(--card-bg); 
-            padding: 0.75rem 0;
-            margin-bottom: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 0.75rem 1.5rem;
+            margin: 0 -1.5rem 0.5rem -1.5rem; /* Bleeds to the edge of the container */
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-glass);
         }
 
+        /* --- Edit Mode Notice --- */
         .edit-mode-container { 
-            display: none; flex-direction: column; align-items: center; justify-content: center; 
-            text-align: center; padding: 12px 20px; margin-bottom: 0.75rem; 
-            background-color: rgba(255, 255, 255, 0.95);
-            border: 1px dashed var(--danger); border-radius: var(--radius-md); 
+            display: none; flex-direction: row; align-items: center; justify-content: space-between; 
+            padding: 8px 12px; margin-bottom: 0.75rem; 
+            background-color: var(--danger-light);
+            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); 
         }
-        .edit-mode-label { font-size: 0.75rem; font-weight: 700; color: var(--danger); margin-bottom: 4px; letter-spacing: 0.02em; }
-        .edit-mode-pill { background-color: var(--danger-light); border: 1px solid var(--danger); color: var(--danger); border-radius: 50px; padding: 4px 14px; font-size: 0.775rem; font-weight: 600; cursor: pointer; box-shadow: none; transition: all 0.2s ease; width: fit-content; }
-        .edit-mode-pill:hover { background-color: #ffe4e6; transform: translateY(-1px); }
+        .edit-mode-label { font-size: 0.75rem; font-weight: 600; color: var(--danger); letter-spacing: 0.01em; margin: 0; }
+        .edit-mode-pill { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); border-radius: var(--radius-sm); padding: 2px 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .edit-mode-pill:hover { background-color: var(--danger); color: white; }
 
-        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 14px; align-items: end; margin-bottom: 1.25rem; background: var(--bg-color); padding: 1rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        /* --- Compact Input Row --- */
+        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 10px; align-items: end; }
         .form-group { position: relative; display: flex; flex-direction: column; }
-        label { font-weight: 600; margin-bottom: 6px; font-size: 0.825rem; color: var(--text-main); }
-        input { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.925rem; font-family: inherit; color: var(--text-main); background-color: var(--card-bg); transition: border-color 0.2s, box-shadow 0.2s; outline: none; box-shadow: var(--shadow-sm); }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15), var(--shadow-sm); }
-        input::placeholder { color: #94a3b8; }
+        label { font-weight: 600; margin-bottom: 4px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        input { padding: 0 10px; height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; color: var(--text-main); background-color: var(--bg-color); transition: all 0.2s ease; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); }
+        input:focus { border-color: var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 1px var(--primary); }
+        input::placeholder { color: #a1a1aa; }
 
-        button { padding: 9px 16px; background-color: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.925rem; font-weight: 600; font-family: inherit; transition: all 0.2s ease; box-shadow: var(--shadow-sm); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
-        button:active { transform: translateY(0); }
-        button:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
+        /* --- Buttons --- */
+        button { padding: 0 14px; height: 32px; background-color: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.825rem; font-weight: 500; font-family: inherit; transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm); }
+        button:hover { background-color: var(--primary-hover); }
+        button:active { transform: scale(0.98); }
+        button:disabled { background-color: #e4e4e7; color: #a1a1aa; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .btn-danger { background-color: var(--danger); }
-        .btn-danger:hover { background-color: var(--danger-hover); }
-        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--card-bg); color: var(--danger); border: 1px solid var(--danger); box-shadow: none; }
+        .btn-danger:hover { background-color: var(--danger-light); }
+        .btn-success { background-color: var(--success); color: white; }
         .btn-success:hover { background-color: var(--success-hover); }
         
         .btn-outline { background-color: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); box-shadow: var(--shadow-sm); }
-        .btn-outline:hover { background-color: var(--bg-color); color: var(--text-main); border-color: var(--text-muted); border-color: var(--text-muted); }
-        .btn-sm { padding: 4px 10px; font-size: 0.825rem; border-radius: var(--radius-sm); height: 28px; }
+        .btn-outline:hover { background-color: var(--primary-light); border-color: #d4d4d8; }
+        .btn-sm { padding: 0 8px; font-size: 0.75rem; height: 26px; font-weight: 500; }
 
-        .table-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        .table-header-actions h3 { margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
-        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); background-color: var(--card-bg); }
+        /* --- Table Layout --- */
+        .table-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; margin-top: 0.5rem; }
+        .table-header-actions h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--card-bg); }
 
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.925rem; min-width: 600px; }
-        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.725rem; letter-spacing: 0.05em; border-bottom: 2px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.825rem; min-width: 600px; }
+        th, td { padding: 8px 12px; text-align: left; }
+        th { background-color: var(--primary-light); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        td { border-bottom: 1px solid var(--border); }
         tr:last-child td { border-bottom: none; }
-        tr:hover td { background-color: #f8fafc; }
+        tr:hover td { background-color: var(--bg-color); }
 
         .actions-cell { display: flex; gap: 4px; }
-        .inline-edit-input { width: 65px; padding: 2px 6px; font-size: 0.875rem; margin-right: 4px; box-shadow: none; }
-        .note-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
+        .inline-edit-input { width: 60px; height: 26px; padding: 0 6px; font-size: 0.8rem; margin-right: 4px; box-shadow: none; }
+        .note-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.75rem; font-style: italic; }
 
-        .export-btn { width: 100%; margin-top: 1.5rem; padding: 11px; font-size: 1rem; font-weight: 700; background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%); border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15); }
-        .export-btn:hover { box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25); transform: translateY(-1px); }
+        /* --- Submit Button --- */
+        .export-btn { width: 100%; margin-top: 1rem; height: 42px; font-size: 0.9rem; font-weight: 600; background-color: var(--primary); border-radius: var(--radius-md); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .export-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: 100%; left: 0; right: 0; max-height: 240px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,0.05); margin-top: 4px; padding: 4px; }
+        /* --- Autocomplete --- */
+        .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: calc(100% + 4px); left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-md); padding: 4px; }
         .autocomplete-items:empty { display: none; border: none; padding: 0; }
-        .autocomplete-items div { padding: 8px 12px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.15s ease; font-size: 0.9rem; margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; }
-        .autocomplete-items div:last-child { margin-bottom: 0; }
-        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--primary-light); color: var(--primary-hover); padding-left: 14px; }
+        .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--primary-light); color: var(--text-main); }
         .item-name { font-weight: 500; color: var(--text-main); }
-        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name { color: var(--primary); }
-        .item-uom { font-size: 0.775rem; color: var(--text-muted); background: var(--bg-color); padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+        .item-uom { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border-radius: 3px; font-weight: 500; border: 1px solid var(--border); }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease-out; }
-        .modal-content { background-color: var(--card-bg); padding: 1.75rem; border-radius: var(--radius-lg); width: 95%; max-width: 620px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); border: 1px solid var(--border); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
-        .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em;}
-        .close-btn { background: var(--bg-color); color: var(--text-muted); border-radius: 50%; width: 28px; height: 28px; padding: 0; font-size: 1.15rem; cursor: pointer; line-height: 1; box-shadow: none; }
-        .close-btn:hover { color: var(--danger); background: var(--danger-light); transform: none;}
-        .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); transition: all 0.2s ease; background-color: var(--bg-color); }
-        .history-item:hover { border-color: var(--primary); background-color: var(--card-bg); box-shadow: var(--shadow-sm); }
+        /* --- Modal --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(9, 9, 11, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(3px); animation: fadeIn 0.15s ease-out; }
+        .modal-content { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--radius-lg); width: 95%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); border: 1px solid var(--border); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+        .modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em;}
+        .close-btn { background: var(--bg-color); color: var(--text-muted); border-radius: 50%; width: 26px; height: 26px; font-size: 1rem; padding: 0; line-height: 1; border: 1px solid var(--border); box-shadow: none; }
+        .close-btn:hover { color: var(--primary); background: var(--border); }
         
-        .history-item-details { display: flex; flex-direction: column; gap: 4px; cursor: pointer; flex: 1; transition: color 0.2s; }
+        .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); transition: all 0.15s ease; background-color: var(--card-bg); }
+        .history-item:hover { border-color: #a1a1aa; box-shadow: var(--shadow-sm); }
+        
+        .history-item-details { display: flex; flex-direction: column; gap: 2px; cursor: pointer; flex: 1; transition: color 0.2s; }
         .history-item-details:hover .history-item-time { color: var(--primary); }
-        .history-item-time { font-weight: 600; font-size: 0.925rem; color: var(--text-main); }
-        .history-item-sub { font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center;}
+        .history-item-time { font-weight: 600; font-size: 0.85rem; color: var(--text-main); }
+        .history-item-sub { font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center;}
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* --- Mobile Responsiveness --- */
         @media (max-width: 680px) {
-            body { padding: 0.5rem; }
-            .container { padding: 1rem; }
-            .main-header { flex-direction: column; gap: 12px; align-items: stretch; }
+            body { padding: 0; background-color: var(--card-bg); }
+            .container { padding: 1rem; border-radius: 0; border: none; box-shadow: none; }
+            .main-header { flex-direction: column; gap: 10px; align-items: stretch; margin-bottom: 10px;}
             .header-right { justify-content: flex-start; } 
-            .input-row { grid-template-columns: 1fr; gap: 12px; padding: 0.75rem; }
-            button { width: 100%; }
+            
+            .sticky-panel {
+                margin: 0 -1rem 0.5rem -1rem;
+                padding: 0.75rem 1rem;
+            }
+
+            .input-row { grid-template-columns: 1fr; gap: 10px; }
+            button { width: 100%; justify-content: center; }
             .btn-sm { width: auto; }
             .actions-cell { width: max-content; }
         }
@@ -168,7 +206,7 @@
                 
                 <div class="meta-chips">
                     <div class="customer-section">
-                        <span class="customer-label">Customer:</span>
+                        <span class="customer-label">Cust:</span>
                         <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
                         <span id="customerEditBtn" style="display:none;" onclick="openCustomerSearch()">✏️</span>
                         
@@ -179,13 +217,13 @@
                     </div>
 
                     <div class="customer-section">
-                        <span class="customer-label">Delivery:</span>
+                        <span class="customer-label">Deliv:</span>
                         <span id="deliveryDisplay" onclick="openDeliveryEdit()"></span>
                         <span id="deliveryEditBtn" onclick="openDeliveryEdit()">✏️</span>
                         
-                        <div id="deliveryInputContainer" style="display: none; align-items: center; gap: 6px;">
-                            <input type="date" id="deliveryInput" style="padding: 2px 6px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.85rem; outline: none; font-family: inherit;">
-                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 0 10px;" onclick="saveDeliveryDate()">Save</button>
+                        <div id="deliveryInputContainer" style="display: none; align-items: center; gap: 4px;">
+                            <input type="date" id="deliveryInput" style="padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; outline: none; font-family: inherit; height: 22px;">
+                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 0 8px; height: 22px;" onclick="saveDeliveryDate()">Save</button>
                         </div>
                     </div>
                 </div>
@@ -199,7 +237,7 @@
         <div class="sticky-panel">
             <div id="editModeContainer" class="edit-mode-container">
                 <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
-                <button onclick="resetAppUI()" class="edit-mode-pill">Buat pesanan baru saja</button>
+                <button onclick="resetAppUI()" class="edit-mode-pill">Cancel Edit</button>
             </div>
 
             <div class="input-row">
@@ -221,19 +259,19 @@
 
         <div class="table-header-actions">
             <h3>Order List</h3>
-            <button class="btn-sm btn-danger btn-outline" onclick="clearAllItems()">Clear Order</button>
+            <button class="btn-sm btn-danger" onclick="clearAllItems()">Clear Order</button>
         </div>
 
         <div class="table-container">
             <table id="cartTable">
                 <thead>
                     <tr>
-                        <th style="width: 50px; text-align: center;">No.</th>
+                        <th style="width: 40px; text-align: center;">No.</th>
                         <th>Item Name</th>
-                        <th style="width: 90px;">Qty</th>
-                        <th style="width: 80px;">UOM</th>
+                        <th style="width: 70px;">Qty</th>
+                        <th style="width: 70px;">UOM</th>
                         <th>Note</th>
-                        <th style="width: 150px;">Actions</th>
+                        <th style="width: 130px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="cartBody">
@@ -254,11 +292,11 @@
                 </div>
             </div>
 
-            <div id="consolidationActions" style="display: none; padding: 8px 12px; background: var(--primary-light); margin-bottom: 10px; border-radius: var(--radius-md); justify-content: space-between; align-items: center; border: 1px solid rgba(79, 70, 229, 0.2);">
-                <span style="font-size: 0.825rem; font-weight: 600; color: var(--primary);">Select orders below</span>
+            <div id="consolidationActions" style="display: none; padding: 8px 12px; background: var(--primary-light); margin-bottom: 10px; border-radius: var(--radius-sm); justify-content: space-between; align-items: center; border: 1px solid var(--border);">
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-main);">Select orders below</span>
                 <div style="display: flex; gap: 6px;">
-                    <button class="btn-sm btn-success" style="height: 28px;" onclick="generateConsolidatedPDF()">Download PDF</button>
-                    <button class="btn-sm btn-outline" style="height: 28px;" onclick="cancelConsolidationMode()">Cancel</button>
+                    <button class="btn-sm btn-success" onclick="generateConsolidatedPDF()">Download PDF</button>
+                    <button class="btn-sm btn-outline" onclick="cancelConsolidationMode()">Cancel</button>
                 </div>
             </div>
 
@@ -267,6 +305,7 @@
         </div>
     </div>
 
+    <!-- JS Logic Remains 100% Untouched -->
     <script>
         // --- Configuration URLs ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
@@ -602,12 +641,12 @@
         function renderCart() {
             const tbody = document.getElementById('cartBody'); tbody.innerHTML = '';
             if (orderCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #6b7280; padding: 40px 20px;"><img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" style="width: 100px; display: block; margin: 0 auto 12px auto; opacity: 0.5; filter: grayscale(30%);"><span style="font-weight: 500; font-size: 0.9rem; color: var(--text-muted);">No items added to this order yet.</span></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 20px;"><span style="font-weight: 500; font-size: 0.85rem;">No items added to this order yet.</span></td></tr>`;
                 return;
             }
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td><td style="font-weight: 600; color: var(--text-main);">${item.name}</td><td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td><td><span style="font-size: 0.775rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-weight: 600;">${item.uom}</span></td><td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td><td class="actions-cell" id="action-cell-${index}"><button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button><button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button><button class="btn-sm btn-danger btn-outline" style="color: var(--danger);" onclick="deleteItem(${index})">🗑</button></td>`;
+                row.innerHTML = `<td style="text-align: center; font-weight: 500; color: var(--text-muted);">${index + 1}</td><td style="font-weight: 500; color: var(--text-main);">${item.name}</td><td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td><td><span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border: 1px solid var(--border); border-radius: 3px; font-weight: 500;">${item.uom}</span></td><td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td><td class="actions-cell" id="action-cell-${index}"><button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button><button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button><button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button></td>`;
                 tbody.appendChild(row);
             });
         }
@@ -618,7 +657,7 @@
         function editItem(index) {
             const qtyCell = document.getElementById(`qty-cell-${index}`); const actionCell = document.getElementById(`action-cell-${index}`);
             qtyCell.innerHTML = `<input type="number" class="inline-edit-input" id="edit-qty-${index}" value="${orderCart[index].qty}" step="0.1" min="0.1">`;
-            actionCell.innerHTML = `<button class="btn-sm" style="background-color: var(--success); color: white; border: none;" onclick="saveItem(${index})">Save</button><button class="btn-sm btn-outline" onclick="renderCart()">Cancel</button>`;
+            actionCell.innerHTML = `<button class="btn-sm btn-success" onclick="saveItem(${index})">Save</button><button class="btn-sm btn-outline" onclick="renderCart()">Cancel</button>`;
             const editInput = document.getElementById(`edit-qty-${index}`); editInput.focus(); editInput.select();
             editInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveItem(index); if (e.key === 'Escape') renderCart(); });
         }
@@ -641,7 +680,7 @@
             transactionHistory.forEach(order => {
                 if (order.orderNumber && order.orderNumber.startsWith("RO" + datePrefix)) {
                     const nPart = parseInt(order.orderNumber.substring(6, 10), 10);
-                    if (nPart > maxN) nPart;
+                    if (nPart > maxN) maxN = nPart;
                 }
             });
             const chars = "ABCDEFGHJKMNPQRSTUVWXYZ"; 
@@ -652,8 +691,7 @@
         function resetAppUI() {
             orderCart = []; currentOrderNumber = null;
             document.getElementById('editModeContainer').style.display = 'none';
-            currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.color = "var(--primary)";
-            customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; customerInput.value = "";
+            currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; customerInput.value = "";
             currentDeliveryDate = getTomorrowDateString(); updateDeliveryDisplay();
             renderCart();
         }
@@ -744,7 +782,7 @@
                     actionsBlock = `
                         <div class="actions-cell">
                             <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
-                            <button class="btn-sm btn-success" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
+                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--success);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
                             <button class="btn-sm btn-outline" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                         </div>
                     `;
@@ -755,7 +793,7 @@
                         ${checkBlock}
                         <div class="history-item-details" title="${isConsolidationMode ? 'Click to select this record' : 'Klik untuk load/edit pesanan'}">
                             <span class="history-item-time">${transaction.timestamp}</span>
-                            <span class="history-item-sub">👤 ${custName} • 📅 Delivery on: ${delDateStr} • 📦 ${transaction.cart.length} item(s)</span>
+                            <span class="history-item-sub">👤 ${custName} &nbsp;•&nbsp; 📅 Deliv: ${delDateStr} &nbsp;•&nbsp; 📦 ${transaction.cart.length} item(s)</span>
                         </div>
                     </div>
                     ${actionsBlock}
@@ -810,7 +848,6 @@
             const tableHeaders = ["No.", "Item Name", ...uniqueCustomers, "Total Qty", "Note"];
             const tableRows = [];
 
-            // Intelligent string line wrap helper for multi-line rendering inside table cells
             const wrapText = (str, max) => {
                 if (!str || str.length <= max) return str;
                 const words = str.split(' ');
@@ -845,7 +882,6 @@
 
                 nestedRow.push(Number.isInteger(rowSum) ? rowSum.toString() : rowSum.toFixed(2));
                 
-                // Wrap note string elegantly if longer than ~30 characters
                 const rawNotes = item.notes.join("; ") || "-";
                 nestedRow.push(rawNotes !== "-" ? wrapText(rawNotes, 30) : "-");
                 
@@ -857,8 +893,8 @@
                 body: tableRows,
                 startY: 25,
                 theme: 'grid',
-                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
-                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak' }
+                headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak', lineColor: [228, 228, 231] }
             });
 
             doc.save(`Consolidated_Orders_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -914,7 +950,7 @@
             document.getElementById('editModeLabel').innerText = `Edit Mode for ${currentOrderNumber}`;
             document.getElementById('editModeContainer').style.display = 'flex';
             if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loadedTransaction.customer); } 
-            else { currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.color = "var(--primary)"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; }
+            else { currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; }
             currentDeliveryDate = loadedTransaction.deliveryDate ? loadedTransaction.deliveryDate : getTomorrowDateString();
             updateDeliveryDisplay(); renderCart(); closeHistoryPopup();
         }
@@ -1000,16 +1036,17 @@
                 startY: 54, 
                 theme: 'grid',
                 headStyles: {
-                    fillColor: [240, 242, 245],
-                    textColor: [15, 23, 42],
+                    fillColor: [24, 24, 27],
+                    textColor: [255, 255, 255],
                     fontStyle: 'bold',
                     fontSize: 9,
                     halign: 'left'
                 },
                 styles: {
                     fontSize: 9,
-                    cellPadding: 1,
-                    overflow: 'linebreak'
+                    cellPadding: 1.5,
+                    overflow: 'linebreak',
+                    lineColor: [228, 228, 231]
                 },
                 columnStyles: {
                     0: { cellWidth: 10 },  

@@ -898,6 +898,10 @@
                 tableRows.push(nestedRow);
             });
 
+            // Calculate the exact column index for "Total Qty" 
+            // (No. is 0, Item Name is 1, Customers take up the next X spots)
+            const totalQtyIndex = uniqueCustomers.length + 2;
+
             doc.autoTable({
                 head: [tableHeaders],
                 body: tableRows,
@@ -905,7 +909,10 @@
                 margin: { left: 7, right: 7 },
                 theme: 'grid',
                 headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
-                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak', lineColor: [228, 228, 231] }
+                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak', lineColor: [228, 228, 231] },
+                columnStyles: {
+                    [totalQtyIndex]: { fontStyle: 'bold' } // Makes this specific column bold
+                }
             });
 
             doc.save(`Consolidated_Orders_${new Date().toISOString().slice(0, 10)}.pdf`);

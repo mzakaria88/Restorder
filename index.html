@@ -123,7 +123,7 @@
         .btn-danger { background-color: var(--card-bg); color: var(--danger); border: 1px solid var(--danger); box-shadow: none; }
         .btn-danger:hover { background-color: var(--danger-light); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1); }
         
-        .btn-success { background-color: var(--success); color: white; }
+        .btn-success { background-color: var(--success); color: white; border: 1px solid var(--success); }
         .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); }
         
         .btn-outline { background-color: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); box-shadow: var(--shadow-sm); }
@@ -789,8 +789,8 @@
                     actionsBlock = `
                         <div class="actions-cell">
                             <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
-                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--border);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
-                            <button class="btn-sm btn-outline" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
+                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--success);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
+                            <button class="btn-sm btn-success" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                         </div>
                     `;
                 }
@@ -872,7 +872,10 @@
                 return lines.join('\n');
             };
 
-            Object.values(itemMatrix).forEach((item, index) => {
+            // Alphabetically sort items before generating the PDF rows
+            const sortedItems = Object.values(itemMatrix).sort((a, b) => a.name.localeCompare(b.name));
+
+            sortedItems.forEach((item, index) => {
                 let rowSum = 0;
                 let formattedName = `${item.name} (${item.uom})`;
                 let nestedRow = [index + 1, formattedName];

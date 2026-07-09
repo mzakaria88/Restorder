@@ -154,7 +154,7 @@
         /* --- Autocomplete --- */
         .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: calc(100% + 4px); left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-md); padding: 4px; }
         .autocomplete-items:empty { display: none; border: none; padding: 0; }
-        .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+        .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 2px; }
         
         /* More pronounced active/hover state for dropdown items */
         .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--text-main); color: var(--card-bg); }

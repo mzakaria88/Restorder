@@ -847,10 +847,10 @@
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(16);
-            doc.text("REKAPITULASI ORDER GABUNGAN", 14, 15);
+            doc.text("REKAPITULASI ORDER GABUNGAN", 7, 15);
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(9);
-            doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 14, 20);
+            doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 7, 20);
 
             const tableHeaders = ["No.", "Item Name", ...uniqueCustomers, "Total Qty", "Note"];
             const tableRows = [];
@@ -902,6 +902,7 @@
                 head: [tableHeaders],
                 body: tableRows,
                 startY: 25,
+                margin: { left: 7, right: 7 },
                 theme: 'grid',
                 headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
                 styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak', lineColor: [228, 228, 231] }

@@ -155,7 +155,6 @@
         .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: calc(100% + 4px); left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-md); padding: 4px; }
         .autocomplete-items:empty { display: none; border: none; padding: 0; }
         
-        /* Updated layout for text and UOM box */
         .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 2px; }
         
         .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--text-main); color: var(--card-bg); }
@@ -320,7 +319,7 @@
 
         let catalogData = [];
         let customerDataList = [];
-        let customerShortNames = {}; // NEW: Mapping dictionary for short names
+        let customerShortNames = {}; 
         
         let orderCart = [];
         let currentCustomer = null;
@@ -469,11 +468,11 @@
                 const cols = cleanLine.split(',');
                 
                 const customerName = cols[0] ? cols[0].trim() : ''; 
-                const shortName = cols[1] ? cols[1].trim() : customerName; // Fallback to full name if column 2 is blank
+                const shortName = cols[1] ? cols[1].trim() : customerName; 
                 
                 if (customerName) {
                     customerDataList.push(customerName);
-                    customerShortNames[customerName] = shortName; // Store map for PDF
+                    customerShortNames[customerName] = shortName; 
                 }
             }
         }
@@ -560,6 +559,7 @@
                 optionDiv.addEventListener("click", () => selectCustomer(match.name));
                 customerAutocompleteList.appendChild(optionDiv);
             });
+            customerAutocompleteList.scrollTop = 0;
         }
 
         customerInput.addEventListener('input', function() { populateCustomerDropdown(this.value); });
@@ -592,6 +592,7 @@
                 optionDiv.addEventListener("click", () => selectItem(match.item));
                 autocompleteList.appendChild(optionDiv);
             });
+            autocompleteList.scrollTop = 0;
         });
 
         searchInput.addEventListener('keydown', function(e) {
@@ -842,7 +843,6 @@
                     itemMatrix[cartItem.name].customerQtys[currentCust] += val;
                     
                     if (cartItem.note && cartItem.note.trim()) {
-                        // Pull the short name from our dictionary, fallback to full name if missing
                         const shortCustName = customerShortNames[currentCust] || currentCust;
                         itemMatrix[cartItem.name].notes.push(`${shortCustName}: ${cartItem.note.trim()}`);
                     }
@@ -850,7 +850,7 @@
             });
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(16);
@@ -859,7 +859,6 @@
             doc.setFontSize(9);
             doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 7, 20);
 
-            // Map the unique customers to their short names for the table header
             const headerCustomers = uniqueCustomers.map(cust => customerShortNames[cust] || cust);
             const tableHeaders = ["No.", "Item Name", ...headerCustomers, "Total Qty", "Note"];
             const tableRows = [];
@@ -1102,8 +1101,26 @@
             doc.text("(......................................)", 15, currentY + 20);
             doc.text("(......................................)", 135, currentY + 20);
 
-            const fileSafeName = customerName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            doc.save(`SJ_${fileSafeName}.pdf`);
+            // Safe parsing of the delivery date into DDMMYY format
+            let dObj = new Date();
+            if (transaction.deliveryDate) {
+                if (transaction.deliveryDate.length === 10 && transaction.deliveryDate.indexOf('-') === 4) {
+                    const parts = transaction.deliveryDate.split('-');
+                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    dObj = new Date(transaction.deliveryDate);
+                }
+            }
+            let dd = String(dObj.getDate()).padStart(2, '0');
+            let mm = String(dObj.getMonth() + 1).padStart(2, '0');
+            let yy = String(dObj.getFullYear()).substring(2);
+            let dateStr = `${dd}${mm}${yy}`;
+            
+            // Clean up the customer name, title case it, and leave proper spaces
+            let cleanName = customerName.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            let properName = cleanName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            doc.save(`SJ ${properName} ${dateStr}.pdf`);
         }
     </script>
 </body>

@@ -438,6 +438,22 @@
                     console.error("Failed to load history from DB", error);
                 }
             }
+
+            // --- Telegram Auto-Print SJ Logic ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const printSJOrder = urlParams.get('printSJ');
+
+            if (printSJOrder && transactionHistory.length > 0) {
+                const historyIndex = transactionHistory.findIndex(t => t.orderNumber === printSJOrder);
+                if (historyIndex !== -1) {
+                    setTimeout(() => {
+                        generateSuratJalan(historyIndex);
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }, 500);
+                } else {
+                    alert("Order " + printSJOrder + " not found in the database.");
+                }
+            }
         };
 
         function parseItemCSV(text) {
@@ -984,9 +1000,17 @@
             if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
             let message = `🚨 *New Order Saved!*\n👤 *Customer:* ${customer || "No Customer"}\n📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n\n📦 *Items:*\n`;
             cart.forEach((item, index) => { message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; });
+            
+            const appBaseUrl = window.location.href.split('?')[0];
+
             fetch(GAS_WEB_APP_URL, {
                 method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
+                body: JSON.stringify({ 
+                    chat_id: TELEGRAM_CHAT_ID, 
+                    text: message,
+                    appUrl: appBaseUrl,
+                    orderNumber: currentOrderNumber
+                })
             }).catch(err => console.error("Failed to route message through Google Script", err));
         }
 

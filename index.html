@@ -328,7 +328,7 @@
                 <p style="margin: 0 0 10px 0; color: var(--text-muted);">Di tabel <b>Order List</b>, Anda bisa mengubah kuantitas (✏️), menghapus item (🗑️), atau menambahkan catatan spesifik (📝 Note) seperti <i>"Ayam broiler potong 15"</i> atau <i>"Opsi kemasan plastik"</i>.</p>
                 
                 <h4 style="margin: 10px 0 5px 0; color: var(--primary);">4. Kirim Pesanan (Submit)</h4>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik tombol <b>Submit Order</b> di paling bawah. Sistem akan otomatis menyimpan orderan Anda di History dan memberi pemberitahuan pesanan baru kepada kami.</p>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik tombol <b>Submit Order</b> di paling bawah. Sistem akan otomatis menyimpan ke database, membuat file CSV di Drive, dan mengirim rekapan pesanan langsung ke grup Telegram koordinasi.</p>
                 
                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
                 
@@ -771,17 +771,18 @@
             let removed = [];
             let modified = [];
             
+            // Replaced sku with item name mapping to prevent issues with blank SKUs
             let oldMap = new Map();
-            oldCart.forEach(item => oldMap.set(item.sku, item));
+            oldCart.forEach(item => oldMap.set(item.name, item));
             
             let newMap = new Map();
-            newCart.forEach(item => newMap.set(item.sku, item));
+            newCart.forEach(item => newMap.set(item.name, item));
 
             newCart.forEach(newItem => {
-                if (!oldMap.has(newItem.sku)) {
+                if (!oldMap.has(newItem.name)) {
                     added.push(newItem);
                 } else {
-                    let oldItem = oldMap.get(newItem.sku);
+                    let oldItem = oldMap.get(newItem.name);
                     if (parseFloat(newItem.qty) !== parseFloat(oldItem.qty) || newItem.note !== oldItem.note) {
                         modified.push({
                             name: newItem.name,
@@ -796,7 +797,7 @@
             });
 
             oldCart.forEach(oldItem => {
-                if (!newMap.has(oldItem.sku)) {
+                if (!newMap.has(oldItem.name)) {
                     removed.push(oldItem);
                 }
             });
@@ -1122,12 +1123,12 @@
                             message += `- ${item.name}: `;
                             let edits = [];
                             if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
-                                edits.push(`Qty ${item.oldQty} ➡️ ${item.newQty} ${item.uom}`);
+                                edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
                             }
                             if (item.oldNote !== item.newNote) {
                                 let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
                                 let nNote = item.newNote ? `"${item.newNote}"` : "None";
-                                edits.push(`Note ${oNote} ➡️ ${nNote}`);
+                                edits.push(`Note ${oNote} -> ${nNote}`);
                             }
                             message += edits.join(" | ") + "\n";
                         });

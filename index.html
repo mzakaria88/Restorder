@@ -766,12 +766,11 @@
             renderCart();
         }
 
-function getCartChanges(oldCart, newCart) {
+    function getCartChanges(oldCart, newCart) {
     let added = [];
     let removed = [];
     let modified = [];
     
-    // Clone arrays so we can safely remove items as we find matches
     let oldItems = [...oldCart];
     let newItems = [...newCart];
     
@@ -784,12 +783,18 @@ function getCartChanges(oldCart, newCart) {
             let oItem = oldItems[matchIdx];
             // Check if only the Qty changed
             if (parseFloat(nItem.qty) !== parseFloat(oItem.qty)) {
-                modified.push({
-                    name: nItem.name,
-                    oldQty: oItem.qty, newQty: nItem.qty,
-                    uom: nItem.uom,
-                    oldNote: oItem.note || "", newNote: nItem.note || ""
-                });
+                // If it's a Custom Order, treat Qty changes as Delete + Add
+                if (nItem.name.toLowerCase() === "custom order") {
+                    added.push(nItem);
+                    removed.push(oItem);
+                } else {
+                    modified.push({
+                        name: nItem.name,
+                        oldQty: oItem.qty, newQty: nItem.qty,
+                        uom: nItem.uom,
+                        oldNote: oItem.note || "", newNote: nItem.note || ""
+                    });
+                }
             }
             // Remove matched items from the checking arrays
             newItems.splice(i, 1);
@@ -798,9 +803,14 @@ function getCartChanges(oldCart, newCart) {
     }
     
     // PASS 2: Find Note edits (Same Name, but Note was changed)
-    // Whatever is left in the arrays at this point didn't match perfectly. 
     for (let i = newItems.length - 1; i >= 0; i--) {
         let nItem = newItems[i];
+        
+        // Skip Custom Orders here so they fall through to Added/Removed
+        if (nItem.name.toLowerCase() === "custom order") {
+            continue;
+        }
+
         let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
         
         if (matchIdx !== -1) {
@@ -817,12 +827,11 @@ function getCartChanges(oldCart, newCart) {
     }
     
     // PASS 3: Anything left in newItems is a brand new addition
-    added = [...newItems].reverse(); 
+    added.push(...[...newItems].reverse()); 
     
     // PASS 4: Anything left in oldItems was completely removed
-    removed = [...oldItems];
+    removed.push(...oldItems);
 
-    // Reverse modified array so it reads top-to-bottom as ordered
     return { added, removed, modified: modified.reverse() };
 }
         function submitOrder() {
@@ -1111,77 +1120,84 @@ function getCartChanges(oldCart, newCart) {
 
         renderCart();
 
-        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+    function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
+    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+    
+    let message = "";
+    
+    if (isUpdate) {
+        message += `🔄 *ORDER UPDATED!*\n`;
+    } else {
+        message += `🚨 *NEW ORDER SAVED!*\n`;
+    }
+    
+    message += `👤 *Customer:* ${customer || "No Customer"}\n`;
+    message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
+    if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
+    
+    if (isUpdate && changes) {
+        let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
+        
+        if (hasChanges) {
+            message += `📝 *CHANGES MADE:*\n`;
             
-            let message = "";
-            
-            if (isUpdate) {
-                message += `🔄 *ORDER UPDATED!*\n`;
-            } else {
-                message += `🚨 *NEW ORDER SAVED!*\n`;
+            if (changes.added.length > 0) {
+                message += `\n➕ *Added:*\n`;
+                changes.added.forEach(item => {
+                    message += `- ${item.name} (${item.qty} ${item.uom})`;
+                    if (item.note) message += ` _(Note: "${item.note}")_`;
+                    message += `\n`;
+                });
             }
             
-            message += `👤 *Customer:* ${customer || "No Customer"}\n`;
-            message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
-            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
-            
-            if (isUpdate && changes) {
-                let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
-                
-                if (hasChanges) {
-                    message += `📝 *CHANGES MADE:*\n`;
-                    
-                    if (changes.added.length > 0) {
-                        message += `\n➕ *Added:*\n`;
-                        changes.added.forEach(item => message += `- ${item.name} (${item.qty} ${item.uom})\n`);
+            if (changes.modified.length > 0) {
+                message += `\n✏️ *Edited:*\n`;
+                changes.modified.forEach(item => {
+                    message += `- ${item.name}: `;
+                    let edits = [];
+                    if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
+                        edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
                     }
-                    
-                    if (changes.modified.length > 0) {
-                        message += `\n✏️ *Edited:*\n`;
-                        changes.modified.forEach(item => {
-                            message += `- ${item.name}: `;
-                            let edits = [];
-                            if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
-                                edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
-                            }
-                            if (item.oldNote !== item.newNote) {
-                                let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
-                                let nNote = item.newNote ? `"${item.newNote}"` : "None";
-                                edits.push(`Note ${oNote} -> ${nNote}`);
-                            }
-                            message += edits.join(" | ") + "\n";
-                        });
+                    if (item.oldNote !== item.newNote) {
+                        let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
+                        let nNote = item.newNote ? `"${item.newNote}"` : "None";
+                        edits.push(`Note ${oNote} -> ${nNote}`);
                     }
-                    
-                    if (changes.removed.length > 0) {
-                        message += `\n❌ *Removed:*\n`;
-                        changes.removed.forEach(item => message += `- ${item.name} (${item.qty} ${item.uom})\n`);
-                    }
-                    message += `\n━━━━━━━━━━━━━━━━━\n\n`;
-                } else {
-                    message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
-                }
+                    message += edits.join(" | ") + "\n";
+                });
             }
-
-            message += `📦 *Full Items List:*\n`;
-            cart.forEach((item, index) => { 
-                message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
-            });
             
-            const appBaseUrl = window.location.href.split('?')[0];
-
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ 
-                    chat_id: TELEGRAM_CHAT_ID, 
-                    text: message,
-                    appUrl: appBaseUrl,
-                    orderNumber: currentOrderNumber
-                })
-            }).catch(err => console.error("Failed to route message through Google Script", err));
+            if (changes.removed.length > 0) {
+                message += `\n❌ *Removed:*\n`;
+                changes.removed.forEach(item => {
+                    message += `- ${item.name} (${item.qty} ${item.uom})`;
+                    if (item.note) message += ` _(Note: "${item.note}")_`;
+                    message += `\n`;
+                });
+            }
+            message += `\n━━━━━━━━━━━━━━━━━\n\n`;
+        } else {
+            message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
         }
+    }
 
+    message += `📦 *Full Items List:*\n`;
+    cart.forEach((item, index) => { 
+        message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
+    });
+    
+    const appBaseUrl = window.location.href.split('?')[0];
+
+    fetch(GAS_WEB_APP_URL, {
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ 
+            chat_id: TELEGRAM_CHAT_ID, 
+            text: message,
+            appUrl: appBaseUrl,
+            orderNumber: currentOrderNumber
+        })
+    }).catch(err => console.error("Failed to route message through Google Script", err));
+}
         function generateSuratJalan(historyIndex) {
             const { jsPDF } = window.jspdf;
             

@@ -766,45 +766,65 @@
             renderCart();
         }
 
-        function getCartChanges(oldCart, newCart) {
-            let added = [];
-            let removed = [];
-            let modified = [];
-            
-            // Replaced sku with item name mapping to prevent issues with blank SKUs
-            let oldMap = new Map();
-            oldCart.forEach(item => oldMap.set(item.name, item));
-            
-            let newMap = new Map();
-            newCart.forEach(item => newMap.set(item.name, item));
-
-            newCart.forEach(newItem => {
-                if (!oldMap.has(newItem.name)) {
-                    added.push(newItem);
-                } else {
-                    let oldItem = oldMap.get(newItem.name);
-                    if (parseFloat(newItem.qty) !== parseFloat(oldItem.qty) || newItem.note !== oldItem.note) {
-                        modified.push({
-                            name: newItem.name,
-                            oldQty: oldItem.qty,
-                            newQty: newItem.qty,
-                            uom: newItem.uom,
-                            oldNote: oldItem.note || "",
-                            newNote: newItem.note || ""
-                        });
-                    }
-                }
-            });
-
-            oldCart.forEach(oldItem => {
-                if (!newMap.has(oldItem.name)) {
-                    removed.push(oldItem);
-                }
-            });
-
-            return { added, removed, modified };
+function getCartChanges(oldCart, newCart) {
+    let added = [];
+    let removed = [];
+    let modified = [];
+    
+    // Clone arrays so we can safely remove items as we find matches
+    let oldItems = [...oldCart];
+    let newItems = [...newCart];
+    
+    // PASS 1: Find exact matches (Same Name AND Same Note)
+    for (let i = newItems.length - 1; i >= 0; i--) {
+        let nItem = newItems[i];
+        let matchIdx = oldItems.findIndex(o => o.name === nItem.name && o.note === nItem.note);
+        
+        if (matchIdx !== -1) {
+            let oItem = oldItems[matchIdx];
+            // Check if only the Qty changed
+            if (parseFloat(nItem.qty) !== parseFloat(oItem.qty)) {
+                modified.push({
+                    name: nItem.name,
+                    oldQty: oItem.qty, newQty: nItem.qty,
+                    uom: nItem.uom,
+                    oldNote: oItem.note || "", newNote: nItem.note || ""
+                });
+            }
+            // Remove matched items from the checking arrays
+            newItems.splice(i, 1);
+            oldItems.splice(matchIdx, 1);
         }
+    }
+    
+    // PASS 2: Find Note edits (Same Name, but Note was changed)
+    // Whatever is left in the arrays at this point didn't match perfectly. 
+    for (let i = newItems.length - 1; i >= 0; i--) {
+        let nItem = newItems[i];
+        let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
+        
+        if (matchIdx !== -1) {
+            let oItem = oldItems[matchIdx];
+            modified.push({
+                name: nItem.name,
+                oldQty: oItem.qty, newQty: nItem.qty,
+                uom: nItem.uom,
+                oldNote: oItem.note || "", newNote: nItem.note || ""
+            });
+            newItems.splice(i, 1);
+            oldItems.splice(matchIdx, 1);
+        }
+    }
+    
+    // PASS 3: Anything left in newItems is a brand new addition
+    added = [...newItems].reverse(); 
+    
+    // PASS 4: Anything left in oldItems was completely removed
+    removed = [...oldItems];
 
+    // Reverse modified array so it reads top-to-bottom as ordered
+    return { added, removed, modified: modified.reverse() };
+}
         function submitOrder() {
             if (orderCart.length === 0) { alert("Your order is empty!"); return; }
             if (!currentCustomer && !confirm("No customer selected. Do you want to proceed anyway?")) return;

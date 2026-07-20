@@ -233,7 +233,8 @@
                 </div>
             </div>
 
-            <div class="header-right">
+            <div class="header-right" style="display: flex; gap: 8px;">
+                <button class="btn-sm btn-outline" onclick="openGuideModal()">📖 Panduan</button>
                 <button class="btn-sm btn-outline" onclick="openHistoryPopup()">🕒 History</button>
             </div>
         </div>
@@ -305,6 +306,35 @@
             </div>
 
             <div id="historyList" class="history-list">
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Panduan Penggunaan -->
+    <div id="guideModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>📋 Panduan Penggunaan RestOrder</h3>
+                <button class="close-btn" onclick="closeGuideModal()">&times;</button>
+            </div>
+            <div class="history-list" style="font-size: 0.85rem; line-height: 1.5; padding-right: 10px;">
+                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">1. Atur Pelanggan & Tanggal</h4>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik kolom <b>Cust</b> untuk mencari nama outlet Anda (misal: Lampoh Bintaro). Secara default, tanggal <b>Deliv</b> disetel untuk besok hari. Klik jika ingin mengubahnya.</p>
+                
+                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">2. Masukkan Barang ke Keranjang</h4>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Ketik nama barang di kolom <b>Search Item</b>. Pilih varietas yang sesuai dari daftar drop-down yang muncul. Masukkan jumlah di kolom <b>Quantity</b> (bisa desimal, misal: 1.5), lalu klik <b>Add Item</b>. <i>Untuk memesan barang yang belum ada di database, ketik dan pilih <b>"Custom Order"</b>, lalu tulis detail barang pada kolom <b>Note</b>.</i></p>
+                
+                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">3. Cek & Ubah Pesanan</h4>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Di tabel <b>Order List</b>, Anda bisa mengubah kuantitas (✏️), menghapus item (🗑️), atau menambahkan catatan spesifik (📝 Note) seperti <i>"Ayam broiler potong 15"</i> atau <i>"Opsi kemasan plastik"</i>.</p>
+                
+                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">4. Kirim Pesanan (Submit)</h4>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik tombol <b>Submit Order</b> di paling bawah. Sistem akan otomatis menyimpan ke database, membuat file CSV di Drive, dan mengirim rekapan pesanan langsung ke grup Telegram koordinasi.</p>
+                
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
+                
+                <h4 style="margin: 0 0 5px 0; color: var(--primary);">🕒 Fitur Riwayat & Cetak Surat Jalan (SJ)</h4>
+                <p style="margin: 0 0 5px 0; color: var(--text-muted);">Buka menu <b>History</b> untuk memuat ulang pesanan lama (<b>Load</b>) atau mengunduh <b>Surat Jalan Resmi (SJ)</b> berformat PDF yang siap dicetak.</p>
+                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Gunakan fitur <b>📦 Consolidate</b> di dalam menu History untuk menggabungkan beberapa pesanan outlet menjadi satu rekap total kuantitas.</p>
             </div>
         </div>
     </div>
@@ -641,9 +671,20 @@
                     deliveryInputContainer.style.display = 'none'; deliveryDisplay.style.display = 'inline-block'; deliveryEditBtn.style.display = 'inline-block';
                 }
             }
-            const modal = document.getElementById('historyModal');
-            if (e.target === modal) closeHistoryPopup();
+            const historyModal = document.getElementById('historyModal');
+            if (e.target === historyModal) closeHistoryPopup();
+
+            const guideModal = document.getElementById('guideModal');
+            if (e.target === guideModal) closeGuideModal();
         });
+
+        function openGuideModal() {
+            document.getElementById('guideModal').style.display = 'flex';
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').style.display = 'none';
+        }
 
         function addToCart() {
             const selectedSku = document.getElementById('selectedSku').value;
@@ -725,12 +766,64 @@
             renderCart();
         }
 
+        function getCartChanges(oldCart, newCart) {
+            let added = [];
+            let removed = [];
+            let modified = [];
+            
+            let oldMap = new Map();
+            oldCart.forEach(item => oldMap.set(item.sku, item));
+            
+            let newMap = new Map();
+            newCart.forEach(item => newMap.set(item.sku, item));
+
+            newCart.forEach(newItem => {
+                if (!oldMap.has(newItem.sku)) {
+                    added.push(newItem);
+                } else {
+                    let oldItem = oldMap.get(newItem.sku);
+                    if (parseFloat(newItem.qty) !== parseFloat(oldItem.qty) || newItem.note !== oldItem.note) {
+                        modified.push({
+                            name: newItem.name,
+                            oldQty: oldItem.qty,
+                            newQty: newItem.qty,
+                            uom: newItem.uom,
+                            oldNote: oldItem.note || "",
+                            newNote: newItem.note || ""
+                        });
+                    }
+                }
+            });
+
+            oldCart.forEach(oldItem => {
+                if (!newMap.has(oldItem.sku)) {
+                    removed.push(oldItem);
+                }
+            });
+
+            return { added, removed, modified };
+        }
+
         function submitOrder() {
             if (orderCart.length === 0) { alert("Your order is empty!"); return; }
             if (!currentCustomer && !confirm("No customer selected. Do you want to proceed anyway?")) return;
 
             const isUpdate = !!currentOrderNumber;
-            if (!isUpdate) { currentOrderNumber = generateOrderNumber(); }
+            let oldCart = [];
+            let cartChanges = null;
+
+            if (isUpdate) { 
+                const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
+                if (idx !== -1) {
+                    oldCart = JSON.parse(JSON.stringify(transactionHistory[idx].cart));
+                }
+            } else { 
+                currentOrderNumber = generateOrderNumber(); 
+            }
+
+            if (isUpdate) {
+                cartChanges = getCartChanges(oldCart, orderCart);
+            }
 
             const transactionData = {
                 orderNumber: currentOrderNumber,
@@ -756,7 +849,8 @@
             } else {
                 alert("⚠️ Warning: Your Database URL is not set. Order is only saved locally!");
             }
-            sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart);
+            
+            sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart, isUpdate, cartChanges);
             resetAppUI();
         }
         
@@ -996,10 +1090,63 @@
 
         renderCart();
 
-        function sendTelegramOrderAlert(customer, deliveryDate, cart) {
+        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
             if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
-            let message = `🚨 *New Order Saved!*\n👤 *Customer:* ${customer || "No Customer"}\n📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n\n📦 *Items:*\n`;
-            cart.forEach((item, index) => { message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; });
+            
+            let message = "";
+            
+            if (isUpdate) {
+                message += `🔄 *ORDER UPDATED!*\n`;
+            } else {
+                message += `🚨 *NEW ORDER SAVED!*\n`;
+            }
+            
+            message += `👤 *Customer:* ${customer || "No Customer"}\n`;
+            message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
+            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
+            
+            if (isUpdate && changes) {
+                let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
+                
+                if (hasChanges) {
+                    message += `📝 *CHANGES MADE:*\n`;
+                    
+                    if (changes.added.length > 0) {
+                        message += `\n➕ *Added:*\n`;
+                        changes.added.forEach(item => message += `- ${item.name} (${item.qty} ${item.uom})\n`);
+                    }
+                    
+                    if (changes.modified.length > 0) {
+                        message += `\n✏️ *Edited:*\n`;
+                        changes.modified.forEach(item => {
+                            message += `- ${item.name}: `;
+                            let edits = [];
+                            if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
+                                edits.push(`Qty ${item.oldQty} ➡️ ${item.newQty} ${item.uom}`);
+                            }
+                            if (item.oldNote !== item.newNote) {
+                                let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
+                                let nNote = item.newNote ? `"${item.newNote}"` : "None";
+                                edits.push(`Note ${oNote} ➡️ ${nNote}`);
+                            }
+                            message += edits.join(" | ") + "\n";
+                        });
+                    }
+                    
+                    if (changes.removed.length > 0) {
+                        message += `\n❌ *Removed:*\n`;
+                        changes.removed.forEach(item => message += `- ${item.name} (${item.qty} ${item.uom})\n`);
+                    }
+                    message += `\n━━━━━━━━━━━━━━━━━\n\n`;
+                } else {
+                    message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
+                }
+            }
+
+            message += `📦 *Full Items List:*\n`;
+            cart.forEach((item, index) => { 
+                message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
+            });
             
             const appBaseUrl = window.location.href.split('?')[0];
 

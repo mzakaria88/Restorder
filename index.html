@@ -766,74 +766,75 @@
             renderCart();
         }
 
-    function getCartChanges(oldCart, newCart) {
-    let added = [];
-    let removed = [];
-    let modified = [];
-    
-    let oldItems = [...oldCart];
-    let newItems = [...newCart];
-    
-    // PASS 1: Find exact matches (Same Name AND Same Note)
-    for (let i = newItems.length - 1; i >= 0; i--) {
-        let nItem = newItems[i];
-        let matchIdx = oldItems.findIndex(o => o.name === nItem.name && o.note === nItem.note);
-        
-        if (matchIdx !== -1) {
-            let oItem = oldItems[matchIdx];
-            // Check if only the Qty changed
-            if (parseFloat(nItem.qty) !== parseFloat(oItem.qty)) {
-                // If it's a Custom Order, treat Qty changes as Delete + Add
+        function getCartChanges(oldCart, newCart) {
+            let added = [];
+            let removed = [];
+            let modified = [];
+            
+            let oldItems = [...oldCart];
+            let newItems = [...newCart];
+            
+            // PASS 1: Find exact matches (Same Name AND Same Note)
+            for (let i = newItems.length - 1; i >= 0; i--) {
+                let nItem = newItems[i];
+                let matchIdx = oldItems.findIndex(o => o.name === nItem.name && o.note === nItem.note);
+                
+                if (matchIdx !== -1) {
+                    let oItem = oldItems[matchIdx];
+                    // Check if only the Qty changed
+                    if (parseFloat(nItem.qty) !== parseFloat(oItem.qty)) {
+                        // If it's a Custom Order, treat Qty changes as Delete + Add
+                        if (nItem.name.toLowerCase() === "custom order") {
+                            added.push(nItem);
+                            removed.push(oItem);
+                        } else {
+                            modified.push({
+                                name: nItem.name,
+                                oldQty: oItem.qty, newQty: nItem.qty,
+                                uom: nItem.uom,
+                                oldNote: oItem.note || "", newNote: nItem.note || ""
+                            });
+                        }
+                    }
+                    // Remove matched items from the checking arrays
+                    newItems.splice(i, 1);
+                    oldItems.splice(matchIdx, 1);
+                }
+            }
+            
+            // PASS 2: Find Note edits (Same Name, but Note was changed)
+            for (let i = newItems.length - 1; i >= 0; i--) {
+                let nItem = newItems[i];
+                
+                // Skip Custom Orders here so they fall through to Added/Removed
                 if (nItem.name.toLowerCase() === "custom order") {
-                    added.push(nItem);
-                    removed.push(oItem);
-                } else {
+                    continue;
+                }
+
+                let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
+                
+                if (matchIdx !== -1) {
+                    let oItem = oldItems[matchIdx];
                     modified.push({
                         name: nItem.name,
                         oldQty: oItem.qty, newQty: nItem.qty,
                         uom: nItem.uom,
                         oldNote: oItem.note || "", newNote: nItem.note || ""
                     });
+                    newItems.splice(i, 1);
+                    oldItems.splice(matchIdx, 1);
                 }
             }
-            // Remove matched items from the checking arrays
-            newItems.splice(i, 1);
-            oldItems.splice(matchIdx, 1);
-        }
-    }
-    
-    // PASS 2: Find Note edits (Same Name, but Note was changed)
-    for (let i = newItems.length - 1; i >= 0; i--) {
-        let nItem = newItems[i];
-        
-        // Skip Custom Orders here so they fall through to Added/Removed
-        if (nItem.name.toLowerCase() === "custom order") {
-            continue;
+            
+            // PASS 3: Anything left in newItems is a brand new addition
+            added.push(...[...newItems].reverse()); 
+            
+            // PASS 4: Anything left in oldItems was completely removed
+            removed.push(...oldItems);
+
+            return { added, removed, modified: modified.reverse() };
         }
 
-        let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
-        
-        if (matchIdx !== -1) {
-            let oItem = oldItems[matchIdx];
-            modified.push({
-                name: nItem.name,
-                oldQty: oItem.qty, newQty: nItem.qty,
-                uom: nItem.uom,
-                oldNote: oItem.note || "", newNote: nItem.note || ""
-            });
-            newItems.splice(i, 1);
-            oldItems.splice(matchIdx, 1);
-        }
-    }
-    
-    // PASS 3: Anything left in newItems is a brand new addition
-    added.push(...[...newItems].reverse()); 
-    
-    // PASS 4: Anything left in oldItems was completely removed
-    removed.push(...oldItems);
-
-    return { added, removed, modified: modified.reverse() };
-}
         function submitOrder() {
             if (orderCart.length === 0) { alert("Your order is empty!"); return; }
             if (!currentCustomer && !confirm("No customer selected. Do you want to proceed anyway?")) return;
@@ -1120,84 +1121,85 @@
 
         renderCart();
 
-    function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
-    if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
-    
-    let message = "";
-    
-    if (isUpdate) {
-        message += `🔄 *ORDER UPDATED!*\n`;
-    } else {
-        message += `🚨 *NEW ORDER SAVED!*\n`;
-    }
-    
-    message += `👤 *Customer:* ${customer || "No Customer"}\n`;
-    message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
-    if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
-    
-    if (isUpdate && changes) {
-        let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
-        
-        if (hasChanges) {
-            message += `📝 *CHANGES MADE:*\n`;
+        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
             
-            if (changes.added.length > 0) {
-                message += `\n➕ *Added:*\n`;
-                changes.added.forEach(item => {
-                    message += `- ${item.name} (${item.qty} ${item.uom})`;
-                    if (item.note) message += ` _(Note: "${item.note}")_`;
-                    message += `\n`;
-                });
+            let message = "";
+            
+            if (isUpdate) {
+                message += `🔄 *ORDER UPDATED!*\n`;
+            } else {
+                message += `🚨 *NEW ORDER SAVED!*\n`;
             }
             
-            if (changes.modified.length > 0) {
-                message += `\n✏️ *Edited:*\n`;
-                changes.modified.forEach(item => {
-                    message += `- ${item.name}: `;
-                    let edits = [];
-                    if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
-                        edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
+            message += `👤 *Customer:* ${customer || "No Customer"}\n`;
+            message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
+            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
+            
+            if (isUpdate && changes) {
+                let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
+                
+                if (hasChanges) {
+                    message += `📝 *CHANGES MADE:*\n`;
+                    
+                    if (changes.added.length > 0) {
+                        message += `\n➕ *Added:*\n`;
+                        changes.added.forEach(item => {
+                            message += `- ${item.name} (${item.qty} ${item.uom})`;
+                            if (item.note) message += ` _(Note: "${item.note}")_`;
+                            message += `\n`;
+                        });
                     }
-                    if (item.oldNote !== item.newNote) {
-                        let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
-                        let nNote = item.newNote ? `"${item.newNote}"` : "None";
-                        edits.push(`Note ${oNote} -> ${nNote}`);
+                    
+                    if (changes.modified.length > 0) {
+                        message += `\n✏️ *Edited:*\n`;
+                        changes.modified.forEach(item => {
+                            message += `- ${item.name}: `;
+                            let edits = [];
+                            if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
+                                edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
+                            }
+                            if (item.oldNote !== item.newNote) {
+                                let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
+                                let nNote = item.newNote ? `"${item.newNote}"` : "None";
+                                edits.push(`Note ${oNote} -> ${nNote}`);
+                            }
+                            message += edits.join(" | ") + "\n";
+                        });
                     }
-                    message += edits.join(" | ") + "\n";
-                });
+                    
+                    if (changes.removed.length > 0) {
+                        message += `\n❌ *Removed:*\n`;
+                        changes.removed.forEach(item => {
+                            message += `- ${item.name} (${item.qty} ${item.uom})`;
+                            if (item.note) message += ` _(Note: "${item.note}")_`;
+                            message += `\n`;
+                        });
+                    }
+                    message += `\n━━━━━━━━━━━━━━━━━\n\n`;
+                } else {
+                    message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
+                }
             }
+
+            message += `📦 *Full Items List:*\n`;
+            cart.forEach((item, index) => { 
+                message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
+            });
             
-            if (changes.removed.length > 0) {
-                message += `\n❌ *Removed:*\n`;
-                changes.removed.forEach(item => {
-                    message += `- ${item.name} (${item.qty} ${item.uom})`;
-                    if (item.note) message += ` _(Note: "${item.note}")_`;
-                    message += `\n`;
-                });
-            }
-            message += `\n━━━━━━━━━━━━━━━━━\n\n`;
-        } else {
-            message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
+            const appBaseUrl = window.location.href.split('?')[0];
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ 
+                    chat_id: TELEGRAM_CHAT_ID, 
+                    text: message,
+                    appUrl: appBaseUrl,
+                    orderNumber: currentOrderNumber
+                })
+            }).catch(err => console.error("Failed to route message through Google Script", err));
         }
-    }
 
-    message += `📦 *Full Items List:*\n`;
-    cart.forEach((item, index) => { 
-        message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
-    });
-    
-    const appBaseUrl = window.location.href.split('?')[0];
-
-    fetch(GAS_WEB_APP_URL, {
-        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ 
-            chat_id: TELEGRAM_CHAT_ID, 
-            text: message,
-            appUrl: appBaseUrl,
-            orderNumber: currentOrderNumber
-        })
-    }).catch(err => console.error("Failed to route message through Google Script", err));
-}
         function generateSuratJalan(historyIndex) {
             const { jsPDF } = window.jspdf;
             
@@ -1330,6 +1332,37 @@
 
             doc.save(`SJ ${properName} ${dateStr}.pdf`);
         }
+
+        // --- Keyboard Shortcuts Listener ---
+        document.addEventListener('keydown', function(e) {
+            // Use Ctrl + Alt together to avoid browser conflicts
+            if (e.ctrlKey && e.altKey) {
+                switch(e.key.toLowerCase()) {
+                    case 's': // Ctrl + Alt + S: Focus Search Item and select all text
+                        e.preventDefault();
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput && !searchInput.disabled) {
+                            searchInput.focus();
+                            searchInput.select();
+                        }
+                        break;
+                    case 'n': // Ctrl + Alt + N: Open note input for the last added item
+                        e.preventDefault();
+                        if (orderCart.length > 0) {
+                            editNote(orderCart.length - 1);
+                        } else {
+                            alert("Your cart is empty. Add an item before adding a note.");
+                        }
+                        break;
+                    case 'h': // Ctrl + Alt + H: Open History modal
+                        e.preventDefault();
+                        if (typeof openHistoryPopup === 'function') {
+                            openHistoryPopup();
+                        }
+                        break;
+                }
+            }
+        });
     </script>
 </body>
 </html>

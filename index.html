@@ -184,6 +184,38 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* --- Tooltip Styles --- */
+        .tooltip-container {
+            position: relative;
+            display: inline-flex;
+        }
+        .custom-tooltip {
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: var(--shadow-md);
+            pointer-events: none;
+            animation: fadeIn 0.15s ease-out;
+        }
+        .custom-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -4px;
+            border-width: 4px;
+            border-style: solid;
+            border-color: var(--primary) transparent transparent transparent;
+        }
+
         /* --- Mobile Responsiveness --- */
         @media (max-width: 680px) {
             body { padding: 0; background-color: var(--card-bg); }
@@ -716,8 +748,40 @@
             }
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td style="text-align: center; font-weight: 500; color: var(--text-muted);">${index + 1}</td><td style="font-weight: 500; color: var(--text-main);">${item.name}</td><td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td><td><span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border: 1px solid var(--border); border-radius: 3px; font-weight: 500;">${item.uom}</span></td><td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td><td class="actions-cell" id="action-cell-${index}"><button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button><button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button><button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button></td>`;
+                row.innerHTML = `<td style="text-align: center; font-weight: 500; color: var(--text-muted);">${index + 1}</td><td style="font-weight: 500; color: var(--text-main);">${item.name}</td><td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td><td><span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border: 1px solid var(--border); border-radius: 3px; font-weight: 500;">${item.uom}</span></td><td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td><td class="actions-cell" id="action-cell-${index}"><button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button><span class="tooltip-container" id="tooltip-container-${index}"><button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button></span><button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button></td>`;
                 tbody.appendChild(row);
+
+                // Add event listeners for the tooltip on the note action container
+                const container = document.getElementById(`tooltip-container-${index}`);
+                let tooltipTimer = null;
+                let activeTooltip = null;
+
+                container.addEventListener('mouseenter', () => {
+                    // Random chance of 1:10 (10% chance)
+                    const randomChance = Math.floor(Math.random() * 10) === 0;
+                    if (randomChance && !activeTooltip) {
+                        activeTooltip = document.createElement('div');
+                        activeTooltip.className = 'custom-tooltip';
+                        activeTooltip.innerText = 'Tip: tekan Ctrl + Alt + N untuk menginput catatan di item yang baru ditambahkan';
+                        container.appendChild(activeTooltip);
+
+                        // Visible for 3 seconds or after user defocuses, whichever is shorter
+                        tooltipTimer = setTimeout(() => {
+                            if (activeTooltip) {
+                                activeTooltip.remove();
+                                activeTooltip = null;
+                            }
+                        }, 3000);
+                    }
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    if (tooltipTimer) clearTimeout(tooltipTimer);
+                    if (activeTooltip) {
+                        activeTooltip.remove();
+                        activeTooltip = null;
+                    }
+                });
             });
         }
 

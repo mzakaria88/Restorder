@@ -758,11 +758,11 @@
 
                 container.addEventListener('mouseenter', () => {
                     // Random chance of 1:10 (10% chance)
-                    const randomChance = Math.floor(Math.random() * 10) === 0;
+                    const randomChance = Math.floor(Math.random() * 8) === 0;
                     if (randomChance && !activeTooltip) {
                         activeTooltip = document.createElement('div');
                         activeTooltip.className = 'custom-tooltip';
-                        activeTooltip.innerText = 'Tip: tekan Ctrl + Alt + N untuk menginput catatan di item yang baru ditambahkan';
+                        activeTooltip.innerText = 'Tip: tekan Ctrl + Alt + N utk menginput catatan di item yg baru ditambahkan';
                         container.appendChild(activeTooltip);
 
                         // Visible for 3 seconds or after user defocuses, whichever is shorter

@@ -646,7 +646,7 @@
 
         .autocomplete-items:empty { display: none; }
 
-        .autocomplete-items div {
+        .autocomplete-item {
             padding: 6px 10px;
             cursor: pointer;
             border-radius: 3px;
@@ -654,49 +654,58 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            transition: background 0.1s ease;
         }
 
-        .autocomplete-items div:hover, .autocomplete-items div.active {
+        .autocomplete-item:hover, .autocomplete-item.active {
             background-color: var(--primary);
             color: #ffffff;
         }
 
-        .autocomplete-items div .item-info {
+        .autocomplete-item .item-info {
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 2px;
             text-align: left;
+            width: 100%;
         }
 
-        .autocomplete-items div .item-name {
+        .autocomplete-item .item-title-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .autocomplete-item .item-name {
             font-weight: 600;
             color: var(--text-main);
         }
-        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name {
+        .autocomplete-item:hover .item-name, .autocomplete-item.active .item-name {
             color: #ffffff;
         }
 
-        .autocomplete-items div .item-meta {
-            font-size: 0.68rem;
-            color: var(--text-muted);
-        }
-        .autocomplete-items div:hover .item-meta, .autocomplete-items div.active .item-meta {
-            color: #cbd5e1;
-        }
-
-        .autocomplete-items div .item-uom {
+        .autocomplete-item .item-uom {
             font-size: 0.68rem;
             font-weight: 700;
             background: var(--primary-light);
             border: 1px solid var(--border);
             color: var(--text-secondary);
-            padding: 1px 6px;
+            padding: 1px 5px;
             border-radius: 3px;
+            text-transform: uppercase;
         }
-        .autocomplete-items div:hover .item-uom, .autocomplete-items div.active .item-uom {
+        .autocomplete-item:hover .item-uom, .autocomplete-item.active .item-uom {
             background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
             border-color: transparent;
+        }
+
+        .autocomplete-item .item-meta {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+        .autocomplete-item:hover .item-meta, .autocomplete-item.active .item-meta {
+            color: #cbd5e1;
         }
 
         /* Compact Order Table Section */
@@ -2109,22 +2118,31 @@
 
             scoredMatches.slice(0, 20).forEach((match, index) => {
                 const optionDiv = document.createElement("div");
+                optionDiv.className = 'autocomplete-item';
                 if (index === 0) { optionDiv.classList.add('active'); currentFocusItem = 0; }
                 optionDiv.innerHTML = `
                     <div class="item-info">
-                        <span class="item-name">${match.item.name}</span>
-                        <span class="item-meta">${match.item.variant ? match.item.variant + ' • ' : ''}SKU: ${match.item.sku || '-'}</span>
+                        <div class="item-title-row">
+                            <span class="item-name">${match.item.name}</span>
+                            <span class="item-uom">${match.item.uom}</span>
+                        </div>
+                        ${(match.item.variant || match.item.sku) ? `<span class="item-meta">${match.item.variant ? match.item.variant + ' • ' : ''}SKU: ${match.item.sku || '-'}</span>` : ''}
                     </div>
-                    <span class="item-uom">${match.item.uom}</span>
                 `;
                 optionDiv.addEventListener("click", () => selectItem(match.item));
+                optionDiv.addEventListener("mouseenter", () => {
+                    const allItems = autocompleteList.querySelectorAll('.autocomplete-item');
+                    allItems.forEach(el => el.classList.remove('active'));
+                    optionDiv.classList.add('active');
+                    currentFocusItem = index;
+                });
                 autocompleteList.appendChild(optionDiv);
             });
             autocompleteList.scrollTop = 0;
         });
 
         searchInput.addEventListener('keydown', function(e) {
-            const items = autocompleteList.getElementsByTagName('div');
+            const items = autocompleteList.querySelectorAll('.autocomplete-item');
             if (e.key === 'ArrowDown') {
                 currentFocusItem = addActive(items, ++currentFocusItem);
             } else if (e.key === 'ArrowUp') {
@@ -2148,7 +2166,7 @@
         });
 
         function selectItem(item) {
-            searchInput.value = item.name;
+            searchInput.value = `${item.name} (${item.uom})`;
             selectedSkuInput.value = item.sku;
             selectedUomBadge.innerText = item.uom;
             selectedUomBadge.style.display = 'inline-block';

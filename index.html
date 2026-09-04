@@ -2668,6 +2668,13 @@
             }
         }
 
+        function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...options, signal: controller.signal })
+                .finally(() => clearTimeout(timer));
+        }
+
         let isFlushingQueue = false;
         async function flushOfflineQueue() {
             if (isFlushingQueue) return;
@@ -2701,10 +2708,10 @@
                         promises.push(syncOrderToLampohSheet(item.transactionData));
                     }
                     if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
-                        promises.push(fetch(GAS_DB_URL, {
+                        promises.push(fetchWithTimeout(GAS_DB_URL, {
                             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify(item.transactionData)
-                        }));
+                        }, 12000));
                     }
                     if (item.telegramPayload && GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes('PASTE_YOUR')) {
                         promises.push(sendTelegramPayload(item.telegramPayload));
@@ -2846,46 +2853,18 @@
                 orderNumber: currentOrderNumber
             };
 
-            if (!willSendOnline) {
-                // Queue into offline outbox
-                addToOfflineQueue({
-                    orderNumber: currentOrderNumber,
-                    transactionData: transactionData,
-                    telegramPayload: telegramPayload,
-                    updatedAt: now,
-                    isUpdate: isUpdate
-                });
-
+            // Optimistic UI: Reset UI immediately (0.3s) so the user can continue taking orders without waiting!
+            setTimeout(() => {
                 submitBtn.disabled = false;
                 submitBtnText.innerText = "Kirim Pesanan";
-                showToast(`Pesanan #${currentOrderNumber} tersimpan di lokal (Offline)! Akan otomatis dikirim saat online.`, "warning", 5000);
                 resetAppUI();
                 updateHistoryCountBadge();
                 updateOfflineQueueBanner();
                 populateHistoryList();
-                return;
-            }
+            }, 300);
 
-            // Attempt online dispatch
-            try {
-                const sheetPromise = syncOrderToLampohSheet(transactionData);
-                const dbPromise = (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) ?
-                    fetch(GAS_DB_URL, {
-                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                        body: JSON.stringify(transactionData)
-                    }) : Promise.resolve();
-                const tgPromise = sendTelegramPayload(telegramPayload);
-
-                await Promise.all([sheetPromise, dbPromise, tgPromise]);
-
-                transactionData.syncStatus = 'synced';
-                removeFromOfflineQueue(currentOrderNumber);
-                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-                showToast(`Pesanan #${currentOrderNumber} berhasil dikirim ke server & Telegram!`, "success", 4000);
-            } catch (netErr) {
-                console.warn("Gagal mengirim online, dialihkan ke antrean offline:", netErr);
-                transactionData.syncStatus = 'pending';
-                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+            if (!willSendOnline) {
+                // Queue into offline outbox immediately
                 addToOfflineQueue({
                     orderNumber: currentOrderNumber,
                     transactionData: transactionData,
@@ -2893,25 +2872,57 @@
                     updatedAt: now,
                     isUpdate: isUpdate
                 });
-                showToast(`Koneksi terputus saat mengirim. Pesanan #${currentOrderNumber} aman disimpan di antrean offline.`, "warning", 5000);
+                showToast(`Pesanan #${currentOrderNumber} tersimpan di lokal (Offline)! Akan otomatis dikirim saat online.`, "warning", 5000);
+                return;
             }
 
-            submitBtn.disabled = false;
-            submitBtnText.innerText = "Kirim Pesanan";
-            resetAppUI();
-            updateHistoryCountBadge();
-            updateOfflineQueueBanner();
-            populateHistoryList();
+            // Online feedback: Saved locally instantly, now transmitting in background
+            showToast(`Pesanan #${currentOrderNumber} tersimpan! Mengirim ke cloud & Telegram...`, "success", 3000);
+
+            // Non-blocking background worker with safety timeout
+            (async () => {
+                try {
+                    const sheetPromise = syncOrderToLampohSheet(transactionData);
+                    const dbPromise = (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) ?
+                        fetchWithTimeout(GAS_DB_URL, {
+                            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify(transactionData)
+                        }, 12000) : Promise.resolve();
+                    const tgPromise = sendTelegramPayload(telegramPayload);
+
+                    await Promise.all([sheetPromise, dbPromise, tgPromise]);
+
+                    // Successfully synchronized to Google Sheet & Telegram
+                    transactionData.syncStatus = 'synced';
+                    removeFromOfflineQueue(currentOrderNumber);
+                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                    populateHistoryList();
+                } catch (netErr) {
+                    console.warn("Gagal mengirim online di background, dialihkan ke antrean offline:", netErr);
+                    transactionData.syncStatus = 'pending';
+                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                    addToOfflineQueue({
+                        orderNumber: currentOrderNumber,
+                        transactionData: transactionData,
+                        telegramPayload: telegramPayload,
+                        updatedAt: now,
+                        isUpdate: isUpdate
+                    });
+                    showToast(`Koneksi cloud lambat/terputus. Pesanan #${currentOrderNumber} aman di antrean offline.`, "warning", 5000);
+                    populateHistoryList();
+                    updateOfflineQueueBanner();
+                }
+            })();
         }
 
         function syncOrderToLampohSheet(transactionData) {
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return Promise.resolve();
-            return fetch(GAS_SHEET_SYNC_URL, {
+            return fetchWithTimeout(GAS_SHEET_SYNC_URL, {
                 method: 'POST',
                 mode: 'no-cors', 
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(transactionData)
-            });
+            }, 12000);
         }
 
         async function fetchLatestHistory() {
@@ -3017,10 +3028,10 @@
 
         function sendTelegramPayload(payload) {
             if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR') || !payload) return Promise.resolve();
-            return fetch(GAS_WEB_APP_URL, {
+            return fetchWithTimeout(GAS_WEB_APP_URL, {
                 method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
-            });
+            }, 12000);
         }
 
         function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {

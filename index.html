@@ -1,378 +1,1683 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RestOrder by NPN</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* Modern Monochrome & High-Contrast Palette */
-        :root {
-            --primary: #18181b; 
-            --primary-hover: #3f3f46; 
-            --primary-light: #f4f4f5;
-            --success: #10b981; 
-            --success-hover: #059669; 
-            --danger: #ef4444;
-            --danger-hover: #dc2626; 
-            --danger-light: #fef2f2; 
-            --bg-color: #fafafa;
-            --card-bg: #ffffff; 
-            --text-main: #09090b; 
-            --text-muted: #71717a;
-            --border: #e4e4e7; 
-            --radius-lg: 10px; 
-            --radius-md: 6px; 
-            --radius-sm: 4px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-            --shadow-glass: 0 4px 12px rgba(0, 0, 0, 0.03);
-        }
-
-        /* --- Scrollbar --- */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
-
-        body { 
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg-color); color: var(--text-main); 
-            padding: 2rem 1rem; margin: 0; display: flex; justify-content: center;
-            align-items: flex-start; min-height: 100vh; line-height: 1.4;
-            -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
-        }
-
-        .container {
-            background-color: var(--card-bg); padding: 1.5rem;
-            border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-            width: 100%; max-width: 900px; position: relative;
-        }
-
-        /* --- Header & Typography --- */
-        .main-header { 
-            display: flex; justify-content: space-between; align-items: flex-start; 
-            margin-bottom: 0; padding-bottom: 0.5rem; 
-        }
-        .header-left { display: flex; flex-direction: column; gap: 4px; flex: 1; }
-        .header-right { flex: 1; display: flex; justify-content: flex-end; align-items: flex-start; }
-
-        h2 { margin: 0; color: var(--text-main); font-size: 1.25rem; font-weight: 700; letter-spacing: -0.03em; display: flex; align-items: center; gap: 8px; }
-        h2::after { content: "App"; font-size: 0.6rem; text-transform: uppercase; background: var(--primary); color: #fff; padding: 2px 6px; border-radius: 3px; font-weight: 600; letter-spacing: 0.05em; }
-
-        .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-
-        /* --- Minimalist Customer/Delivery Badges --- */
-        .customer-section {
-            font-size: 0.75rem; display: flex; align-items: center; gap: 6px; position: relative;
-            background-color: var(--primary-light); padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid transparent; transition: all 0.2s ease;
-        }
-        .customer-section:hover { border-color: var(--border); background-color: var(--card-bg); }
-
-        .customer-label { font-weight: 600; color: var(--text-muted); }
-        
-        #customerDisplay, #deliveryDisplay { color: var(--text-main); font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.2s ease; border-bottom: 1px dashed var(--text-muted); }
-        #customerDisplay:hover, #deliveryDisplay:hover { opacity: 0.7; }
-
-        #customerEditBtn, #deliveryEditBtn { cursor: pointer; font-size: 0.75rem; opacity: 0.4; transition: opacity 0.2s; margin-left: 2px; }
-        #customerEditBtn:hover, #deliveryEditBtn:hover { opacity: 1; }
-
-        #customerInputContainer, #deliveryInputContainer { display: none; position: relative; }
-        #customerInput { padding: 2px 8px; border: 1px solid var(--primary); border-radius: var(--radius-sm); font-size: 0.75rem; width: 140px; outline: none; font-family: inherit; height: 20px;}
-
-        /* --- Edge-to-Edge Sticky Glass Panel --- */
-        .sticky-panel {
-            position: sticky; 
-            top: -1px; 
-            z-index: 100;
-            background-color: rgba(255, 255, 255, 0.85); 
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 0.75rem 1.5rem;
-            margin: 0 -1.5rem 0.5rem -1.5rem;
-            border-bottom: 1px solid var(--border);
-            box-shadow: var(--shadow-glass);
-        }
-
-        /* --- Edit Mode Notice --- */
-        .edit-mode-container { 
-            display: none; flex-direction: row; align-items: center; justify-content: space-between; 
-            padding: 8px 12px; margin-bottom: 0.75rem; 
-            background-color: var(--danger-light);
-            border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); 
-        }
-        .edit-mode-label { font-size: 0.75rem; font-weight: 600; color: var(--danger); letter-spacing: 0.01em; margin: 0; }
-        .edit-mode-pill { background-color: transparent; border: 1px solid var(--danger); color: var(--danger); border-radius: var(--radius-sm); padding: 2px 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
-        .edit-mode-pill:hover { background-color: var(--danger); color: white; }
-
-        /* --- Compact Input Row --- */
-        .input-row { display: grid; grid-template-columns: 2.5fr 1fr auto; gap: 10px; align-items: end; }
-        .form-group { position: relative; display: flex; flex-direction: column; }
-        label { font-weight: 600; margin-bottom: 4px; font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        input { padding: 0 10px; height: 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: inherit; color: var(--text-main); background-color: var(--bg-color); transition: all 0.2s ease; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); }
-        input:focus { border-color: var(--primary); background-color: var(--card-bg); box-shadow: 0 0 0 1px var(--primary); }
-        input::placeholder { color: #a1a1aa; }
-
-        /* --- Buttons --- */
-        button { padding: 0 14px; height: 32px; background-color: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.825rem; font-weight: 500; font-family: inherit; transition: all 0.15s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm); }
-        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button:active { transform: scale(0.98); box-shadow: none; }
-        button:disabled { background-color: #e4e4e7; color: #a1a1aa; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .btn-danger { background-color: var(--card-bg); color: var(--danger); border: 1px solid var(--danger); box-shadow: none; }
-        .btn-danger:hover { background-color: var(--danger-light); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1); }
-        
-        .btn-success { background-color: var(--success); color: white; border: 1px solid var(--success); }
-        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); }
-        
-        .btn-outline { background-color: var(--card-bg); border: 1px solid var(--border); color: var(--text-main); box-shadow: var(--shadow-sm); }
-        .btn-outline:hover { background-color: var(--border); border-color: var(--text-muted); color: var(--primary); transform: translateY(-1px); }
-        
-        .btn-sm { padding: 0 8px; font-size: 0.75rem; height: 26px; font-weight: 500; }
-
-        /* --- Table Layout --- */
-        .table-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; margin-top: 0.5rem; }
-        .table-header-actions h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
-        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--card-bg); }
-
-        table { width: 100%; border-collapse: collapse; font-size: 0.825rem; min-width: 600px; }
-        th, td { padding: 8px 12px; text-align: left; }
-        th { background-color: var(--primary-light); color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
-        td { border-bottom: 1px solid var(--border); }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background-color: var(--bg-color); }
-
-        .actions-cell { display: flex; gap: 4px; }
-        .inline-edit-input { width: 60px; height: 26px; padding: 0 6px; font-size: 0.8rem; margin-right: 4px; box-shadow: none; }
-        .note-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.75rem; font-style: italic; }
-
-        /* --- Submit Button --- */
-        .export-btn { width: 100%; margin-top: 1rem; height: 42px; font-size: 0.9rem; font-weight: 600; background-color: var(--primary); border-radius: var(--radius-md); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .export-btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-
-        /* --- Autocomplete --- */
-        .autocomplete-items { position: absolute; border: 1px solid var(--border); border-radius: var(--radius-md); z-index: 105; top: calc(100% + 4px); left: 0; right: 0; max-height: 200px; overflow-y: auto; background-color: var(--card-bg); box-shadow: var(--shadow-md); padding: 4px; }
-        .autocomplete-items:empty { display: none; border: none; padding: 0; }
-        
-        .autocomplete-items div { padding: 6px 10px; cursor: pointer; border-radius: var(--radius-sm); transition: all 0.1s ease; font-size: 0.8rem; display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-bottom: 2px; }
-        
-        .autocomplete-items div:hover, .autocomplete-items div.active { background-color: var(--text-main); color: var(--card-bg); }
-        .item-name { font-weight: 500; color: var(--text-main); }
-        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name { color: var(--card-bg); }
-        
-        .item-uom { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border-radius: 3px; font-weight: 500; border: 1px solid var(--border); }
-        .autocomplete-items div:hover .item-uom, .autocomplete-items div.active .item-uom { background: var(--primary-hover); color: var(--card-bg); border-color: var(--primary-hover); }
-
-        /* --- Modal --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(9, 9, 11, 0.4); display: flex; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(3px); animation: fadeIn 0.15s ease-out; }
-        .modal-content { background-color: var(--card-bg); padding: 1.5rem; border-radius: var(--radius-lg); width: 95%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2); border: 1px solid var(--border); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
-        .modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.02em;}
-        .close-btn { background: var(--bg-color); color: var(--text-muted); border-radius: 50%; width: 26px; height: 26px; font-size: 1rem; padding: 0; line-height: 1; border: 1px solid var(--border); box-shadow: none; }
-        .close-btn:hover { color: var(--primary); background: var(--border); }
-        
-        .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
-        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); transition: all 0.15s ease; background-color: var(--card-bg); }
-        
-        .history-item:hover { border-color: var(--text-main); box-shadow: var(--shadow-md); transform: translateY(-1px); }
-        
-        .history-item-details { display: flex; flex-direction: column; gap: 2px; cursor: pointer; flex: 1; transition: color 0.2s; }
-        .history-item-details:hover .history-item-time { color: var(--primary); }
-        .history-item-time { font-weight: 600; font-size: 0.85rem; color: var(--text-main); }
-        .history-item-sub { font-size: 0.7rem; color: var(--text-muted); display: flex; gap: 6px; align-items: center;}
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* --- Tooltip Styles --- */
-        .tooltip-container {
-            position: relative;
-            display: inline-flex;
-        }
-        .custom-tooltip {
-            position: absolute;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--primary);
-            color: #fff;
-            padding: 6px 10px;
-            border-radius: var(--radius-sm);
-            font-size: 0.7rem;
-            white-space: nowrap;
-            z-index: 1000;
-            box-shadow: var(--shadow-md);
-            pointer-events: none;
-            animation: fadeIn 0.15s ease-out;
-        }
-        .custom-tooltip::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -4px;
-            border-width: 4px;
-            border-style: solid;
-            border-color: var(--primary) transparent transparent transparent;
-        }
-
-        /* --- Mobile Responsiveness --- */
-        @media (max-width: 680px) {
-            body { padding: 0; background-color: var(--card-bg); }
-            .container { padding: 1rem; border-radius: 0; border: none; box-shadow: none; }
-            .main-header { flex-direction: column; gap: 10px; align-items: stretch; margin-bottom: 10px;}
-            .header-right { justify-content: flex-start; } 
-            
-            .sticky-panel { margin: 0 -1rem 0.5rem -1rem; padding: 0.75rem 1rem; }
-            .input-row { grid-template-columns: 1fr; gap: 10px; }
-            button { width: 100%; justify-content: center; }
-            .btn-sm { width: auto; }
-            .actions-cell { width: max-content; }
-        }
-    </style>
+    <title>RestOrder by NPN — Sistem Pemesanan & Rekapitulasi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --primary-light: #f8fafc;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --accent-light: #ecfdf5;
+            --accent-border: #a7f3d0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --danger-light: #fef2f2;
+            --danger-border: #fecaca;
+            --warning: #f59e0b;
+            --warning-light: #fffbeb;
+            --warning-border: #fde68a;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-secondary: #334155;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --radius-lg: 8px;
+            --radius-md: 6px;
+            --radius-sm: 4px;
+            --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 2rem;
+            font-size: 0.84rem;
+        }
+
+        /* Top Slim Header */
+        .top-navbar {
+            width: 100%;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: var(--shadow-xs);
+        }
+
+        .navbar-container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 48px;
+        }
+
+        .brand-logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .brand-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .brand-text h1 {
+            font-size: 0.98rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .brand-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            background: var(--primary);
+            color: #ffffff;
+            padding: 1px 5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .brand-subtext {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        @media (min-width: 640px) {
+            .brand-subtext { display: inline; }
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--primary-light);
+            padding: 3px 8px;
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Compact Top Navigation Tabs */
+        .tabs-wrapper {
+            width: 100%;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tabs-container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+            background: var(--primary-light);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 700;
+            background: transparent;
+        }
+
+        .tab-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 9999px;
+            background: #e2e8f0;
+            color: var(--text-secondary);
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .tab-btn.active .tab-badge {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        /* Main Content Container */
+        .app-main {
+            width: 100%;
+            max-width: 980px;
+            padding: 0.85rem 1rem;
+        }
+
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.15s ease-in-out;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-xs);
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.85rem;
+        }
+
+        /* Compact Metadata Bar: Customer & Delivery in 1 Dense Row */
+        .order-meta-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 6px 10px;
+            margin-bottom: 0.75rem;
+            box-shadow: var(--shadow-xs);
+            flex-wrap: wrap;
+        }
+
+        .meta-chip-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 4px 9px;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            position: relative;
+            user-select: none;
+        }
+
+        .meta-chip-item:hover {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        .meta-chip-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .meta-chip-val {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .meta-chip-val.placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* Customer dropdown popover */
+        .customer-popover {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            width: 280px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 250;
+            padding: 6px;
+        }
+
+        .customer-popover input {
+            width: 100%;
+            height: 32px;
+            padding: 0 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-family: inherit;
+            outline: none;
+        }
+        .customer-popover input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        .customer-list-box {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .customer-list-item {
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .customer-list-item:hover, .customer-list-item.active {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .customer-list-item .c-short {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            background: var(--bg-page);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .customer-list-item:hover .c-short, .customer-list-item.active .c-short {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        /* Delivery Date Popover */
+        .date-popover {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 250;
+            padding: 8px;
+            width: 250px;
+        }
+
+        .date-presets {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .preset-chip {
+            flex: 1;
+            padding: 4px 0;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-align: center;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        .preset-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #ffffff;
+        }
+
+        /* Sticky Search & Fast Item Entry Bar */
+        .sticky-order-bar {
+            position: sticky;
+            top: 48px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0.75rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Edit Mode Banner */
+        .edit-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            background: var(--danger-light);
+            border: 1px solid var(--danger-border);
+            border-radius: var(--radius-sm);
+            color: var(--danger);
+        }
+
+        .edit-banner-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .edit-banner-btn {
+            background: #ffffff;
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .edit-banner-btn:hover {
+            background: var(--danger);
+            color: #ffffff;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 2.8fr 1fr auto;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .form-group {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .form-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .kbd-hint {
+            font-size: 0.62rem;
+            font-weight: 600;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: var(--text-muted);
+            text-transform: none;
+        }
+
+        .input-with-icon {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-leading-icon {
+            position: absolute;
+            left: 9px;
+            color: var(--text-muted);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-uom-tag {
+            position: absolute;
+            right: 6px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #e2e8f0;
+            color: var(--text-secondary);
+            padding: 1px 5px;
+            border-radius: 3px;
+            pointer-events: none;
+            display: none;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            height: 34px;
+            padding: 0 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-family: inherit;
+            color: var(--text-main);
+            background-color: var(--bg-page);
+            outline: none;
+            transition: all 0.12s ease;
+        }
+
+        .input-with-icon input[type="text"] {
+            padding-left: 30px;
+            padding-right: 28px;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+
+        input::placeholder { color: #94a3b8; }
+
+        /* Compact Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            height: 34px;
+            padding: 0 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            white-space: nowrap;
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            box-shadow: var(--shadow-xs);
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+
+        .btn-success {
+            background-color: var(--accent);
+            color: #ffffff;
+            box-shadow: var(--shadow-xs);
+        }
+        .btn-success:hover { background-color: var(--accent-hover); }
+
+        .btn-outline {
+            background-color: #ffffff;
+            border-color: var(--border);
+            color: var(--text-main);
+            box-shadow: var(--shadow-xs);
+        }
+        .btn-outline:hover {
+            border-color: var(--border-hover);
+            background-color: var(--primary-light);
+        }
+
+        .btn-danger {
+            background-color: #ffffff;
+            border-color: var(--danger-border);
+            color: var(--danger);
+        }
+        .btn-danger:hover {
+            background-color: var(--danger-light);
+            border-color: var(--danger);
+        }
+
+        .btn-sm {
+            height: 26px;
+            padding: 0 8px;
+            font-size: 0.74rem;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Autocomplete dropdown for items */
+        .autocomplete-items {
+            position: absolute;
+            top: calc(100% + 3px);
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 120;
+            padding: 3px;
+        }
+
+        .autocomplete-items:empty { display: none; }
+
+        .autocomplete-items div {
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .autocomplete-items div:hover, .autocomplete-items div.active {
+            background-color: var(--primary);
+            color: #ffffff;
+        }
+
+        .autocomplete-items div .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            text-align: left;
+        }
+
+        .autocomplete-items div .item-name {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .autocomplete-items div:hover .item-name, .autocomplete-items div.active .item-name {
+            color: #ffffff;
+        }
+
+        .autocomplete-items div .item-meta {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+        .autocomplete-items div:hover .item-meta, .autocomplete-items div.active .item-meta {
+            color: #cbd5e1;
+        }
+
+        .autocomplete-items div .item-uom {
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+        .autocomplete-items div:hover .item-uom, .autocomplete-items div.active .item-uom {
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        /* Compact Order Table Section */
+        .table-card {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-xs);
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .table-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .table-count-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            padding: 1px 6px;
+            border-radius: 9999px;
+            color: var(--text-secondary);
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.81rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-light);
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background-color: #fafbfc; }
+
+        .td-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .note-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            max-width: 200px;
+            padding: 2px 6px;
+            background: var(--warning-light);
+            border: 1px solid var(--warning-border);
+            border-radius: 3px;
+            font-size: 0.72rem;
+            color: #92400e;
+            font-weight: 500;
+            cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .note-tag:hover { border-color: #f59e0b; }
+
+        .empty-note-btn {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: transparent;
+            border: 1px dashed var(--border);
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .empty-note-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* Compact Order Summary & Submit Bar */
+        .order-summary-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-xs);
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .summary-stats {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .stat-val {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .summary-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit-order {
+            height: 38px;
+            padding: 0 18px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            border-radius: var(--radius-sm);
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            box-shadow: var(--shadow-xs);
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-submit-order:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* --- TAB 2: RIWAYAT PESANAN COMPACT STYLES --- */
+        .history-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .history-search-box {
+            flex: 1;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .history-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .consolidation-alert-bar {
+            display: none;
+            background: var(--accent-light);
+            border: 1px solid var(--accent-border);
+            border-radius: var(--radius-sm);
+            padding: 7px 12px;
+            margin-bottom: 0.75rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .history-card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .history-order-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 0.9rem;
+            transition: all 0.12s ease;
+            box-shadow: var(--shadow-xs);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .history-order-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .history-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .history-meta-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .order-id-badge {
+            font-family: monospace;
+            font-size: 0.74rem;
+            font-weight: 700;
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+        .order-id-badge:hover { background: var(--border); }
+
+        .customer-pill {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .delivery-date-pill {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: #f1f5f9;
+            padding: 1px 6px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .history-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Expandable Item Drawer in History */
+        .history-items-drawer {
+            display: none;
+            border-top: 1px dashed var(--border);
+            padding-top: 6px;
+            margin-top: 2px;
+        }
+
+        .history-drawer-table {
+            width: 100%;
+            font-size: 0.76rem;
+            border-collapse: collapse;
+        }
+        .history-drawer-table th {
+            padding: 5px 8px;
+            font-size: 0.65rem;
+            background: var(--primary-light);
+        }
+        .history-drawer-table td {
+            padding: 5px 8px;
+        }
+
+        /* --- TAB 3: PANDUAN PENGGUNAAN COMPACT --- */
+        .guide-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .guide-step-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .guide-step-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.85rem;
+            box-shadow: var(--shadow-xs);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .step-number-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.72rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+
+        .guide-step-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .guide-step-text {
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .shortcut-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+        .shortcut-table th {
+            padding: 6px 10px;
+            background: var(--primary-light);
+            text-align: left;
+        }
+        .shortcut-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .kbd-key {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* --- MODALS & DIALOGS --- */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+            animation: fadeIn 0.12s ease-out;
+        }
+
+        .modal-box {
+            background-color: #ffffff;
+            border-radius: var(--radius-md);
+            width: 100%;
+            max-width: 440px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-body {
+            padding: 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modal-footer {
+            padding: 0.65rem 1rem;
+            background: var(--primary-light);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .note-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .note-chip {
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .note-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        /* Toast Notifications */
+        #toastContainer {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            min-width: 240px;
+            max-width: 360px;
+            background: #ffffff;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            box-shadow: var(--shadow-md);
+            border-left: 3px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+            transform: translateX(100%);
+            animation: slideInToast 0.2s forwards cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.toast-success { border-left-color: var(--accent); }
+        .toast.toast-danger { border-left-color: var(--danger); }
+        .toast.toast-warning { border-left-color: var(--warning); }
+        .toast.toast-info { border-left-color: #3b82f6; }
+
+        @keyframes slideInToast { to { transform: translateX(0); } }
+        @keyframes fadeOutToast { to { opacity: 0; transform: translateY(-6px); } }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body { font-size: 0.82rem; }
+            .navbar-container { height: 44px; }
+            .order-meta-compact { flex-direction: column; align-items: stretch; }
+            .meta-chip-item { width: 100%; justify-content: space-between; }
+            .meta-chip-val { max-width: none; }
+            .customer-popover { width: 100%; }
+            .input-row { grid-template-columns: 1fr; gap: 8px; }
+            .order-summary-card { flex-direction: column; align-items: stretch; }
+            .summary-stats { justify-content: space-around; width: 100%; }
+            .summary-actions { width: 100%; flex-direction: column; }
+            .summary-actions button { width: 100%; }
+            .history-card-header { flex-direction: column; align-items: flex-start; }
+            .history-card-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+        }
+    </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="main-header">
-            <div class="header-left">
-                <h2>RestOrder by NPN</h2>
-                
-                <div class="meta-chips">
-                    <div class="customer-section">
-                        <span class="customer-label">Cust:</span>
-                        <span id="customerDisplay" onclick="openCustomerSearch()">click here</span>
-                        <span id="customerEditBtn" style="display:none;" onclick="openCustomerSearch()">✏️</span>
-                        
-                        <div id="customerInputContainer">
-                            <input type="text" id="customerInput" placeholder="Search customer..." autocomplete="off">
-                            <div id="customer-autocomplete-list" class="autocomplete-items"></div>
+    <!-- Top Slim Header -->
+    <header class="top-navbar">
+        <div class="navbar-container">
+            <div class="brand-logo-area" onclick="switchTab('tab-order')">
+                <div class="brand-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>RestOrder <span class="brand-badge">NPN</span></h1>
+                    <span class="brand-subtext">&bull; Niaga Pangan Nusantara</span>
+                </div>
+            </div>
+
+            <div class="system-status" id="systemStatusPill" title="Status koneksi katalog database">
+                <span class="status-dot" id="systemStatusDot"></span>
+                <span id="systemStatusText">Memuat data...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Tabs Navigation -->
+    <div class="tabs-wrapper">
+        <nav class="tabs-container">
+            <button class="tab-btn active" id="btn-tab-order" onclick="switchTab('tab-order')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                Form Pemesanan
+                <span class="tab-badge" id="cartCountBadge">0</span>
+            </button>
+
+            <button class="tab-btn" id="btn-tab-history" onclick="switchTab('tab-history')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                Riwayat
+                <span class="tab-badge" id="historyCountBadge">0</span>
+            </button>
+
+            <button class="tab-btn" id="btn-tab-guide" onclick="switchTab('tab-guide')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                </svg>
+                Panduan
+            </button>
+        </nav>
+    </div>
+
+    <!-- Main Container Area -->
+    <main class="app-main">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: FORM PEMESANAN                      -->
+        <!-- ========================================== -->
+        <section id="tab-order" class="tab-panel active">
+            
+            <!-- Compact Metadata Bar: Pelanggan & Tanggal Kirim -->
+            <div class="order-meta-compact">
+                <!-- Customer Chip -->
+                <div class="meta-chip-item" onclick="toggleCustomerPopover(event)">
+                    <span class="meta-chip-label">Cust:</span>
+                    <span class="meta-chip-val placeholder" id="customerDisplay">Pilih outlet...</span>
+                    <span style="font-size: 0.7rem; opacity: 0.5;">✏️</span>
+
+                    <div id="customerPopover" class="customer-popover" onclick="event.stopPropagation()">
+                        <input type="text" id="customerSearchInput" placeholder="Cari nama outlet / toko..." autocomplete="off">
+                        <div id="customerDropdownList" class="customer-list-box"></div>
+                    </div>
+                </div>
+
+                <!-- Delivery Date Chip -->
+                <div class="meta-chip-item" onclick="toggleDatePopover(event)">
+                    <span class="meta-chip-label">Deliv:</span>
+                    <span class="meta-chip-val" id="deliveryDisplay">Memuat...</span>
+                    <span style="font-size: 0.7rem; opacity: 0.5;">📅</span>
+
+                    <div id="datePopover" class="date-popover" onclick="event.stopPropagation()">
+                        <div class="date-presets">
+                            <button class="preset-chip" onclick="setPresetDate('tomorrow')">Besok</button>
+                            <button class="preset-chip" onclick="setPresetDate('today')">Hari Ini</button>
+                            <button class="preset-chip" onclick="setPresetDate('dayAfter')">Lusa</button>
+                        </div>
+                        <input type="date" id="deliveryDateInput" onchange="onDateInputChange(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Order Search & Fast Input -->
+            <div class="sticky-order-bar">
+                <!-- Edit Mode Banner -->
+                <div id="editModeContainer" class="edit-banner">
+                    <span id="editModeLabel" class="edit-banner-title">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Mode Edit Pesanan: ROXXXXXX
+                    </span>
+                    <button onclick="resetAppUI()" class="edit-banner-btn">Batal Edit</button>
+                </div>
+
+                <div class="input-row">
+                    <!-- Search Item Form Group -->
+                    <div class="form-group">
+                        <div class="form-label">
+                            <span>Cari Barang / Komoditas</span>
+                            <span class="kbd-hint">Ctrl + Alt + S</span>
+                        </div>
+                        <div class="input-with-icon">
+                            <span class="input-leading-icon">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </span>
+                            <input type="text" id="searchInput" placeholder="Ketik nama barang (contoh: Kentang, Bawang...)" disabled autocomplete="off">
+                            <span id="selectedUomBadge" class="input-uom-tag">KG</span>
+                            <input type="hidden" id="selectedSku">
+                            <div id="autocomplete-list" class="autocomplete-items"></div>
                         </div>
                     </div>
 
-                    <div class="customer-section">
-                        <span class="customer-label">Deliv:</span>
-                        <span id="deliveryDisplay" onclick="openDeliveryEdit()"></span>
-                        <span id="deliveryEditBtn" onclick="openDeliveryEdit()">✏️</span>
-                        
-                        <div id="deliveryInputContainer" style="display: none; align-items: center; gap: 4px;">
-                            <input type="date" id="deliveryInput" style="padding: 0 6px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; outline: none; font-family: inherit; height: 22px;">
-                            <button id="deliverySaveBtn" class="btn-sm" style="padding: 0 8px; height: 22px;" onclick="saveDeliveryDate()">Save</button>
+                    <!-- Quantity Form Group -->
+                    <div class="form-group">
+                        <div class="form-label">
+                            <span>Kuantitas</span>
+                            <span class="kbd-hint" id="uomHintText">Qty</span>
+                        </div>
+                        <input type="number" id="qtyInput" placeholder="0.0" step="0.1" min="0.1">
+                    </div>
+
+                    <!-- Add Button -->
+                    <button class="btn btn-primary" id="addBtn" onclick="addToCart()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Tambah
+                    </button>
+                </div>
+            </div>
+
+            <!-- Order Table Card -->
+            <div class="table-card">
+                <div class="table-header-bar">
+                    <div class="table-title">
+                        <span>Daftar Pesanan</span>
+                        <span class="table-count-badge" id="tableItemCount">0 barang</span>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="confirmClearCart()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Hapus Semua
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="cartTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 36px; text-align: center;">No.</th>
+                                <th>Nama Barang</th>
+                                <th style="width: 80px; text-align: center;">Qty</th>
+                                <th style="width: 70px;">Satuan</th>
+                                <th>Catatan</th>
+                                <th style="width: 110px; text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bottom Summary Bar -->
+            <div class="order-summary-card">
+                <div class="summary-stats">
+                    <div class="stat-box">
+                        <span class="stat-label">Jenis Barang</span>
+                        <span class="stat-val" id="summaryTotalItems">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Total Kuantitas</span>
+                        <span class="stat-val" id="summaryTotalQty">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">Customer</span>
+                        <span class="stat-val" id="summaryCustomer" style="font-size: 0.92rem; font-weight: 700; color: var(--text-secondary);">-</span>
+                    </div>
+                </div>
+
+                <div class="summary-actions">
+                    <button class="btn-submit-order" id="submitOrderBtn" onclick="submitOrder()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                        <span id="submitBtnText">Kirim Pesanan</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: RIWAYAT PESANAN                     -->
+        <!-- ========================================== -->
+        <section id="tab-history" class="tab-panel">
+            <div class="card" style="padding: 0.85rem;">
+                <div class="history-controls">
+                    <div class="history-search-box">
+                        <span class="input-leading-icon">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </span>
+                        <input type="text" id="historySearchInput" placeholder="Cari Order ID, customer, atau tanggal..." oninput="filterHistoryList()">
+                    </div>
+
+                    <div class="history-actions-group">
+                        <button class="btn btn-sm btn-outline" id="refreshHistoryBtn" onclick="fetchLatestHistory()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <polyline points="1 20 1 14 7 14"></polyline>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Sinkronkan
+                        </button>
+                        <button class="btn btn-sm btn-outline" id="toggleConsolidateBtn" style="color: var(--accent); border-color: var(--accent);" onclick="toggleConsolidationMode()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Mode Konsolidasi
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Consolidation Alert Bar -->
+                <div id="consolidationActions" class="consolidation-alert-bar">
+                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">
+                        Centang pesanan yang ingin digabung menjadi 1 PDF rekap.
+                    </span>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-sm btn-success" onclick="generateConsolidatedPDF()">
+                            Download PDF Rekap
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="cancelConsolidationMode()">Batal</button>
+                    </div>
+                </div>
+
+                <!-- History Orders List -->
+                <div id="historyListContainer" class="history-card-list"></div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: PANDUAN PENGGUNAAN                  -->
+        <!-- ========================================== -->
+        <section id="tab-guide" class="tab-panel">
+            <div class="guide-container">
+                <div class="card">
+                    <h2 style="font-size: 0.98rem; font-weight: 700; margin-bottom: 0.35rem;">📋 Alur Pemesanan Cepat</h2>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Aplikasi pemesanan komoditas pangan harian terintegrasi database logistik Niaga Pangan Nusantara (NPN).
+                    </p>
+
+                    <div class="guide-step-grid">
+                        <div class="guide-step-card">
+                            <div class="step-number-badge">1</div>
+                            <div class="guide-step-title">Pilih Outlet & Tanggal</div>
+                            <div class="guide-step-text">
+                                Klik tombol <b>Cust</b> untuk memilih outlet. Tanggal pengiriman otomatis tersetting untuk <b>Besok</b> hari.
+                            </div>
+                        </div>
+
+                        <div class="guide-step-card">
+                            <div class="step-number-badge">2</div>
+                            <div class="guide-step-title">Cari & Tambah Barang</div>
+                            <div class="guide-step-text">
+                                Ketik nama barang, pilih dari drop-down, masukkan kuantitas (bisa desimal, misal <code>1.5</code>), lalu tekan <b>Enter</b>.
+                            </div>
+                        </div>
+
+                        <div class="guide-step-card">
+                            <div class="step-number-badge">3</div>
+                            <div class="guide-step-title">Catatan Spesifik</div>
+                            <div class="guide-step-text">
+                                Tambahkan permintaan perlakuan barang (misal: <i>"Potong 15"</i> atau <i>"Kirim pagi"</i>) lewat tombol <b>+ Tambah Catatan</b>.
+                            </div>
+                        </div>
+
+                        <div class="guide-step-card">
+                            <div class="step-number-badge">4</div>
+                            <div class="guide-step-title">Kirim Pesanan</div>
+                            <div class="guide-step-text">
+                                Klik <b>Kirim Pesanan</b>. Data otomatis masuk ke database, sinkron Google Sheet, dan notifikasi terkirim ke Telegram logistik NPN.
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="header-right" style="display: flex; gap: 8px;">
-                <button class="btn-sm btn-outline" onclick="openGuideModal()">📖 Panduan</button>
-                <button class="btn-sm btn-outline" onclick="openHistoryPopup()">🕒 History</button>
-            </div>
-        </div>
-
-        <div class="sticky-panel">
-            <div id="editModeContainer" class="edit-mode-container">
-                <span id="editModeLabel" class="edit-mode-label">Edit Mode for ROXXXXXX</span>
-                <button onclick="resetAppUI()" class="edit-mode-pill">Cancel Edit</button>
-            </div>
-
-            <div class="input-row">
-                <div class="form-group">
-                    <label for="searchInput">Search Item</label>
-                    <input type="text" id="searchInput" placeholder="Loading catalog..." disabled autocomplete="off">
-                    <input type="hidden" id="selectedSku">
-                    <div id="autocomplete-list" class="autocomplete-items"></div>
+                <!-- Custom Order Notice Card -->
+                <div class="card" style="border-left: 3px solid var(--accent);">
+                    <h3 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.3rem;">
+                        💡 Pesanan Barang Khusus (Non-Katalog)
+                    </h3>
+                    <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;">
+                        Jika barang belum terdaftar di katalog, ketik <b>"Custom Order"</b> pada kolom pencarian, pilih item tersebut, masukkan kuantitas, dan <b>tuliskan nama spesifik barang serta satuannya pada kolom Catatan</b>.
+                    </p>
                 </div>
 
-                <div class="form-group">
-                    <label for="qtyInput">Quantity</label>
-                    <input type="number" id="qtyInput" placeholder="0.0" step="0.1" min="0.1">
+                <!-- Surat Jalan & Consolidation Guide -->
+                <div class="card">
+                    <h3 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.5rem;">📦 Surat Jalan & Mode Konsolidasi</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.65rem;">
+                        <div style="background: var(--primary-light); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                            <h4 style="font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">Surat Jalan (SJ)</h4>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary);">
+                                Klik tombol <b>SJ</b> pada riwayat pesanan untuk mengunduh PDF Surat Jalan resmi siap cetak lengkap dengan kop NPN dan tanda tangan.
+                            </p>
+                        </div>
+                        <div style="background: var(--primary-light); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                            <h4 style="font-size: 0.8rem; font-weight: 700; margin-bottom: 3px;">Mode Konsolidasi</h4>
+                            <p style="font-size: 0.75rem; color: var(--text-secondary);">
+                                Gabungkan pesanan dari beberapa outlet menjadi satu lembar matriks total belanja menggunakan tombol <b>Mode Konsolidasi</b>.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <button onclick="addToCart()" id="addBtn">Add Item</button>
+                <!-- Keyboard Shortcuts Reference -->
+                <div class="card">
+                    <h3 style="font-size: 0.88rem; font-weight: 700; margin-bottom: 0.5rem;">⚡ Pintasan Keyboard</h3>
+                    <div class="table-responsive">
+                        <table class="shortcut-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 160px;">Pintasan</th>
+                                    <th>Fungsi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="kbd-key">Ctrl</span> + <span class="kbd-key">Alt</span> + <span class="kbd-key">S</span></td>
+                                    <td>Fokus langsung ke kolom Cari Barang.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="kbd-key">Ctrl</span> + <span class="kbd-key">Alt</span> + <span class="kbd-key">N</span></td>
+                                    <td>Buka pop-up input catatan untuk barang terakhir di keranjang.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="kbd-key">Ctrl</span> + <span class="kbd-key">Alt</span> + <span class="kbd-key">H</span></td>
+                                    <td>Beralih ke tab <b>Riwayat</b>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="kbd-key">Enter</span> pada Qty</td>
+                                    <td>Menambahkan barang ke keranjang & fokus kembali ke pencarian.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="kbd-key">Ctrl</span> + <span class="kbd-key">Enter</span> pada Catatan</td>
+                                    <td>Menyimpan catatan khusus di modal catatan.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="kbd-key">Esc</span></td>
+                                    <td>Menutup dropdown atau modal yang sedang aktif.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="table-header-actions">
-            <h3>Order List</h3>
-            <button class="btn-sm btn-danger" onclick="clearAllItems()">Clear Order</button>
-        </div>
+    </main>
 
-        <div class="table-container">
-            <table id="cartTable">
-                <thead>
-                    <tr>
-                        <th style="width: 40px; text-align: center;">No.</th>
-                        <th>Item Name</th>
-                        <th style="width: 70px;">Qty</th>
-                        <th style="width: 70px;">UOM</th>
-                        <th>Note</th>
-                        <th style="width: 130px;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="cartBody">
-                </tbody>
-            </table>
-        </div>
+    <!-- ========================================== -->
+    <!-- MODALS & DIALOGS                           -->
+    <!-- ========================================== -->
 
-        <button class="export-btn" onclick="submitOrder()">Submit Order</button>
-    </div>
-
-    <div id="historyModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
+    <!-- Note Editor Modal -->
+    <div id="noteModal" class="modal-backdrop">
+        <div class="modal-box">
             <div class="modal-header">
-                <h3>Transaction History</h3>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <button id="refreshHistoryBtn" class="btn-sm btn-outline" onclick="fetchLatestHistory()">🔄 Refresh</button>
-                    <button id="toggleConsolidateBtn" class="btn-sm btn-outline" style="color: var(--primary); font-weight: 600;" onclick="toggleConsolidationMode()">📦 Consolidate</button>
-                    <button class="close-btn" onclick="closeHistoryPopup()">&times;</button>
+                <h3>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Catatan Barang
+                </h3>
+                <button class="btn-sm btn-outline" style="padding: 0 6px; height: 22px;" onclick="closeNoteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);" id="noteItemTitle">Nama Barang</div>
+                <textarea id="noteTextInput" rows="2" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.8rem; outline: none; resize: vertical;" placeholder="Contoh: Potong 15, kirim subuh, pilih yg segar..."></textarea>
+                
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pilihan Cepat:</span>
+                    <div class="note-suggestions">
+                        <span class="note-chip" onclick="appendNoteSuggestion('Potong 15')">+ Potong 15</span>
+                        <span class="note-chip" onclick="appendNoteSuggestion('Potong 10')">+ Potong 10</span>
+                        <span class="note-chip" onclick="appendNoteSuggestion('Kirim pagi')">+ Kirim pagi</span>
+                        <span class="note-chip" onclick="appendNoteSuggestion('Pilih yg segar')">+ Pilih yg segar</span>
+                        <span class="note-chip" onclick="appendNoteSuggestion('Kemasan rapi')">+ Kemasan rapi</span>
+                    </div>
                 </div>
             </div>
-
-            <div id="consolidationActions" style="display: none; padding: 8px 12px; background: var(--primary-light); margin-bottom: 10px; border-radius: var(--radius-sm); justify-content: space-between; align-items: center; border: 1px solid var(--border);">
-                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-main);">Select orders below</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn-sm btn-success" onclick="generateConsolidatedPDF()">Download PDF</button>
-                    <button class="btn-sm btn-outline" onclick="cancelConsolidationMode()">Cancel</button>
-                </div>
-            </div>
-
-            <div id="historyList" class="history-list">
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline" onclick="closeNoteModal()">Batal</button>
+                <button class="btn btn-sm btn-primary" onclick="saveCurrentNote()">Simpan (Ctrl+Enter)</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Panduan Penggunaan -->
-    <div id="guideModal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 700px;">
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width: 380px;">
             <div class="modal-header">
-                <h3>📋 Panduan Penggunaan RestOrder</h3>
-                <button class="close-btn" onclick="closeGuideModal()">&times;</button>
+                <h3 id="confirmTitle">Konfirmasi</h3>
+                <button class="btn-sm btn-outline" style="padding: 0 6px; height: 22px;" onclick="closeConfirmModal(false)">&times;</button>
             </div>
-            <div class="history-list" style="font-size: 0.85rem; line-height: 1.5; padding-right: 10px;">
-                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">1. Atur Pelanggan & Tanggal</h4>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik kolom <b>Cust</b> untuk mencari nama outlet Anda (misal: Lampoh Bintaro). Secara default, tanggal <b>Deliv</b> disetel untuk besok hari. Klik jika ingin mengubahnya.</p>
-                
-                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">2. Masukkan Barang ke Keranjang</h4>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Ketik nama barang di kolom <b>Search Item</b>. Pilih varietas yang sesuai dari daftar drop-down yang muncul. Masukkan jumlah di kolom <b>Quantity</b> (bisa desimal, misal: 1.5), lalu klik <b>Add Item</b>. <i>Untuk memesan barang yang belum ada di database, ketik dan pilih <b>"Custom Order"</b>, lalu tulis detail barang pada kolom <b>Note</b>.</i></p>
-                
-                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">3. Cek & Ubah Pesanan</h4>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Di tabel <b>Order List</b>, Anda bisa mengubah kuantitas (✏️), menghapus item (🗑️), atau menambahkan catatan spesifik (📝 Note) seperti <i>"Potong 15"</i> atau <i>"dikirim pagi"</i>.</p>
-                
-                <h4 style="margin: 10px 0 5px 0; color: var(--primary);">4. Kirim Pesanan (Submit)</h4>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Klik tombol <b>Submit Order</b> di paling bawah. Sistem akan otomatis menyimpan ke History dan mengirim pemberitahuan pesanan baru kepada kami.</p>
-                
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
-                
-                <h4 style="margin: 0 0 5px 0; color: var(--primary);">🕒 Fitur Riwayat & Cetak Surat Jalan (SJ)</h4>
-                <p style="margin: 0 0 5px 0; color: var(--text-muted);">Buka menu <b>History</b> untuk memuat ulang dan mengedit pesanan lama (<b>Load</b>) atau mengunduh <b>Surat Jalan Resmi (SJ)</b> berformat PDF yang siap dicetak.</p>
-                <p style="margin: 0 0 10px 0; color: var(--text-muted);">Gunakan fitur <b>📦 Consolidate</b> di dalam menu History untuk menggabungkan beberapa pesanan outlet menjadi satu rekap total kuantitas.</p>
+            <div class="modal-body">
+                <p id="confirmMessage" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-outline" id="confirmCancelBtn" onclick="closeConfirmModal(false)">Batal</button>
+                <button class="btn btn-sm btn-primary" id="confirmOkBtn" onclick="closeConfirmModal(true)">Lanjutkan</button>
             </div>
         </div>
     </div>
 
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer"></div>
+
+    <!-- ========================================== -->
+    <!-- APPLICATION JAVASCRIPT LOGIC               -->
+    <!-- ========================================== -->
     <script>
+        // --- API & Webhook Endpoints ---
         const itemSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSJZsW8YEFBWTJLfDvCfBmVKrhKowYgaxtI7nd1cRLrj0-lG4sE8ufzhjcfjsE15JuU9llCN6BEifS/pub?output=csv'; 
         const customerSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQOr3QPD1cMK99O5WMN1AIUcXd4ZXWBbnZKCBXYkDdgHJUsW3L7Kqt0myWtUb-eD1KsNa9if1URXjOx/pub?output=csv'; 
         const GAS_DB_URL = 'https://script.google.com/macros/s/AKfycbyrPvMpFQWX5w-G9YZctb8jxVnWPtClAqnyYFkTyaLaV0KVeKfKvTmMDBPdbXZGu3s/exec';
@@ -380,6 +1685,7 @@
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxqWGZWEFBkp2XcKlG7PeLDx9g2l6-rEgAEaWaP829fdIAS-91BltBaTnepewpBH_Hr/exec'; 
         const TELEGRAM_CHAT_ID = '-1004295283262';
 
+        // --- Application State ---
         let catalogData = [];
         let customerDataList = [];
         let customerShortNames = {}; 
@@ -392,44 +1698,121 @@
         let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
         let currentOrderNumber = null;
         let isConsolidationMode = false;
+        let activeNoteEditIndex = -1;
+        let confirmCallback = null;
 
-        function syncOrderToLampohSheet(transactionData) {
-            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
-            fetch(GAS_SHEET_SYNC_URL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(transactionData)
-             })
-            .then(res => console.log("Google Sheet sync payload dispatched."))
-            .catch(err => console.error("Sheet sync failed", err));
+        // --- Tab Navigation Controller ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            const targetPanel = document.getElementById(tabId);
+            if (targetPanel) targetPanel.classList.add('active');
+
+            if (tabId === 'tab-order') document.getElementById('btn-tab-order').classList.add('active');
+            if (tabId === 'tab-history') {
+                document.getElementById('btn-tab-history').classList.add('active');
+                populateHistoryList();
+            }
+            if (tabId === 'tab-guide') document.getElementById('btn-tab-guide').classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function fetchLatestHistory() {
-            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
-            const refreshBtn = document.getElementById('refreshHistoryBtn');
-            if (refreshBtn) {
-                refreshBtn.innerText = "⏳ Loading...";
-                refreshBtn.disabled = true;
+        // --- Toast Notification Engine ---
+        function showToast(message, type = 'info', duration = 2800) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            let iconSvg = '';
+            if (type === 'success') {
+                iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            } else if (type === 'danger') {
+                iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+            } else if (type === 'warning') {
+                iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+            } else {
+                iconSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
             }
-            try {
-                const response = await fetch(GAS_SHEET_SYNC_URL + '?t=' + new Date().getTime());
-                const data = await response.json();
-                if (data && Array.isArray(data) && data.length > 0) {
-                    transactionHistory = data;
-                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-                    populateHistoryList();
-                }
-            } catch (error) {
-                console.error("Failed to refresh history", error);
-            } finally {
-                if (refreshBtn) {
-                    refreshBtn.innerText = "🔄 Refresh";
-                    refreshBtn.disabled = false;
-                }
+
+            toast.innerHTML = `<div>${iconSvg}</div><div style="flex:1;">${message}</div>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOutToast 0.2s forwards';
+                setTimeout(() => toast.remove(), 200);
+            }, duration);
+        }
+
+        // --- Custom Confirmation Dialog Engine ---
+        function showConfirm(title, message, callback, okBtnText = 'Lanjutkan', isDanger = false) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            const okBtn = document.getElementById('confirmOkBtn');
+            okBtn.innerText = okBtnText;
+            if (isDanger) {
+                okBtn.className = 'btn btn-sm btn-danger';
+            } else {
+                okBtn.className = 'btn btn-sm btn-primary';
+            }
+            confirmCallback = callback;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        function closeConfirmModal(result) {
+            document.getElementById('confirmModal').style.display = 'none';
+            if (confirmCallback) {
+                confirmCallback(result);
+                confirmCallback = null;
             }
         }
 
+        // --- Custom Note Editor Modal Engine ---
+        function openNoteModal(index) {
+            activeNoteEditIndex = index;
+            const item = orderCart[index];
+            if (!item) return;
+            document.getElementById('noteItemTitle').innerText = `${item.name} (${item.qty} ${item.uom})`;
+            document.getElementById('noteTextInput').value = item.note || '';
+            document.getElementById('noteModal').style.display = 'flex';
+            setTimeout(() => document.getElementById('noteTextInput').focus(), 50);
+        }
+
+        function closeNoteModal() {
+            document.getElementById('noteModal').style.display = 'none';
+            activeNoteEditIndex = -1;
+        }
+
+        function appendNoteSuggestion(text) {
+            const input = document.getElementById('noteTextInput');
+            if (!input.value.trim()) {
+                input.value = text;
+            } else {
+                input.value = input.value.trim() + ', ' + text;
+            }
+            input.focus();
+        }
+
+        function saveCurrentNote() {
+            if (activeNoteEditIndex >= 0 && activeNoteEditIndex < orderCart.length) {
+                const noteVal = document.getElementById('noteTextInput').value.trim();
+                orderCart[activeNoteEditIndex].note = noteVal;
+                renderCart();
+                showToast("Catatan disimpan", "success");
+            }
+            closeNoteModal();
+        }
+
+        // Shortcut Ctrl+Enter on note modal
+        document.getElementById('noteTextInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                saveCurrentNote();
+            }
+        });
+
+        // --- Date Handling ---
         function getTomorrowDateString() {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -449,7 +1832,7 @@
                 dLocal = new Date(dateString);
             }
             if (isNaN(dLocal.getTime())) return dateString;
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
             const dd = String(dLocal.getDate()).padStart(2, '0');
             const mmm = months[dLocal.getMonth()];
             const yyyy = dLocal.getFullYear();
@@ -457,119 +1840,128 @@
         }
 
         let currentDeliveryDate = getTomorrowDateString();
-        
-        const deliveryDisplay = document.getElementById('deliveryDisplay');
-        const deliveryEditBtn = document.getElementById('deliveryEditBtn');
-        const deliveryInputContainer = document.getElementById('deliveryInputContainer');
-        const deliveryInput = document.getElementById('deliveryInput');
 
-        function updateDeliveryDisplay() { deliveryDisplay.innerText = formatDateDisplay(currentDeliveryDate); }
-
-        function openDeliveryEdit() {
-            deliveryDisplay.style.display = 'none'; deliveryEditBtn.style.display = 'none'; deliveryInputContainer.style.display = 'flex';
-            let isoDate = currentDeliveryDate;
-            if (currentDeliveryDate.length !== 10) {
-                const d = new Date(currentDeliveryDate);
-                if (!isNaN(d.getTime())) {
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    isoDate = `${yyyy}-${mm}-${dd}`;
-                }
-            }
-            deliveryInput.value = isoDate; deliveryInput.focus();
+        function updateDeliveryDisplay() {
+            document.getElementById('deliveryDisplay').innerText = formatDateDisplay(currentDeliveryDate);
+            document.getElementById('deliveryDateInput').value = currentDeliveryDate;
         }
 
-        function saveDeliveryDate() {
-            if (deliveryInput.value) { currentDeliveryDate = deliveryInput.value; }
-            deliveryInputContainer.style.display = 'none'; deliveryDisplay.style.display = 'inline-block'; deliveryEditBtn.style.display = 'inline-block';
+        function toggleDatePopover(e) {
+            if (e) e.stopPropagation();
+            const popover = document.getElementById('datePopover');
+            popover.style.display = popover.style.display === 'block' ? 'none' : 'block';
+            closeCustomerPopover();
+        }
+
+        function closeDatePopover() {
+            document.getElementById('datePopover').style.display = 'none';
+        }
+
+        function setPresetDate(preset) {
+            const d = new Date();
+            if (preset === 'tomorrow') d.setDate(d.getDate() + 1);
+            else if (preset === 'dayAfter') d.setDate(d.getDate() + 2);
+            // else today
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            currentDeliveryDate = `${y}-${m}-${day}`;
             updateDeliveryDisplay();
+            closeDatePopover();
         }
 
-        deliveryInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') saveDeliveryDate();
-            if (e.key === 'Escape') {
-                deliveryInputContainer.style.display = 'none'; deliveryDisplay.style.display = 'inline-block'; deliveryEditBtn.style.display = 'inline-block';
+        function onDateInputChange(val) {
+            if (val) {
+                currentDeliveryDate = val;
+                updateDeliveryDisplay();
+                closeDatePopover();
+            }
+        }
+
+        // --- Customer Selection Popover ---
+        function toggleCustomerPopover(e) {
+            if (e) e.stopPropagation();
+            const popover = document.getElementById('customerPopover');
+            if (popover.style.display === 'block') {
+                closeCustomerPopover();
+            } else {
+                popover.style.display = 'block';
+                closeDatePopover();
+                const search = document.getElementById('customerSearchInput');
+                search.value = '';
+                populateCustomerDropdown('');
+                setTimeout(() => search.focus(), 50);
+            }
+        }
+
+        function closeCustomerPopover() {
+            document.getElementById('customerPopover').style.display = 'none';
+        }
+
+        function selectCustomer(name) {
+            currentCustomer = name;
+            const display = document.getElementById('customerDisplay');
+            display.innerText = name;
+            display.classList.remove('placeholder');
+            document.getElementById('summaryCustomer').innerText = name;
+            closeCustomerPopover();
+            showToast(`Customer: ${name}`, 'info');
+        }
+
+        function populateCustomerDropdown(query) {
+            const list = document.getElementById('customerDropdownList');
+            list.innerHTML = '';
+            currentFocusCustomer = -1;
+            let matches = [];
+            if (!query) {
+                matches = customerDataList.slice(0, 25).map(name => ({ name, score: 100 }));
+            } else {
+                matches = customerDataList.map(name => ({ name, score: getMatchScore(query, name) })).filter(m => m.score > 0);
+                matches.sort((a, b) => b.score - a.score);
+            }
+
+            if (matches.length === 0) {
+                list.innerHTML = '<div style="padding: 8px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">Tidak ada hasil</div>';
+                return;
+            }
+
+            matches.forEach((match, index) => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = 'customer-list-item';
+                if (index === 0 && query) {
+                    itemDiv.classList.add('active');
+                    currentFocusCustomer = 0;
+                }
+                const shortCode = customerShortNames[match.name] || '';
+                itemDiv.innerHTML = `<span>${match.name}</span> <span class="c-short">${shortCode}</span>`;
+                itemDiv.addEventListener("click", () => selectCustomer(match.name));
+                list.appendChild(itemDiv);
+            });
+        }
+
+        const customerSearchInput = document.getElementById('customerSearchInput');
+        customerSearchInput.addEventListener('input', function() {
+            populateCustomerDropdown(this.value);
+        });
+
+        customerSearchInput.addEventListener('keydown', function(e) {
+            const items = document.querySelectorAll('#customerDropdownList .customer-list-item');
+            if (e.key === 'ArrowDown') {
+                currentFocusCustomer = addActive(items, ++currentFocusCustomer);
+            } else if (e.key === 'ArrowUp') {
+                currentFocusCustomer = addActive(items, --currentFocusCustomer);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (items.length > 0) {
+                    e.preventDefault();
+                    if (currentFocusCustomer > -1 && items[currentFocusCustomer]) items[currentFocusCustomer].click();
+                    else items[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                closeCustomerPopover();
             }
         });
 
-        updateDeliveryDisplay(); 
-
-        window.onload = async function() {
-            try {
-                const response = await fetch(itemSheetUrl + '&t=' + new Date().getTime());
-                if (response.ok) {
-                    const csvText = await response.text();
-                    parseItemCSV(csvText);
-                }
-            } catch (error) { console.error(error); }
-
-            try {
-                if(customerSheetUrl) {
-                    const response = await fetch(customerSheetUrl + '&t=' + new Date().getTime());
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        parseCustomerCSV(csvText);
-                    }
-                }
-            } catch (error) { console.error(error); }
-
-            await fetchLatestHistory();
-
-            // --- Telegram Auto-Print SJ Logic ---
-            const urlParams = new URLSearchParams(window.location.search);
-            const printSJOrder = urlParams.get('printSJ');
-
-            if (printSJOrder && transactionHistory.length > 0) {
-                const historyIndex = transactionHistory.findIndex(t => t.orderNumber === printSJOrder);
-                if (historyIndex !== -1) {
-                    setTimeout(() => {
-                        generateSuratJalan(historyIndex);
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }, 500);
-                } else {
-                    alert("Order " + printSJOrder + " not found in the database.");
-                }
-            }
-        };
-
-        function parseItemCSV(text) {
-            catalogData = []; 
-            const lines = text.split('\n');
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const cols = lines[i].split(',');
-                const product = {
-                    sku: cols[0] ? cols[0].trim() : '', name: cols[1] ? cols[1].trim() : '',
-                    variant: cols[2] ? cols[2].trim() : '', uom: cols[3] ? cols[3].trim() : ''
-                };
-                if (product.name) catalogData.push(product);
-            }
-            const searchInput = document.getElementById('searchInput');
-            if (catalogData.length > 0) {
-                searchInput.placeholder = "Type to search items..."; searchInput.disabled = false;
-            } else { searchInput.placeholder = "Catalog is empty"; }
-        }
-
-        function parseCustomerCSV(text) {
-            customerDataList = [];
-            customerShortNames = {}; 
-            const lines = text.split('\n');
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                const cleanLine = lines[i].replace(/\r/g, ''); 
-                const cols = cleanLine.split(',');
-                
-                const customerName = cols[0] ? cols[0].trim() : ''; 
-                const shortName = cols[1] ? cols[1].trim() : customerName; 
-                
-                if (customerName) {
-                    customerDataList.push(customerName);
-                    customerShortNames[customerName] = shortName; 
-                }
-            }
-        }
-
+        // --- Levenshtein Fuzzy Search Engine ---
         function levenshtein(a, b) {
             const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
             for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
@@ -584,9 +1976,13 @@
         }
 
         function getMatchScore(query, text) {
-            query = query.toLowerCase().trim(); text = text.toLowerCase();
-            if (!query) return 0; if (text === query) return 100; if (text.startsWith(query)) return 90;
-            const words = text.split(/\s+/); if (words.some(w => w.startsWith(query))) return 80; 
+            query = query.toLowerCase().trim();
+            text = text.toLowerCase();
+            if (!query) return 0;
+            if (text === query) return 100;
+            if (text.startsWith(query)) return 90;
+            const words = text.split(/\s+/);
+            if (words.some(w => w.startsWith(query))) return 80; 
             if (text.includes(query)) return 70;
             let qIdx = 0;
             for (let i = 0; i < text.length; i++) {
@@ -596,7 +1992,8 @@
             if (query.length > 2) {
                 const maxTypos = query.length <= 5 ? 2 : 3;
                 for (let w of words) {
-                    let dist = levenshtein(query, w); if (dist <= maxTypos) return 50 - dist; 
+                    let dist = levenshtein(query, w);
+                    if (dist <= maxTypos) return 50 - dist; 
                     let wordPrefix = w.substring(0, query.length);
                     if (wordPrefix.length >= query.length - maxTypos) {
                         let prefixDist = levenshtein(query, wordPrefix);
@@ -611,77 +2008,115 @@
         }
 
         function addActive(items, focusVar) {
-            if (!items) return focusVar;
+            if (!items || items.length === 0) return focusVar;
             for (let i = 0; i < items.length; i++) items[i].classList.remove('active');
-            if (focusVar >= items.length) focusVar = 0; if (focusVar < 0) focusVar = items.length - 1;
-            items[focusVar].classList.add('active'); items[focusVar].scrollIntoView({ block: 'nearest' });
+            if (focusVar >= items.length) focusVar = 0;
+            if (focusVar < 0) focusVar = items.length - 1;
+            items[focusVar].classList.add('active');
+            items[focusVar].scrollIntoView({ block: 'nearest' });
             return focusVar;
         }
 
-        const customerInput = document.getElementById('customerInput');
-        const customerAutocompleteList = document.getElementById('customer-autocomplete-list');
-        const customerDisplay = document.getElementById('customerDisplay');
-        const customerEditBtn = document.getElementById('customerEditBtn');
-        const customerInputContainer = document.getElementById('customerInputContainer');
-
-        function openCustomerSearch() {
-            customerDisplay.style.display = 'none'; customerEditBtn.style.display = 'none';
-            customerInputContainer.style.display = 'block'; customerInput.value = ''; customerInput.focus();
-            populateCustomerDropdown('');
-        }
-
-        function selectCustomer(name) {
-            currentCustomer = name; customerDisplay.innerText = name; customerDisplay.style.display = 'inline-block';
-            customerDisplay.style.textDecoration = 'none'; customerDisplay.style.color = 'var(--text-main)';
-            customerEditBtn.style.display = 'inline-block'; customerInputContainer.style.display = 'none';
-            customerAutocompleteList.innerHTML = '';
-        }
-
-        function populateCustomerDropdown(query) {
-            customerAutocompleteList.innerHTML = ''; currentFocusCustomer = -1;
-            let matches = [];
-            if (!query) { matches = customerDataList.slice(0, 15).map(name => ({ name, score: 100 })); } 
-            else {
-                matches = customerDataList.map(name => { return { name, score: getMatchScore(query, name) }; }).filter(m => m.score > 0);
-                matches.sort((a, b) => b.score - a.score);
+        // --- Robust CSV Line Parser ---
+        function parseCsvRow(rowText) {
+            const regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*|(?:\n|$))/g;
+            const cols = [];
+            let match;
+            while ((match = regex.exec(rowText)) !== null) {
+                let val = match[1];
+                if (val !== undefined) {
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.slice(1, -1).replace(/""/g, '"');
+                    }
+                    cols.push(val.trim());
+                }
+                if (regex.lastIndex >= rowText.length) break;
             }
-            matches.forEach((match, index) => {
-                const optionDiv = document.createElement("div");
-                if (index === 0 && query) { optionDiv.classList.add('active'); currentFocusCustomer = 0; }
-                optionDiv.innerHTML = `<span class="item-name">${match.name}</span>`;
-                optionDiv.addEventListener("click", () => selectCustomer(match.name));
-                customerAutocompleteList.appendChild(optionDiv);
-            });
-            customerAutocompleteList.scrollTop = 0;
+            return cols;
         }
 
-        customerInput.addEventListener('input', function() { populateCustomerDropdown(this.value); });
-        customerInput.addEventListener('keydown', function(e) {
-            const items = customerAutocompleteList.getElementsByTagName('div');
-            if (e.key === 'ArrowDown') { currentFocusCustomer = addActive(items, ++currentFocusCustomer); }
-            else if (e.key === 'ArrowUp') { currentFocusCustomer = addActive(items, --currentFocusCustomer); }
-            else if (e.key === 'Enter' || e.key === 'Tab') {
-                if (items.length > 0) { e.preventDefault(); if (currentFocusCustomer > -1) items[currentFocusCustomer].click(); else items[0].click(); }
-            } else if (e.key === 'Escape') {
-                if (currentCustomer) selectCustomer(currentCustomer);
-                else { customerInputContainer.style.display = 'none'; customerDisplay.style.display = 'inline-block'; }
+        // --- Catalog & Customer CSV Data Fetching ---
+        function parseItemCSV(text) {
+            catalogData = []; 
+            const lines = text.split('\n');
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = parseCsvRow(line);
+                const product = {
+                    sku: cols[0] ? cols[0].trim() : '',
+                    name: cols[1] ? cols[1].trim() : '',
+                    variant: cols[2] ? cols[2].trim() : '',
+                    uom: cols[3] ? cols[3].trim() : ''
+                };
+                if (product.name) catalogData.push(product);
             }
-        });
+            const searchInput = document.getElementById('searchInput');
+            if (catalogData.length > 0) {
+                searchInput.placeholder = `Ketik nama barang (${catalogData.length} item siap)...`;
+                searchInput.disabled = false;
+                document.getElementById('systemStatusText').innerText = `${catalogData.length} Item Ready`;
+                document.getElementById('systemStatusDot').style.backgroundColor = 'var(--accent)';
+            } else {
+                searchInput.placeholder = "Katalog kosong";
+                document.getElementById('systemStatusText').innerText = "Katalog Kosong";
+            }
+        }
 
+        function parseCustomerCSV(text) {
+            customerDataList = [];
+            customerShortNames = {}; 
+            const lines = text.split('\n');
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const cols = parseCsvRow(line);
+                const customerName = cols[0] ? cols[0].trim() : ''; 
+                const shortName = cols[1] ? cols[1].trim() : customerName; 
+                if (customerName) {
+                    customerDataList.push(customerName);
+                    customerShortNames[customerName] = shortName; 
+                }
+            }
+        }
+
+        // --- Autocomplete Item Search ---
         const searchInput = document.getElementById('searchInput');
         const qtyInput = document.getElementById('qtyInput');
         const autocompleteList = document.getElementById('autocomplete-list');
         const selectedSkuInput = document.getElementById('selectedSku');
+        const selectedUomBadge = document.getElementById('selectedUomBadge');
+        const uomHintText = document.getElementById('uomHintText');
 
         searchInput.addEventListener('input', function() {
-            const val = this.value; autocompleteList.innerHTML = ''; selectedSkuInput.value = ''; currentFocusItem = -1;
+            const val = this.value;
+            autocompleteList.innerHTML = '';
+            selectedSkuInput.value = '';
+            selectedUomBadge.style.display = 'none';
+            uomHintText.innerText = 'Qty';
+            currentFocusItem = -1;
             if (!val) return false;
-            let scoredMatches = catalogData.map(item => { return { item, score: getMatchScore(val, item.name) }; }).filter(m => m.score > 0);
+
+            let scoredMatches = catalogData.map(item => ({ item, score: getMatchScore(val, item.name) })).filter(m => m.score > 0);
             scoredMatches.sort((a, b) => b.score - a.score);
-            scoredMatches.forEach((match, index) => {
+
+            if (scoredMatches.length === 0) {
+                const emptyDiv = document.createElement("div");
+                emptyDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Tidak ditemukan. Ketik <b>Custom Order</b> untuk barang khusus</span>`;
+                autocompleteList.appendChild(emptyDiv);
+                return;
+            }
+
+            scoredMatches.slice(0, 20).forEach((match, index) => {
                 const optionDiv = document.createElement("div");
                 if (index === 0) { optionDiv.classList.add('active'); currentFocusItem = 0; }
-                optionDiv.innerHTML = `<span class="item-name">${match.item.name}</span> <span class="item-uom">${match.item.uom}</span>`;
+                optionDiv.innerHTML = `
+                    <div class="item-info">
+                        <span class="item-name">${match.item.name}</span>
+                        <span class="item-meta">${match.item.variant ? match.item.variant + ' • ' : ''}SKU: ${match.item.sku || '-'}</span>
+                    </div>
+                    <span class="item-uom">${match.item.uom}</span>
+                `;
                 optionDiv.addEventListener("click", () => selectItem(match.item));
                 autocompleteList.appendChild(optionDiv);
             });
@@ -690,138 +2125,220 @@
 
         searchInput.addEventListener('keydown', function(e) {
             const items = autocompleteList.getElementsByTagName('div');
-            if (e.key === 'ArrowDown') { currentFocusItem = addActive(items, ++currentFocusItem); } 
-            else if (e.key === 'ArrowUp') { currentFocusItem = addActive(items, --currentFocusItem); } 
-            else if (e.key === 'Enter' || e.key === 'Tab') {
-                if (items.length > 0) { e.preventDefault(); if (currentFocusItem > -1) items[currentFocusItem].click(); else items[0].click(); }
+            if (e.key === 'ArrowDown') {
+                currentFocusItem = addActive(items, ++currentFocusItem);
+            } else if (e.key === 'ArrowUp') {
+                currentFocusItem = addActive(items, --currentFocusItem);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (items.length > 0) {
+                    e.preventDefault();
+                    if (currentFocusItem > -1 && items[currentFocusItem]) items[currentFocusItem].click();
+                    else items[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                autocompleteList.innerHTML = '';
             }
         });
 
-        qtyInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); addToCart(); } });
+        qtyInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addToCart();
+            }
+        });
 
         function selectItem(item) {
-            searchInput.value = `${item.name} (${item.uom})`; selectedSkuInput.value = item.sku;
-            autocompleteList.innerHTML = ''; qtyInput.focus();
+            searchInput.value = item.name;
+            selectedSkuInput.value = item.sku;
+            selectedUomBadge.innerText = item.uom;
+            selectedUomBadge.style.display = 'inline-block';
+            uomHintText.innerText = item.uom;
+            autocompleteList.innerHTML = '';
+            qtyInput.focus();
+            qtyInput.select();
         }
 
+        // Global Click listener for closing popovers
         document.addEventListener("click", function (e) {
             if (e.target !== searchInput) autocompleteList.innerHTML = '';
-            if (e.target !== customerInput && e.target !== customerDisplay && e.target !== customerEditBtn) {
-                customerAutocompleteList.innerHTML = '';
-                if (customerInputContainer.style.display === 'block') {
-                    if (currentCustomer) selectCustomer(currentCustomer); 
-                    else { customerInputContainer.style.display = 'none'; customerDisplay.style.display = 'inline-block'; }
-                }
+            
+            const custPopover = document.getElementById('customerPopover');
+            if (custPopover.style.display === 'block' && !custPopover.contains(e.target) && !e.target.closest('.meta-chip-item')) {
+                closeCustomerPopover();
             }
-            if (deliveryInputContainer.style.display === 'flex') {
-                if (!deliveryInputContainer.contains(e.target) && e.target !== deliveryDisplay && e.target !== deliveryEditBtn) {
-                    deliveryInputContainer.style.display = 'none'; deliveryDisplay.style.display = 'inline-block'; deliveryEditBtn.style.display = 'inline-block';
-                }
-            }
-            const historyModal = document.getElementById('historyModal');
-            if (e.target === historyModal) closeHistoryPopup();
 
-            const guideModal = document.getElementById('guideModal');
-            if (e.target === guideModal) closeGuideModal();
+            const datePopover = document.getElementById('datePopover');
+            if (datePopover.style.display === 'block' && !datePopover.contains(e.target) && !e.target.closest('.meta-chip-item')) {
+                closeDatePopover();
+            }
         });
 
-        function openGuideModal() {
-            document.getElementById('guideModal').style.display = 'flex';
-        }
-
-        function closeGuideModal() {
-            document.getElementById('guideModal').style.display = 'none';
-        }
-
+        // --- Cart Management ---
         function addToCart() {
-            const selectedSku = document.getElementById('selectedSku').value;
+            const selectedSku = selectedSkuInput.value;
             const rawQty = parseFloat(qtyInput.value);
-            if (!selectedSku) { alert("Please select an item from the search results."); searchInput.focus(); return; }
-            if (isNaN(rawQty) || rawQty <= 0) { alert("Please enter a valid quantity."); qtyInput.focus(); return; }
             
-            const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
-            const product = catalogData.find(p => p.sku === selectedSku);
-            orderCart.push({ sku: product.sku, name: product.name, variant: product.variant, qty: formattedQty, uom: product.uom, note: "" });
-            
-            renderCart(); 
-            searchInput.value = ''; selectedSkuInput.value = ''; qtyInput.value = ''; 
-            searchInput.focus(); 
+            if (!selectedSku) {
+                showToast("Pilih barang dari daftar pencarian", "warning");
+                searchInput.focus();
+                return;
+            }
+            if (isNaN(rawQty) || rawQty <= 0) {
+                showToast("Masukkan kuantitas yang valid (> 0)", "warning");
+                qtyInput.focus();
+                return;
+            }
 
-            setTimeout(() => {
-                window.scrollTo({ 
-                    top: document.body.scrollHeight, 
-                    behavior: 'smooth' 
-                });
-            }, 50);
+            const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
+            let product = catalogData.find(p => p.sku === selectedSku);
+            
+            if (!product) {
+                // Fallback for custom or direct text item
+                product = {
+                    sku: selectedSku,
+                    name: searchInput.value || "Item",
+                    variant: "",
+                    uom: selectedUomBadge.innerText || "PCS"
+                };
+            }
+            
+            orderCart.push({
+                sku: product.sku,
+                name: product.name,
+                variant: product.variant || "",
+                qty: formattedQty,
+                uom: product.uom || "PCS",
+                note: ""
+            });
+
+            renderCart();
+
+            // Clear inputs and refocus
+            searchInput.value = '';
+            selectedSkuInput.value = '';
+            selectedUomBadge.style.display = 'none';
+            uomHintText.innerText = 'Qty';
+            qtyInput.value = '';
+            searchInput.focus();
+
+            showToast(`${product.name} (${formattedQty} ${product.uom}) ditambahkan`, "success");
         }
 
         function renderCart() {
-            const tbody = document.getElementById('cartBody'); tbody.innerHTML = '';
+            const tbody = document.getElementById('cartBody');
+            tbody.innerHTML = '';
+            
+            let totalQty = 0;
+            orderCart.forEach(item => {
+                totalQty += parseFloat(item.qty) || 0;
+            });
+
+            const formattedTotalQty = Number.isInteger(totalQty) ? totalQty.toString() : totalQty.toFixed(2);
+            document.getElementById('summaryTotalItems').innerText = orderCart.length;
+            document.getElementById('summaryTotalQty').innerText = formattedTotalQty;
+            document.getElementById('cartCountBadge').innerText = orderCart.length;
+            document.getElementById('tableItemCount').innerText = `${orderCart.length} item`;
+
             if (orderCart.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 40px 20px;"><img src="https://res.cloudinary.com/dmebrkcru/image/upload/f_auto,q_auto/baby_bear_white_bg_xq7e72" style="width: 80px; display: block; margin: 0 auto 12px auto; opacity: 0.3; filter: grayscale(100%);"><span style="font-weight: 500; font-size: 0.85rem;">No items added to this order yet.</span></td></tr>`;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="9" cy="21" r="1"></circle>
+                                    <circle cx="20" cy="21" r="1"></circle>
+                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                                </svg>
+                                <span style="font-weight: 600; font-size: 0.84rem; color: var(--text-secondary);">Keranjang pemesanan kosong</span>
+                                <span style="font-size: 0.74rem; color: var(--text-muted);">Cari barang di atas untuk menambahkan pesanan</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
+
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td style="text-align: center; font-weight: 500; color: var(--text-muted);">${index + 1}</td><td style="font-weight: 500; color: var(--text-main);">${item.name}</td><td id="qty-cell-${index}" style="font-weight: 500;">${item.qty}</td><td><span style="font-size: 0.7rem; color: var(--text-muted); background: var(--bg-color); padding: 2px 4px; border: 1px solid var(--border); border-radius: 3px; font-weight: 500;">${item.uom}</span></td><td class="note-cell" title="${item.note || ''}">${item.note || '-'}</td><td class="actions-cell" id="action-cell-${index}"><button class="btn-sm btn-outline" onclick="editItem(${index})">✏</button><span class="tooltip-container" id="tooltip-container-${index}"><button class="btn-sm btn-outline" onclick="editNote(${index})">📝 Note</button></span><button class="btn-sm btn-danger" onclick="deleteItem(${index})">🗑</button></td>`;
+                
+                const noteContent = item.note && item.note.trim() ? 
+                    `<span class="note-tag" onclick="openNoteModal(${index})" title="${item.note}">📝 ${item.note}</span>` :
+                    `<button class="empty-note-btn" onclick="openNoteModal(${index})">+ Catatan</button>`;
+
+                row.innerHTML = `
+                    <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--text-main);">${item.name}</div>
+                        ${item.variant ? `<div style="font-size: 0.68rem; color: var(--text-muted);">${item.variant}</div>` : ''}
+                    </td>
+                    <td id="qty-cell-${index}" style="text-align: center; font-weight: 700; font-size: 0.88rem;">${item.qty}</td>
+                    <td><span style="font-size: 0.68rem; font-weight: 700; background: var(--primary-light); border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; color: var(--text-secondary);">${item.uom}</span></td>
+                    <td>${noteContent}</td>
+                    <td style="text-align: center;">
+                        <div class="td-actions" id="action-cell-${index}" style="justify-content: center;">
+                            <button class="btn btn-sm btn-outline" title="Ubah Qty" onclick="startInlineEditQty(${index})">✏️</button>
+                            <button class="btn btn-sm btn-danger" title="Hapus" onclick="deleteCartItem(${index})">🗑️</button>
+                        </div>
+                    </td>
+                `;
                 tbody.appendChild(row);
-
-                // Add event listeners for the tooltip on the note action container
-                const container = document.getElementById(`tooltip-container-${index}`);
-                let tooltipTimer = null;
-                let activeTooltip = null;
-
-                container.addEventListener('mouseenter', () => {
-                    // Random chance of 1:10 (10% chance)
-                    const randomChance = Math.floor(Math.random() * 8) === 0;
-                    if (randomChance && !activeTooltip) {
-                        activeTooltip = document.createElement('div');
-                        activeTooltip.className = 'custom-tooltip';
-                        activeTooltip.innerText = 'Tip: tekan Ctrl + Alt + N utk menginput catatan di item yg baru ditambahkan';
-                        container.appendChild(activeTooltip);
-
-                        // Visible for 3 seconds or after user defocuses, whichever is shorter
-                        tooltipTimer = setTimeout(() => {
-                            if (activeTooltip) {
-                                activeTooltip.remove();
-                                activeTooltip = null;
-                            }
-                        }, 3000);
-                    }
-                });
-
-                container.addEventListener('mouseleave', () => {
-                    if (tooltipTimer) clearTimeout(tooltipTimer);
-                    if (activeTooltip) {
-                        activeTooltip.remove();
-                        activeTooltip = null;
-                    }
-                });
             });
         }
 
-        function clearAllItems() { if (orderCart.length > 0 && confirm("Are you sure you want to clear the entire order?")) { orderCart = []; renderCart(); } }
-        function deleteItem(index) { orderCart.splice(index, 1); renderCart(); }
-
-        function editItem(index) {
-            const qtyCell = document.getElementById(`qty-cell-${index}`); const actionCell = document.getElementById(`action-cell-${index}`);
-            qtyCell.innerHTML = `<input type="number" class="inline-edit-input" id="edit-qty-${index}" value="${orderCart[index].qty}" step="0.1" min="0.1">`;
-            actionCell.innerHTML = `<button class="btn-sm btn-success" onclick="saveItem(${index})">Save</button><button class="btn-sm btn-outline" onclick="renderCart()">Cancel</button>`;
-            const editInput = document.getElementById(`edit-qty-${index}`); editInput.focus(); editInput.select();
-            editInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') saveItem(index); if (e.key === 'Escape') renderCart(); });
+        function startInlineEditQty(index) {
+            const qtyCell = document.getElementById(`qty-cell-${index}`);
+            const actionCell = document.getElementById(`action-cell-${index}`);
+            qtyCell.innerHTML = `<input type="number" id="inline-qty-${index}" value="${orderCart[index].qty}" step="0.1" min="0.1" style="width: 64px; height: 26px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.82rem;">`;
+            actionCell.innerHTML = `
+                <button class="btn btn-sm btn-success" style="padding: 0 6px; height: 24px;" onclick="saveInlineEditQty(${index})">OK</button>
+                <button class="btn btn-sm btn-outline" style="padding: 0 6px; height: 24px;" onclick="renderCart()">Batal</button>
+            `;
+            const editInput = document.getElementById(`inline-qty-${index}`);
+            editInput.focus();
+            editInput.select();
+            editInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') saveInlineEditQty(index);
+                if (e.key === 'Escape') renderCart();
+            });
         }
 
-        function editNote(index) {
-            const newNote = prompt(`Enter note for ${orderCart[index].name}:`, orderCart[index].note || "");
-            if (newNote !== null) { orderCart[index].note = newNote.trim(); renderCart(); }
+        function saveInlineEditQty(index) {
+            const editInput = document.getElementById(`inline-qty-${index}`);
+            const rawQty = parseFloat(editInput.value);
+            if (isNaN(rawQty) || rawQty <= 0) {
+                showToast("Masukkan kuantitas yang valid", "warning");
+                editInput.focus();
+                return;
+            }
+            orderCart[index].qty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
+            renderCart();
+            showToast("Kuantitas diperbarui", "success");
         }
 
-        function saveItem(index) {
-            const editInput = document.getElementById(`edit-qty-${index}`); const rawQty = parseFloat(editInput.value);
-            if (isNaN(rawQty) || rawQty <= 0) { alert("Please enter a valid quantity."); editInput.focus(); return; }
-            orderCart[index].qty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2); renderCart();
+        function deleteCartItem(index) {
+            const item = orderCart[index];
+            orderCart.splice(index, 1);
+            renderCart();
+            showToast(`${item.name} dihapus`, "info");
         }
-        
+
+        function confirmClearCart() {
+            if (orderCart.length === 0) return;
+            showConfirm(
+                "Kosongkan Keranjang?",
+                "Semua item pesanan saat ini akan dihapus. Lanjutkan?",
+                (confirmed) => {
+                    if (confirmed) {
+                        orderCart = [];
+                        renderCart();
+                        showToast("Keranjang dikosongkan", "info");
+                    }
+                },
+                "Kosongkan",
+                true
+            );
+        }
+
         function generateOrderNumber() {
             const now = new Date();
             const datePrefix = String(now.getFullYear()).slice(2) + String(now.getMonth() + 1).padStart(2, '0');
@@ -833,18 +2350,26 @@
                 }
             });
             const chars = "ABCDEFGHJKMNPQRSTUVWXYZ"; 
-            let xxx = ""; for (let i = 0; i < 3; i++) xxx += chars.charAt(Math.floor(Math.random() * chars.length));
+            let xxx = "";
+            for (let i = 0; i < 3; i++) xxx += chars.charAt(Math.floor(Math.random() * chars.length));
             return "RO" + datePrefix + String(maxN + 1).padStart(4, '0') + xxx;
         }
 
         function resetAppUI() {
-            orderCart = []; currentOrderNumber = null;
+            orderCart = [];
+            currentOrderNumber = null;
             document.getElementById('editModeContainer').style.display = 'none';
-            currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; customerInput.value = "";
-            currentDeliveryDate = getTomorrowDateString(); updateDeliveryDisplay();
+            currentCustomer = null;
+            const custDisplay = document.getElementById('customerDisplay');
+            custDisplay.innerText = "Pilih outlet...";
+            custDisplay.classList.add('placeholder');
+            document.getElementById('summaryCustomer').innerText = "-";
+            currentDeliveryDate = getTomorrowDateString();
+            updateDeliveryDisplay();
             renderCart();
         }
 
+        // --- Cart Diffs for Order Update ---
         function getCartChanges(oldCart, newCart) {
             let added = [];
             let removed = [];
@@ -853,16 +2378,13 @@
             let oldItems = [...oldCart];
             let newItems = [...newCart];
             
-            // PASS 1: Find exact matches (Same Name AND Same Note)
             for (let i = newItems.length - 1; i >= 0; i--) {
                 let nItem = newItems[i];
                 let matchIdx = oldItems.findIndex(o => o.name === nItem.name && o.note === nItem.note);
                 
                 if (matchIdx !== -1) {
                     let oItem = oldItems[matchIdx];
-                    // Check if only the Qty changed
                     if (parseFloat(nItem.qty) !== parseFloat(oItem.qty)) {
-                        // If it's a Custom Order, treat Qty changes as Delete + Add
                         if (nItem.name.toLowerCase() === "custom order") {
                             added.push(nItem);
                             removed.push(oItem);
@@ -875,23 +2397,16 @@
                             });
                         }
                     }
-                    // Remove matched items from the checking arrays
                     newItems.splice(i, 1);
                     oldItems.splice(matchIdx, 1);
                 }
             }
             
-            // PASS 2: Find Note edits (Same Name, but Note was changed)
             for (let i = newItems.length - 1; i >= 0; i--) {
                 let nItem = newItems[i];
-                
-                // Skip Custom Orders here so they fall through to Added/Removed
-                if (nItem.name.toLowerCase() === "custom order") {
-                    continue;
-                }
+                if (nItem.name.toLowerCase() === "custom order") continue;
 
                 let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
-                
                 if (matchIdx !== -1) {
                     let oItem = oldItems[matchIdx];
                     modified.push({
@@ -905,18 +2420,37 @@
                 }
             }
             
-            // PASS 3: Anything left in newItems is a brand new addition
             added.push(...[...newItems].reverse()); 
-            
-            // PASS 4: Anything left in oldItems was completely removed
             removed.push(...oldItems);
 
             return { added, removed, modified: modified.reverse() };
         }
 
+        // --- Submit Order Workflow ---
         function submitOrder() {
-            if (orderCart.length === 0) { alert("Your order is empty!"); return; }
-            if (!currentCustomer && !confirm("No customer selected. Do you want to proceed anyway?")) return;
+            if (orderCart.length === 0) {
+                showToast("Keranjang pesanan kosong!", "warning");
+                return;
+            }
+
+            if (!currentCustomer) {
+                showConfirm(
+                    "Customer Belum Dipilih",
+                    "Nama outlet belum dipilih. Tetap lanjutkan pesanan?",
+                    (confirmed) => {
+                        if (confirmed) proceedOrderSubmission();
+                    }
+                );
+            } else {
+                proceedOrderSubmission();
+            }
+        }
+
+        function proceedOrderSubmission() {
+            const submitBtn = document.getElementById('submitOrderBtn');
+            const submitBtnText = document.getElementById('submitBtnText');
+            submitBtn.disabled = true;
+            submitBtnText.innerText = "Mengirim...";
 
             const isUpdate = !!currentOrderNumber;
             let oldCart = [];
@@ -937,7 +2471,7 @@
 
             const transactionData = {
                 orderNumber: currentOrderNumber,
-                timestamp: new Date().toLocaleString(),
+                timestamp: new Date().toLocaleString('id-ID'),
                 customer: currentCustomer || "No Customer",
                 deliveryDate: currentDeliveryDate,
                 cart: JSON.parse(JSON.stringify(orderCart)) 
@@ -946,7 +2480,9 @@
             if (isUpdate) {
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) transactionHistory[idx] = transactionData;
-            } else { transactionHistory.push(transactionData); }
+            } else {
+                transactionHistory.push(transactionData);
+            }
 
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
             syncOrderToLampohSheet(transactionData);
@@ -956,88 +2492,286 @@
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(transactionData)
                 }).catch(err => console.error("Database sync failed", err));
-            } else {
-                alert("⚠️ Warning: Your Database URL is not set. Order is only saved locally!");
             }
             
             sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart, isUpdate, cartChanges);
-            resetAppUI();
-        }
-        
-        function openHistoryPopup() { 
-            document.getElementById('historyModal').style.display = 'flex'; 
-            populateHistoryList(); 
-            fetchLatestHistory(); 
-        }
-        
-        function closeHistoryPopup() { 
-            document.getElementById('historyModal').style.display = 'none'; 
-            cancelConsolidationMode();
+            
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtnText.innerText = "Kirim Pesanan";
+                showToast(`Pesanan #${currentOrderNumber} terkirim!`, "success", 4000);
+                resetAppUI();
+                updateHistoryCountBadge();
+            }, 500);
         }
 
+        function syncOrderToLampohSheet(transactionData) {
+            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
+            fetch(GAS_SHEET_SYNC_URL, {
+                method: 'POST',
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(transactionData)
+            }).catch(err => console.error("Sheet sync failed", err));
+        }
+
+        async function fetchLatestHistory() {
+            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
+            const refreshBtn = document.getElementById('refreshHistoryBtn');
+            if (refreshBtn) {
+                refreshBtn.innerText = "Loading...";
+                refreshBtn.disabled = true;
+            }
+            try {
+                const response = await fetch(GAS_SHEET_SYNC_URL + '?t=' + new Date().getTime());
+                const data = await response.json();
+                if (data && Array.isArray(data) && data.length > 0) {
+                    transactionHistory = data;
+                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                    populateHistoryList();
+                    showToast("Riwayat disinkronkan", "success");
+                }
+            } catch (error) {
+                console.error("Failed to refresh history", error);
+                showToast("Sinkronisasi offline", "warning");
+            } finally {
+                if (refreshBtn) {
+                    refreshBtn.innerText = "Sinkronkan";
+                    refreshBtn.disabled = false;
+                }
+                updateHistoryCountBadge();
+            }
+        }
+
+        function updateHistoryCountBadge() {
+            document.getElementById('historyCountBadge').innerText = transactionHistory.length;
+        }
+
+        // --- Telegram Alerts ---
+        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+            
+            let message = "";
+            if (isUpdate) {
+                message += `🔄 *ORDER UPDATED!*\n`;
+            } else {
+                message += `🚨 *NEW ORDER SAVED!*\n`;
+            }
+            
+            message += `👤 *Customer:* ${customer || "No Customer"}\n`;
+            message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
+            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
+            
+            if (isUpdate && changes) {
+                let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
+                if (hasChanges) {
+                    message += `📝 *CHANGES MADE:*\n`;
+                    if (changes.added.length > 0) {
+                        message += `\n➕ *Added:*\n`;
+                        changes.added.forEach(item => {
+                            message += `- ${item.name} (${item.qty} ${item.uom})`;
+                            if (item.note) message += ` _(Note: "${item.note}")_`;
+                            message += `\n`;
+                        });
+                    }
+                    if (changes.modified.length > 0) {
+                        message += `\n✏️ *Edited:*\n`;
+                        changes.modified.forEach(item => {
+                            message += `- ${item.name}: `;
+                            let edits = [];
+                            if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
+                                edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
+                            }
+                            if (item.oldNote !== item.newNote) {
+                                let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
+                                let nNote = item.newNote ? `"${item.newNote}"` : "None";
+                                edits.push(`Note ${oNote} -> ${nNote}`);
+                            }
+                            message += edits.join(" | ") + "\n";
+                        });
+                    }
+                    if (changes.removed.length > 0) {
+                        message += `\n❌ *Removed:*\n`;
+                        changes.removed.forEach(item => {
+                            message += `- ${item.name} (${item.qty} ${item.uom})`;
+                            if (item.note) message += ` _(Note: "${item.note}")_`;
+                            message += `\n`;
+                        });
+                    }
+                    message += `\n━━━━━━━━━━━━━━━━━\n\n`;
+                } else {
+                    message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
+                }
+            }
+
+            message += `📦 *Full Items List:*\n`;
+            cart.forEach((item, index) => { 
+                message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
+            });
+            
+            const appBaseUrl = window.location.href.split('?')[0];
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ 
+                    chat_id: TELEGRAM_CHAT_ID, 
+                    text: message,
+                    appUrl: appBaseUrl,
+                    orderNumber: currentOrderNumber
+                })
+            }).catch(err => console.error("Failed to route message through Google Script", err));
+        }
+
+        // --- TAB 2: Riwayat (History) Rendering ---
         function toggleConsolidationMode() {
             isConsolidationMode = true;
             document.getElementById('consolidationActions').style.display = 'flex';
             document.getElementById('toggleConsolidateBtn').style.display = 'none';
             populateHistoryList();
+            showToast("Centang pesanan untuk direkap", "info");
         }
 
         function cancelConsolidationMode() {
             isConsolidationMode = false;
             document.getElementById('consolidationActions').style.display = 'none';
-            document.getElementById('toggleConsolidateBtn').style.display = 'block';
+            document.getElementById('toggleConsolidateBtn').style.display = 'inline-flex';
             populateHistoryList();
         }
 
-        function handleHistoryRowClick(index) {
-            if (isConsolidationMode) {
-                const cb = document.querySelector(`.consolidate-checkbox[data-index="${index}"]`);
-                if (cb) cb.checked = !cb.checked;
-            } else {
-                loadHistoryItem(index);
-            }
+        function filterHistoryList() {
+            populateHistoryList();
         }
 
         function populateHistoryList() {
-            const listContainer = document.getElementById('historyList'); listContainer.innerHTML = '';
-            if (transactionHistory.length === 0) { listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); margin-top: 2rem; font-weight: 500;">No previous transactions found.</p>'; return; }
-            const displayHistory = [...transactionHistory].reverse();
+            const container = document.getElementById('historyListContainer');
+            container.innerHTML = '';
+            
+            const searchKeyword = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
 
-            displayHistory.forEach((transaction, reversedIndex) => {
+            if (transactionHistory.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px 16px; color: var(--text-muted);">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 6px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <div style="font-weight: 600; font-size: 0.82rem;">Belum ada riwayat transaksi</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const reversedHistory = [...transactionHistory].reverse();
+            let renderedCount = 0;
+
+            reversedHistory.forEach((tx, reversedIndex) => {
                 const originalIndex = transactionHistory.length - 1 - reversedIndex;
-                const custName = transaction.customer || "No Customer";
-                const delDateStr = transaction.deliveryDate ? formatDateDisplay(transaction.deliveryDate) : "Unknown Date";
-                const itemDiv = document.createElement('div'); itemDiv.className = 'history-item';
-                
+                const custName = tx.customer || "No Customer";
+                const delDateStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : "Unknown Date";
+                const orderNum = tx.orderNumber || "Tanpa ID";
+
+                // Filter check
+                if (searchKeyword) {
+                    const matchText = `${orderNum} ${custName} ${delDateStr}`.toLowerCase();
+                    if (!matchText.includes(searchKeyword)) return;
+                }
+
+                renderedCount++;
+                const card = document.createElement('div');
+                card.className = 'history-order-card';
+
                 let checkBlock = '';
                 if (isConsolidationMode) {
-                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${originalIndex}" style="margin-right: 12px; width: 16px; height: 16px; cursor: pointer;" onclick="event.stopPropagation();">`;
+                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${originalIndex}" style="width: 16px; height: 16px; cursor: pointer;" onclick="event.stopPropagation()">`;
                 }
 
                 let actionsBlock = '';
                 if (!isConsolidationMode) {
                     actionsBlock = `
-                        <div class="actions-cell">
-                            <button class="btn-sm btn-outline" title="Lihat & edit pesanan" onclick="loadHistoryItem(${originalIndex})">Load</button>
-                            <button class="btn-sm btn-outline" style="color: var(--success); border-color: var(--success);" title="Generate Delivery PDF" onclick="generateSuratJalan(${originalIndex})">SJ</button>
-                            <button class="btn-sm btn-outline copy-btn-${originalIndex}" title="Copy Text" onclick="copyHistoryText(${originalIndex})">📋TXT</button>
-                            <button class="btn-sm btn-success" title="Export to CSV" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
+                        <div class="history-card-actions">
+                            <button class="btn btn-sm btn-outline" title="Tampilkan rincian barang" onclick="toggleHistoryDrawer(${originalIndex})">👁️ Detail</button>
+                            <button class="btn btn-sm btn-primary" title="Muat & edit pesanan ini" onclick="loadHistoryItem(${originalIndex})">Muat</button>
+                            <button class="btn btn-sm btn-success" title="Cetak Surat Jalan Resmi (PDF)" onclick="generateSuratJalan(${originalIndex})">SJ</button>
+                            <button class="btn btn-sm btn-outline copy-btn-${originalIndex}" title="Salin teks pesanan" onclick="copyHistoryText(${originalIndex})">📋 TXT</button>
+                            <button class="btn btn-sm btn-outline" title="Unduh file CSV Accurate" onclick="downloadHistoryCSV(${originalIndex})">CSV</button>
                         </div>
                     `;
                 }
-                
-                itemDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; flex: 1; width: 100%;" onclick="handleHistoryRowClick(${originalIndex})">
-                        ${checkBlock}
-                        <div class="history-item-details" title="${isConsolidationMode ? 'Click to select this record' : 'Klik untuk load/edit pesanan'}">
-                            <span class="history-item-time">${transaction.timestamp}</span>
-                            <span class="history-item-sub">👤 ${custName} &nbsp;•&nbsp; 📅 Deliv: ${delDateStr} &nbsp;•&nbsp; 📦 ${transaction.cart.length} item(s)</span>
+
+                // Prepare items table for drawer
+                let drawerRows = '';
+                let txTotalQty = 0;
+                if (tx.cart && tx.cart.length > 0) {
+                    tx.cart.forEach((cItem, i) => {
+                        txTotalQty += parseFloat(cItem.qty) || 0;
+                        drawerRows += `
+                            <tr>
+                                <td style="text-align: center; color: var(--text-muted);">${i + 1}</td>
+                                <td><b>${cItem.name}</b> ${cItem.variant ? `<span style="font-size: 0.65rem; color: var(--text-muted);">(${cItem.variant})</span>` : ''}</td>
+                                <td style="text-align: center; font-weight: 700;">${cItem.qty}</td>
+                                <td>${cItem.uom}</td>
+                                <td style="font-style: italic; color: var(--text-secondary);">${cItem.note || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                const formattedTxQty = Number.isInteger(txTotalQty) ? txTotalQty : txTotalQty.toFixed(1);
+
+                card.innerHTML = `
+                    <div class="history-card-header" ${isConsolidationMode ? `onclick="toggleCheckbox(${originalIndex})"` : ''} style="${isConsolidationMode ? 'cursor: pointer;' : ''}">
+                        <div class="history-meta-left">
+                            ${checkBlock}
+                            <span class="order-id-badge" onclick="copyToClipboard('${orderNum}')" title="Klik salin ID">
+                                #${orderNum}
+                            </span>
+                            <span class="customer-pill">${custName}</span>
+                            <span class="delivery-date-pill">
+                                📅 Deliv: ${delDateStr}
+                            </span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">&bull; ${tx.cart ? tx.cart.length : 0} item (${formattedTxQty} total)</span>
                         </div>
+                        ${actionsBlock}
                     </div>
-                    ${actionsBlock}
+
+                    <!-- Expandable Item Drawer -->
+                    <div id="history-drawer-${originalIndex}" class="history-items-drawer">
+                        <table class="history-drawer-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px; text-align: center;">No</th>
+                                    <th>Nama Barang</th>
+                                    <th style="width: 60px; text-align: center;">Qty</th>
+                                    <th style="width: 60px;">Satuan</th>
+                                    <th>Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody>${drawerRows}</tbody>
+                        </table>
+                    </div>
                 `;
-                listContainer.appendChild(itemDiv);
+                container.appendChild(card);
             });
+
+            if (renderedCount === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada transaksi cocok dengan "${searchKeyword}"</div>`;
+            }
+        }
+
+        function toggleCheckbox(index) {
+            const cb = document.querySelector(`.consolidate-checkbox[data-index="${index}"]`);
+            if (cb) cb.checked = !cb.checked;
+        }
+
+        function toggleHistoryDrawer(index) {
+            const drawer = document.getElementById(`history-drawer-${index}`);
+            if (!drawer) return;
+            drawer.style.display = drawer.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast(`Tersalin: ${text}`, "info"));
+            }
         }
 
         function copyHistoryText(index) {
@@ -1059,44 +2793,255 @@
                 message += `${i + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
             });
 
+            const btn = document.querySelector(`.copy-btn-${index}`);
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(message).then(() => {
-                    const btn = document.querySelector(`.copy-btn-${index}`);
-                    if(btn) {
-                        const originalText = btn.innerText;
-                        btn.innerText = "Copied!";
-                        setTimeout(() => btn.innerText = originalText, 2000);
+                    showToast("Rincian pesanan tersalin!", "success");
+                    if (btn) {
+                        btn.innerText = "Tersalin!";
+                        setTimeout(() => btn.innerText = "📋 TXT", 2000);
                     }
-                }).catch(err => {
-                    alert("Failed to copy text.");
-                });
+                }).catch(() => showToast("Gagal menyalin", "danger"));
             } else {
                 let textArea = document.createElement("textarea");
                 textArea.value = message;
                 textArea.style.position = "fixed";
                 textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
                 try {
                     document.execCommand('copy');
-                    const btn = document.querySelector(`.copy-btn-${index}`);
-                    if(btn) {
-                        const originalText = btn.innerText;
-                        btn.innerText = "Copied!";
-                        setTimeout(() => btn.innerText = originalText, 2000);
+                    showToast("Rincian pesanan tersalin!", "success");
+                    if (btn) {
+                        btn.innerText = "Tersalin!";
+                        setTimeout(() => btn.innerText = "📋 TXT", 2000);
                     }
                 } catch (err) {
-                    alert("Failed to copy text.");
+                    showToast("Gagal menyalin", "danger");
                 }
                 textArea.remove();
             }
         }
 
+        function loadHistoryItem(index) {
+            const doLoad = () => {
+                const loaded = transactionHistory[index];
+                orderCart = JSON.parse(JSON.stringify(loaded.cart));
+                currentOrderNumber = loaded.orderNumber;
+                
+                document.getElementById('editModeLabel').innerText = `Mode Edit Pesanan: ${currentOrderNumber}`;
+                document.getElementById('editModeContainer').style.display = 'flex';
+                
+                if (loaded.customer && loaded.customer !== "No Customer") {
+                    selectCustomer(loaded.customer);
+                } else {
+                    currentCustomer = null;
+                    const custDisplay = document.getElementById('customerDisplay');
+                    custDisplay.innerText = "Pilih outlet...";
+                    custDisplay.classList.add('placeholder');
+                    document.getElementById('summaryCustomer').innerText = "-";
+                }
+                
+                currentDeliveryDate = loaded.deliveryDate ? loaded.deliveryDate : getTomorrowDateString();
+                updateDeliveryDisplay();
+                renderCart();
+                switchTab('tab-order');
+                showToast(`Pesanan #${currentOrderNumber} dimuat`, "info");
+            };
+
+            if (orderCart.length > 0) {
+                showConfirm(
+                    "Ganti Keranjang Saat Ini?",
+                    "Memuat transaksi lama akan menggantikan barang yang ada di keranjang. Lanjutkan?",
+                    (confirmed) => {
+                        if (confirmed) doLoad();
+                    }
+                );
+            } else {
+                doLoad();
+            }
+        }
+
+        // --- Accurate CSV Export ---
+        function downloadHistoryCSV(index) {
+            const transaction = transactionHistory[index];
+            if (!transaction || !transaction.cart) return;
+            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom,note\n";
+            const sanitize = (str) => { return str ? String(str).replace(/"/g, "").replace(/,/g, ".") : ""; };
+            transaction.cart.forEach(item => { 
+                csvContent += `${sanitize(item.name)},${sanitize(item.variant)},${sanitize(item.sku)},${sanitize(item.qty)},${sanitize(item.uom)},${sanitize(item.note || "")}\n`; 
+            });
+            const currentDeliveryDate = transaction.deliveryDate;
+            let deliveryFormatted = "UnknownDate";
+            if (currentDeliveryDate) {
+                let dObj;
+                if (currentDeliveryDate.length === 10 && currentDeliveryDate.indexOf('-') === 4) {
+                    const parts = currentDeliveryDate.split('-');
+                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else { dObj = new Date(currentDeliveryDate); }
+                if (!isNaN(dObj.getTime())) {
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const dd = String(dObj.getDate()).padStart(2, '0');
+                    const mmm = months[dObj.getMonth()];
+                    const yy = String(dObj.getFullYear()).substring(2);
+                    deliveryFormatted = `${dd}${mmm}${yy}`;
+                }
+            }
+            let timestampFormatted = "UnknownTime";
+            const tDate = new Date(transaction.timestamp);
+            if (!isNaN(tDate.getTime())) {
+                timestampFormatted = `${tDate.getFullYear()}${String(tDate.getMonth()+1).padStart(2,'0')}${String(tDate.getDate()).padStart(2,'0')} ${String(tDate.getHours()).padStart(2,'0')}_${String(tDate.getMinutes()).padStart(2,'0')}_${String(tDate.getSeconds()).padStart(2,'0')}`;
+            } else { timestampFormatted = transaction.timestamp.replace(/[\/\\:]/g, '_'); }
+            const safeCustomerName = transaction.customer && transaction.customer !== "No Customer" ? transaction.customer : "New";
+            const fileName = `${safeCustomerName} for ${deliveryFormatted} - ${timestampFormatted}.csv`;
+            const encodedUri = encodeURI(csvContent); 
+            const link = document.createElement("a"); 
+            link.setAttribute("href", encodedUri); 
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link);
+            showToast(`CSV diunduh`, "success");
+        }
+
+        // --- Surat Jalan PDF Engine ---
+        function generateSuratJalan(historyIndex) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ margin: [15, 14, 15, 14] });
+            
+            const transaction = transactionHistory[historyIndex];
+            if (!transaction) return;
+
+            const customerName = transaction.customer || "No Customer";
+            const deliveryFormattedDate = formatDateDisplay(transaction.deliveryDate);
+
+            // Header Layout
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(20);
+            doc.text("SURAT JALAN", 14, 15);
+
+            // Company Identity
+            doc.setFontSize(11);
+            doc.text("NIAGA PANGAN NUSANTARA", 14, 26);
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(9);
+            doc.setTextColor(80, 80, 80);
+            doc.text("No. Telp/WA: 082188881492", 14, 31);
+            doc.text("Jl. Lele Raya No. 43", 14, 36);
+            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 41);
+            doc.text("Kota Tangerang Selatan", 14, 46);
+
+            // Right Meta Block
+            doc.setFont("Helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text("Tanggal Kirim:", 130, 26);
+            doc.setFont("Helvetica", "normal");
+            doc.text(deliveryFormattedDate, 160, 26);
+
+            doc.setFont("Helvetica", "bold");
+            doc.text("Kepada Yth. Tuan / Toko:", 130, 36);
+            doc.setFont("Helvetica", "normal");
+            
+            const customerLines = doc.splitTextToSize(customerName, 65);
+            doc.text(customerLines, 130, 41);
+
+            doc.setTextColor(0, 0, 0);
+
+            // Table Data
+            const tableColumn = ["No.", "QTY", "UOM", "Item Name", "Note", "QTY Diterima", "Kondisi"];
+            const tableRows = [];
+
+            (transaction.cart || []).forEach((item, index) => {
+                tableRows.push([
+                    index + 1,
+                    item.qty,
+                    item.uom,
+                    item.name,
+                    item.note || "", 
+                    "",             
+                    ""               
+                ]);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 54, 
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [15, 23, 42],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    fontSize: 9,
+                    halign: 'left'
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 2,
+                    overflow: 'linebreak',
+                    lineColor: [226, 232, 240]
+                },
+                columnStyles: {
+                    0: { cellWidth: 10 },  
+                    1: { cellWidth: 14 },  
+                    2: { cellWidth: 15 },  
+                    3: { cellWidth: 65 },  
+                    4: { cellWidth: 34 },  
+                    5: { cellWidth: 24 },  
+                    6: { cellWidth: 25 }   
+                }
+            });
+
+            const finalY = doc.lastAutoTable.finalY;
+            const pageHeight = doc.internal.pageSize.height;
+
+            let currentY;
+            if (finalY + 30 > pageHeight - 15) {
+                doc.addPage();
+                currentY = 20; 
+            } else {
+                currentY = finalY + 8; 
+            }
+
+            doc.setFont("Helvetica", "normal");
+            doc.setFontSize(10);
+            doc.text("Tanda Terima,", 25, currentY);
+            doc.text("Hormat Kami,", 145, currentY);
+
+            doc.text("(......................................)", 15, currentY + 20);
+            doc.text("(......................................)", 135, currentY + 20);
+
+            // Safe parsing of delivery date
+            let dObj = new Date();
+            if (transaction.deliveryDate) {
+                if (transaction.deliveryDate.length === 10 && transaction.deliveryDate.indexOf('-') === 4) {
+                    const parts = transaction.deliveryDate.split('-');
+                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    dObj = new Date(transaction.deliveryDate);
+                }
+            }
+            let dd = String(dObj.getDate()).padStart(2, '0');
+            let mm = String(dObj.getMonth() + 1).padStart(2, '0');
+            let yy = String(dObj.getFullYear()).substring(2);
+            let dateStr = `${dd}${mm}${yy}`;
+            
+            let cleanName = customerName.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+            let properName = cleanName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            doc.save(`SJ ${properName} ${dateStr}.pdf`);
+            showToast(`Surat Jalan PDF diunduh`, "success");
+        }
+
+        // --- Consolidated PDF Engine ---
         function generateConsolidatedPDF() {
             const checkboxes = document.querySelectorAll('.consolidate-checkbox:checked');
-            if (checkboxes.length === 0) { alert("Please check at least one order to consolidate."); return; }
+            if (checkboxes.length === 0) {
+                showToast("Centang minimal 1 pesanan untuk direkap", "warning");
+                return;
+            }
 
             const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
             const selectedTx = selectedIndices.map(idx => transactionHistory[idx]);
@@ -1106,7 +3051,7 @@
 
             selectedTx.forEach(tx => {
                 const currentCust = tx.customer || "No Customer";
-                tx.cart.forEach(cartItem => {
+                (tx.cart || []).forEach(cartItem => {
                     if (!itemMatrix[cartItem.name]) {
                         itemMatrix[cartItem.name] = {
                             name: cartItem.name,
@@ -1132,14 +3077,14 @@
             const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
             doc.setFont("Helvetica", "bold");
-            doc.setFontSize(16);
-            doc.text("REKAPITULASI ORDER GABUNGAN", 7, 15);
+            doc.setFontSize(15);
+            doc.text("REKAPITULASI ORDER GABUNGAN", 7, 14);
             doc.setFont("Helvetica", "normal");
-            doc.setFontSize(9);
-            doc.text(`Tanggal Cetak: ${new Date().toLocaleString()}`, 7, 20);
+            doc.setFontSize(8.5);
+            doc.text(`Tanggal Cetak: ${new Date().toLocaleString('id-ID')}`, 7, 19);
 
             const headerCustomers = uniqueCustomers.map(cust => customerShortNames[cust] || cust);
-            const tableHeaders = ["No.", "Item Name", ...headerCustomers, "Total Qty", "Note"];
+            const tableHeaders = ["No.", "Item Name", ...headerCustomers, "Total Qty", "Catatan"];
             const tableRows = [];
 
             const wrapText = (str, max) => {
@@ -1189,11 +3134,11 @@
             doc.autoTable({
                 head: [tableHeaders],
                 body: tableRows,
-                startY: 25,
+                startY: 23,
                 margin: { left: 7, right: 7 },
                 theme: 'grid',
-                headStyles: { fillColor: [24, 24, 27], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
-                styles: { fontSize: 8.5, cellPadding: 1.5, overflow: 'linebreak', lineColor: [228, 228, 231] },
+                headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+                styles: { fontSize: 8, cellPadding: 1.8, overflow: 'linebreak', lineColor: [226, 232, 240] },
                 columnStyles: {
                     [totalQtyIndex]: { fontStyle: 'bold' } 
                 }
@@ -1201,306 +3146,98 @@
 
             doc.save(`Consolidated_Orders_${new Date().toISOString().slice(0, 10)}.pdf`);
             cancelConsolidationMode();
-            closeHistoryPopup();
+            showToast("PDF Rekapitulasi Gabungan diunduh", "success");
         }
 
-        function downloadHistoryCSV(index) {
-            const transaction = transactionHistory[index];
-            if (!transaction || !transaction.cart) return;
-            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom,note\n";
-            const sanitize = (str) => { return str ? String(str).replace(/"/g, "").replace(/,/g, ".") : ""; };
-            transaction.cart.forEach(item => { 
-                csvContent += `${sanitize(item.name)},${sanitize(item.variant)},${sanitize(item.sku)},${sanitize(item.qty)},${sanitize(item.uom)},${sanitize(item.note || "")}\n`; 
-            });
-            const currentDeliveryDate = transaction.deliveryDate;
-            let deliveryFormatted = "UnknownDate";
-            if (currentDeliveryDate) {
-                let dObj;
-                if (currentDeliveryDate.length === 10 && currentDeliveryDate.indexOf('-') === 4) {
-                    const parts = currentDeliveryDate.split('-');
-                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                } else { dObj = new Date(currentDeliveryDate); }
-                if (!isNaN(dObj.getTime())) {
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const dd = String(dObj.getDate()).padStart(2, '0');
-                    const mmm = months[dObj.getMonth()];
-                    const yy = String(dObj.getFullYear()).substring(2);
-                    deliveryFormatted = `${dd}${mmm}${yy}`;
-                }
-            }
-            let timestampFormatted = "UnknownTime";
-            const tDate = new Date(transaction.timestamp);
-            if (!isNaN(tDate.getTime())) {
-                timestampFormatted = `${tDate.getFullYear()}${String(tDate.getMonth()+1).padStart(2,'0')}${String(tDate.getDate()).padStart(2,'0')} ${String(tDate.getHours()).padStart(2,'0')}_${String(tDate.getMinutes()).padStart(2,'0')}_${String(tDate.getSeconds()).padStart(2,'0')}`;
-            } else { timestampFormatted = transaction.timestamp.replace(/[\/\\:]/g, '_'); }
-            const safeCustomerName = transaction.customer && transaction.customer !== "No Customer" ? transaction.customer : "New";
-            const fileName = `${safeCustomerName} for ${deliveryFormatted} - ${timestampFormatted}.csv`;
-            const encodedUri = encodeURI(csvContent); 
-            const link = document.createElement("a"); 
-            link.setAttribute("href", encodedUri); 
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link); 
-            link.click(); 
-            document.body.removeChild(link);
-        }
-
-        function loadHistoryItem(index) {
-            if (orderCart.length > 0 && !confirm("Loading a previous transaction will replace your current cart. Continue?")) return;
-            const loadedTransaction = transactionHistory[index];
-            orderCart = JSON.parse(JSON.stringify(loadedTransaction.cart));
-            currentOrderNumber = loadedTransaction.orderNumber;
-            document.getElementById('editModeLabel').innerText = `Edit Mode for ${currentOrderNumber}`;
-            document.getElementById('editModeContainer').style.display = 'flex';
-            if (loadedTransaction.customer && loadedTransaction.customer !== "No Customer") { selectCustomer(loadedTransaction.customer); } 
-            else { currentCustomer = null; customerDisplay.innerText = "click here"; customerDisplay.style.textDecoration = "underline"; customerEditBtn.style.display = "none"; }
-            currentDeliveryDate = loadedTransaction.deliveryDate ? loadedTransaction.deliveryDate : getTomorrowDateString();
-            updateDeliveryDisplay(); renderCart(); closeHistoryPopup();
-        }
-
-        renderCart();
-
-        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
-            
-            let message = "";
-            
-            if (isUpdate) {
-                message += `🔄 *ORDER UPDATED!*\n`;
-            } else {
-                message += `🚨 *NEW ORDER SAVED!*\n`;
-            }
-            
-            message += `👤 *Customer:* ${customer || "No Customer"}\n`;
-            message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
-            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
-            
-            if (isUpdate && changes) {
-                let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
-                
-                if (hasChanges) {
-                    message += `📝 *CHANGES MADE:*\n`;
-                    
-                    if (changes.added.length > 0) {
-                        message += `\n➕ *Added:*\n`;
-                        changes.added.forEach(item => {
-                            message += `- ${item.name} (${item.qty} ${item.uom})`;
-                            if (item.note) message += ` _(Note: "${item.note}")_`;
-                            message += `\n`;
-                        });
-                    }
-                    
-                    if (changes.modified.length > 0) {
-                        message += `\n✏️ *Edited:*\n`;
-                        changes.modified.forEach(item => {
-                            message += `- ${item.name}: `;
-                            let edits = [];
-                            if (parseFloat(item.oldQty) !== parseFloat(item.newQty)) {
-                                edits.push(`Qty ${item.oldQty} -> ${item.newQty} ${item.uom}`);
-                            }
-                            if (item.oldNote !== item.newNote) {
-                                let oNote = item.oldNote ? `"${item.oldNote}"` : "None";
-                                let nNote = item.newNote ? `"${item.newNote}"` : "None";
-                                edits.push(`Note ${oNote} -> ${nNote}`);
-                            }
-                            message += edits.join(" | ") + "\n";
-                        });
-                    }
-                    
-                    if (changes.removed.length > 0) {
-                        message += `\n❌ *Removed:*\n`;
-                        changes.removed.forEach(item => {
-                            message += `- ${item.name} (${item.qty} ${item.uom})`;
-                            if (item.note) message += ` _(Note: "${item.note}")_`;
-                            message += `\n`;
-                        });
-                    }
-                    message += `\n━━━━━━━━━━━━━━━━━\n\n`;
-                } else {
-                    message += `📝 _No items changed (Only delivery date or customer updated)._\n\n━━━━━━━━━━━━━━━━━\n\n`;
-                }
-            }
-
-            message += `📦 *Full Items List:*\n`;
-            cart.forEach((item, index) => { 
-                message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
-            });
-            
-            const appBaseUrl = window.location.href.split('?')[0];
-
-            fetch(GAS_WEB_APP_URL, {
-                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ 
-                    chat_id: TELEGRAM_CHAT_ID, 
-                    text: message,
-                    appUrl: appBaseUrl,
-                    orderNumber: currentOrderNumber
-                })
-            }).catch(err => console.error("Failed to route message through Google Script", err));
-        }
-
-        function generateSuratJalan(historyIndex) {
-            const { jsPDF } = window.jspdf;
-            
-            const doc = new jsPDF({
-                margin: [15, 14, 15, 14] 
-            });
-            
-            const transaction = transactionHistory[historyIndex];
-            if (!transaction) return;
-
-            const customerName = transaction.customer || "No Customer";
-            const deliveryFormattedDate = formatDateDisplay(transaction.deliveryDate);
-
-            // --- Header Layout ---
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(20);
-            doc.text("SURAT JALAN", 14, 15);
-
-            // Left Side: Company Identity Header
-            doc.setFontSize(11);
-            doc.text("NIAGA PANGAN NUSANTARA", 14, 26);
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(9);
-            doc.setTextColor(80, 80, 80);
-            doc.text("No. Telp/WA: 082188881492", 14, 31);
-            doc.text("Jl. Lele Raya No. 43", 14, 36);
-            doc.text("Kel. Bambu Apus, Kec. Pamulang", 14, 41);
-            doc.text("Kota Tangerang Selatan", 14, 46);
-
-            // Right Side: Meta Block Layout
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.text("Tanggal Kirim:", 130, 26);
-            doc.setFont("Helvetica", "normal");
-            doc.text(deliveryFormattedDate, 160, 26);
-
-            doc.setFont("Helvetica", "bold");
-            doc.text("Kepada Yth. Tuan / Toko:", 130, 36);
-            doc.setFont("Helvetica", "normal");
-            
-            const customerLines = doc.splitTextToSize(customerName, 65);
-            doc.text(customerLines, 130, 41);
-
-            doc.setTextColor(0, 0, 0);
-
-            // --- Table Configuration Setup ---
-            const tableColumn = ["No.", "QTY", "UOM", "Item Name", "Note", "QTY Diterima", "Kondisi"];
-            const tableRows = [];
-
-            transaction.cart.forEach((item, index) => {
-                const rowData = [
-                    index + 1,
-                    item.qty,
-                    item.uom,
-                    item.name,
-                    item.note || "", 
-                    "",             
-                    ""               
-                ];
-                tableRows.push(rowData);
-            });
-
-            doc.autoTable({
-                head: [tableColumn],
-                body: tableRows,
-                startY: 54, 
-                theme: 'grid',
-                headStyles: {
-                    fillColor: [24, 24, 27],
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold',
-                    fontSize: 9,
-                    halign: 'left'
-                },
-                styles: {
-                    fontSize: 9,
-                    cellPadding: 1.5,
-                    overflow: 'linebreak',
-                    lineColor: [228, 228, 231]
-                },
-                columnStyles: {
-                    0: { cellWidth: 10 },  
-                    1: { cellWidth: 14 },  
-                    2: { cellWidth: 15 },  
-                    3: { cellWidth: 65 },  
-                    4: { cellWidth: 34 },  
-                    5: { cellWidth: 24 },  
-                    6: { cellWidth: 25 }   
-                }
-            });
-
-            const finalY = doc.lastAutoTable.finalY;
-            const pageHeight = doc.internal.pageSize.height;
-
-            let currentY;
-            if (finalY + 30 > pageHeight - 15) {
-                doc.addPage();
-                currentY = 20; 
-            } else {
-                currentY = finalY + 8; 
-            }
-
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(10);
-            doc.text("Tanda Terima,", 25, currentY);
-            doc.text("Hormat Kami,", 145, currentY);
-
-            doc.text("(......................................)", 15, currentY + 20);
-            doc.text("(......................................)", 135, currentY + 20);
-
-            // Safe parsing of the delivery date into DDMMYY format
-            let dObj = new Date();
-            if (transaction.deliveryDate) {
-                if (transaction.deliveryDate.length === 10 && transaction.deliveryDate.indexOf('-') === 4) {
-                    const parts = transaction.deliveryDate.split('-');
-                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                } else {
-                    dObj = new Date(transaction.deliveryDate);
-                }
-            }
-            let dd = String(dObj.getDate()).padStart(2, '0');
-            let mm = String(dObj.getMonth() + 1).padStart(2, '0');
-            let yy = String(dObj.getFullYear()).substring(2);
-            let dateStr = `${dd}${mm}${yy}`;
-            
-            // Clean up the customer name, title case it, and leave proper spaces
-            let cleanName = customerName.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-            let properName = cleanName.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-
-            doc.save(`SJ ${properName} ${dateStr}.pdf`);
-        }
-
-        // --- Keyboard Shortcuts Listener ---
+        // --- Keyboard Shortcuts ---
         document.addEventListener('keydown', function(e) {
-            // Use Ctrl + Alt together to avoid browser conflicts
+            if (e.key === 'Escape') {
+                closeCustomerPopover();
+                closeDatePopover();
+                closeNoteModal();
+                closeConfirmModal(false);
+                autocompleteList.innerHTML = '';
+            }
+
             if (e.ctrlKey && e.altKey) {
                 switch(e.key.toLowerCase()) {
-                    case 's': // Ctrl + Alt + S: Focus Search Item and select all text
+                    case 's':
                         e.preventDefault();
-                        const searchInput = document.getElementById('searchInput');
+                        switchTab('tab-order');
                         if (searchInput && !searchInput.disabled) {
                             searchInput.focus();
                             searchInput.select();
                         }
                         break;
-                    case 'n': // Ctrl + Alt + N: Open note input for the last added item
+                    case 'n':
                         e.preventDefault();
                         if (orderCart.length > 0) {
-                            editNote(orderCart.length - 1);
+                            openNoteModal(orderCart.length - 1);
                         } else {
-                            alert("Your cart is empty. Add an item before adding a note.");
+                            showToast("Keranjang kosong. Tambah barang dulu.", "warning");
                         }
                         break;
-                    case 'h': // Ctrl + Alt + H: Open History modal
+                    case 'h':
                         e.preventDefault();
-                        if (typeof openHistoryPopup === 'function') {
-                            openHistoryPopup();
-                        }
+                        switchTab('tab-history');
                         break;
                 }
             }
         });
+
+        // --- Initialization on Load ---
+        window.onload = async function() {
+            updateDeliveryDisplay();
+            renderCart();
+            updateHistoryCountBadge();
+
+            // Load items catalog
+            try {
+                const response = await fetch(itemSheetUrl + '&t=' + new Date().getTime());
+                if (response.ok) {
+                    const csvText = await response.text();
+                    parseItemCSV(csvText);
+                } else {
+                    document.getElementById('systemStatusText').innerText = "Gagal memuat katalog";
+                    document.getElementById('systemStatusDot').style.backgroundColor = 'var(--danger)';
+                }
+            } catch (error) {
+                console.error("Gagal memuat katalog", error);
+                document.getElementById('systemStatusText').innerText = "Katalog Offline";
+                document.getElementById('systemStatusDot').style.backgroundColor = 'var(--danger)';
+            }
+
+            // Load customers
+            try {
+                if (customerSheetUrl) {
+                    const response = await fetch(customerSheetUrl + '&t=' + new Date().getTime());
+                    if (response.ok) {
+                        const csvText = await response.text();
+                        parseCustomerCSV(csvText);
+                    }
+                }
+            } catch (error) {
+                console.error("Gagal memuat data customer", error);
+            }
+
+            await fetchLatestHistory();
+
+            // Auto-print SJ via query parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const printSJOrder = urlParams.get('printSJ');
+
+            if (printSJOrder && transactionHistory.length > 0) {
+                const historyIndex = transactionHistory.findIndex(t => t.orderNumber === printSJOrder);
+                if (historyIndex !== -1) {
+                    setTimeout(() => {
+                        generateSuratJalan(historyIndex);
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }, 500);
+                } else {
+                    showToast("Order " + printSJOrder + " tidak ditemukan di database.", "warning");
+                }
+            }
+        };
     </script>
 </body>
 </html>

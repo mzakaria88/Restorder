@@ -992,6 +992,45 @@
             gap: 3px;
         }
 
+        .pending-sync-pill {
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #b45309;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            padding: 1px 7px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            animation: pulse-warm 2s infinite ease-in-out;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .pending-sync-pill:hover {
+            background: #fde68a;
+            border-color: #f59e0b;
+        }
+
+        @keyframes pulse-warm {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(0.98); }
+        }
+
+        .offline-queue-banner {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: var(--radius-md);
+            padding: 6px 12px;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: #92400e;
+        }
+
         .history-card-actions {
             display: flex;
             align-items: center;
@@ -1496,6 +1535,15 @@
                         </button>
                         <button class="btn btn-sm btn-outline" onclick="cancelConsolidationMode()">Batal</button>
                     </div>
+                </div>
+
+                <!-- Offline Queue Notice Bar -->
+                <div id="offlineQueueNotice" class="offline-queue-banner">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span>⏳</span>
+                        <span><strong id="offlineQueueCountText">0 pesanan</strong> tersimpan di lokal (menunggu koneksi internet).</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline" style="background: #ffffff; border-color: #fde68a; color: #92400e; padding: 2px 8px;" onclick="flushOfflineQueue()">Sinkronkan Sekarang</button>
                 </div>
 
                 <!-- History Orders List -->
@@ -2044,6 +2092,114 @@
             return cols;
         }
 
+        // --- Option C: Hybrid Smart Network Monitor ---
+        let isNetworkOnline = true;
+        let connectionCheckInterval = null;
+
+        async function checkRealInternet(timeoutMs = 4000) {
+            // Step 1: Instant local interface check
+            if (!navigator.onLine) {
+                setNetworkStatus(false, "Sinyal / Wi-Fi Mati");
+                return false;
+            }
+
+            // Step 2: Probe true WAN connectivity (detects Wi-Fi connected without internet)
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+                // Ping Google's ultra-lightweight 0-byte captive portal check endpoint
+                await fetch(`https://www.gstatic.com/generate_204?t=${Date.now()}`, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                setNetworkStatus(true);
+                return true;
+            } catch (err) {
+                // Fetch failed or timed out => Router connected but NO INTERNET access
+                setNetworkStatus(false, "Tidak Ada Internet");
+                return false;
+            }
+        }
+
+        function setNetworkStatus(online, offlineMsg = "Tidak Ada Internet") {
+            const wasOnline = isNetworkOnline;
+            isNetworkOnline = online;
+
+            const dot = document.getElementById('systemStatusDot');
+            const text = document.getElementById('systemStatusText');
+            const pill = document.getElementById('systemStatusPill');
+
+            if (!dot || !text || !pill) return;
+
+            if (online) {
+                dot.style.backgroundColor = 'var(--accent)';
+                dot.style.boxShadow = '0 0 0 2px rgba(16, 185, 129, 0.2)';
+                text.innerText = catalogData.length > 0 ? `${catalogData.length} Item Ready` : 'Online';
+                pill.title = 'Koneksi internet aktif';
+                if (!wasOnline) {
+                    showToast("Koneksi internet terhubung kembali", "success");
+                    if (typeof flushOfflineQueue === 'function') {
+                        flushOfflineQueue().then(() => {
+                            if (typeof fetchLatestHistory === 'function') fetchLatestHistory();
+                        });
+                    } else if (typeof fetchLatestHistory === 'function') {
+                        fetchLatestHistory();
+                    }
+                }
+            } else {
+                dot.style.backgroundColor = 'var(--danger)';
+                dot.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)';
+                text.innerText = offlineMsg;
+                pill.title = 'Tidak ada akses internet. Pesanan baru tetap aman tersimpan di lokal.';
+                if (wasOnline) {
+                    showToast("Akses internet terputus! Pesanan tetap aman disimpan lokal.", "warning", 4000);
+                }
+            }
+        }
+
+        // Instant listeners for hardware network changes (0ms latency)
+        window.addEventListener('online', () => {
+            checkRealInternet(3000);
+        });
+
+        window.addEventListener('offline', () => {
+            setNetworkStatus(false, "Koneksi Terputus");
+        });
+
+        // Periodic heartbeat every 20 seconds, automatically paused when tab is hidden to save battery
+        function startConnectionMonitor() {
+            checkRealInternet(4000).then(isUp => {
+                if (isUp && typeof flushOfflineQueue === 'function' && getOfflineQueue().length > 0) {
+                    flushOfflineQueue();
+                }
+            });
+            if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+            connectionCheckInterval = setInterval(() => {
+                if (!document.hidden) {
+                    checkRealInternet(4000).then(isUp => {
+                        if (isUp && typeof flushOfflineQueue === 'function' && getOfflineQueue().length > 0) {
+                            flushOfflineQueue();
+                        }
+                    });
+                }
+            }, 20000);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkRealInternet(3500).then(isUp => {
+                    if (isUp && typeof flushOfflineQueue === 'function' && getOfflineQueue().length > 0) {
+                        flushOfflineQueue();
+                    }
+                });
+            }
+        });
+
         // --- Catalog & Customer CSV Data Fetching ---
         function parseItemCSV(text) {
             catalogData = []; 
@@ -2064,11 +2220,15 @@
             if (catalogData.length > 0) {
                 searchInput.placeholder = `Ketik nama barang (${catalogData.length} item siap)...`;
                 searchInput.disabled = false;
-                document.getElementById('systemStatusText').innerText = `${catalogData.length} Item Ready`;
-                document.getElementById('systemStatusDot').style.backgroundColor = 'var(--accent)';
+                if (isNetworkOnline) {
+                    document.getElementById('systemStatusText').innerText = `${catalogData.length} Item Ready`;
+                    document.getElementById('systemStatusDot').style.backgroundColor = 'var(--accent)';
+                }
             } else {
                 searchInput.placeholder = "Katalog kosong";
-                document.getElementById('systemStatusText').innerText = "Katalog Kosong";
+                if (isNetworkOnline) {
+                    document.getElementById('systemStatusText').innerText = "Katalog Kosong";
+                }
             }
         }
 
@@ -2464,20 +2624,185 @@
             }
         }
 
-        function proceedOrderSubmission() {
+        // --- Offline Outbox Queue & Smart Merge System ---
+        function getOfflineQueue() {
+            try {
+                return JSON.parse(localStorage.getItem('npn_offline_queue')) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveOfflineQueue(queue) {
+            localStorage.setItem('npn_offline_queue', JSON.stringify(queue));
+            updateOfflineQueueBanner();
+        }
+
+        function addToOfflineQueue(item) {
+            const queue = getOfflineQueue();
+            const existingIdx = queue.findIndex(q => q.orderNumber === item.orderNumber);
+            if (existingIdx !== -1) {
+                queue[existingIdx] = item;
+            } else {
+                queue.push(item);
+            }
+            saveOfflineQueue(queue);
+        }
+
+        function removeFromOfflineQueue(orderNumber) {
+            const queue = getOfflineQueue().filter(q => q.orderNumber !== orderNumber);
+            saveOfflineQueue(queue);
+        }
+
+        function updateOfflineQueueBanner() {
+            const banner = document.getElementById('offlineQueueNotice');
+            const countText = document.getElementById('offlineQueueCountText');
+            if (!banner || !countText) return;
+
+            const queue = getOfflineQueue();
+            if (queue.length > 0) {
+                countText.innerText = `${queue.length} pesanan`;
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
+        let isFlushingQueue = false;
+        async function flushOfflineQueue() {
+            if (isFlushingQueue) return;
+            const queue = getOfflineQueue();
+            if (queue.length === 0) {
+                updateOfflineQueueBanner();
+                return;
+            }
+
+            if (!navigator.onLine) {
+                showToast("Perangkat sedang offline. Sinkronisasi ditunda.", "warning");
+                return;
+            }
+
+            isFlushingQueue = true;
+            const refreshBtn = document.getElementById('refreshHistoryBtn');
+            if (refreshBtn) {
+                refreshBtn.innerText = "Mengirim...";
+                refreshBtn.disabled = true;
+            }
+
+            showToast(`Menyinkronkan ${queue.length} pesanan offline ke server...`, "info", 3000);
+
+            const remainingQueue = [];
+            let successCount = 0;
+
+            for (const item of queue) {
+                try {
+                    const promises = [];
+                    if (GAS_SHEET_SYNC_URL && !GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
+                        promises.push(syncOrderToLampohSheet(item.transactionData));
+                    }
+                    if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
+                        promises.push(fetch(GAS_DB_URL, {
+                            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify(item.transactionData)
+                        }));
+                    }
+                    if (item.telegramPayload && GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes('PASTE_YOUR')) {
+                        promises.push(sendTelegramPayload(item.telegramPayload));
+                    }
+
+                    await Promise.all(promises);
+
+                    // Mark as synced in local transactionHistory
+                    const histIdx = transactionHistory.findIndex(t => t.orderNumber === item.orderNumber);
+                    if (histIdx !== -1) {
+                        transactionHistory[histIdx].syncStatus = 'synced';
+                    }
+                    successCount++;
+                } catch (err) {
+                    console.error("Gagal mengirim pesanan offline:", item.orderNumber, err);
+                    remainingQueue.push(item);
+                }
+            }
+
+            saveOfflineQueue(remainingQueue);
+            localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+            isFlushingQueue = false;
+
+            if (refreshBtn) {
+                refreshBtn.innerText = "Sinkronkan";
+                refreshBtn.disabled = false;
+            }
+
+            if (successCount > 0) {
+                showToast(`✅ ${successCount} pesanan offline berhasil disinkronkan ke server!`, "success", 4000);
+            }
+            if (remainingQueue.length > 0) {
+                showToast(`⚠️ ${remainingQueue.length} pesanan belum terkirim. Akan dicoba lagi otomatis.`, "warning", 4000);
+            }
+
+            populateHistoryList();
+            updateHistoryCountBadge();
+        }
+
+        function smartMergeHistory(serverData, localHistory) {
+            if (!Array.isArray(serverData)) return localHistory || [];
+            if (!Array.isArray(localHistory) || localHistory.length === 0) return serverData;
+
+            // Map server data by orderNumber
+            const mergedMap = new Map();
+            serverData.forEach(sItem => {
+                if (sItem && sItem.orderNumber) {
+                    if (!sItem.syncStatus) sItem.syncStatus = 'synced';
+                    mergedMap.set(sItem.orderNumber, sItem);
+                }
+            });
+
+            // Reconcile with local transactions
+            localHistory.forEach(lItem => {
+                if (!lItem || !lItem.orderNumber) return;
+
+                const sItem = mergedMap.get(lItem.orderNumber);
+
+                if (!sItem) {
+                    // Order exists in local storage but not yet on server (created offline)
+                    mergedMap.set(lItem.orderNumber, lItem);
+                } else if (lItem.syncStatus === 'pending') {
+                    // Local copy has un-synced edits
+                    const localTime = lItem.updatedAt || 0;
+                    const serverTime = sItem.updatedAt || 0;
+
+                    if (localTime >= serverTime) {
+                        mergedMap.set(lItem.orderNumber, lItem);
+                    } else {
+                        mergedMap.set(lItem.orderNumber, sItem);
+                    }
+                } else {
+                    // Already synced: retain server item, but transfer local metadata if helpful
+                    if (lItem.updatedAt && !sItem.updatedAt) {
+                        sItem.updatedAt = lItem.updatedAt;
+                    }
+                }
+            });
+
+            return Array.from(mergedMap.values());
+        }
+
+        async function proceedOrderSubmission() {
             const submitBtn = document.getElementById('submitOrderBtn');
             const submitBtnText = document.getElementById('submitBtnText');
             submitBtn.disabled = true;
-            submitBtnText.innerText = "Mengirim...";
+            submitBtnText.innerText = "Menyimpan...";
 
             const isUpdate = !!currentOrderNumber;
             let oldCart = [];
             let cartChanges = null;
+            let existingVersion = 0;
 
             if (isUpdate) { 
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) {
                     oldCart = JSON.parse(JSON.stringify(transactionHistory[idx].cart));
+                    existingVersion = transactionHistory[idx].version || 1;
                 }
             } else { 
                 currentOrderNumber = generateOrderNumber(); 
@@ -2487,50 +2812,106 @@
                 cartChanges = getCartChanges(oldCart, orderCart);
             }
 
+            const now = Date.now();
+            const orderVersion = isUpdate ? (existingVersion + 1) : 1;
+            const willSendOnline = isNetworkOnline && navigator.onLine;
+
             const transactionData = {
                 orderNumber: currentOrderNumber,
                 timestamp: new Date().toLocaleString('id-ID'),
+                updatedAt: now,
+                version: orderVersion,
+                syncStatus: willSendOnline ? 'synced' : 'pending',
                 customer: currentCustomer || "No Customer",
                 deliveryDate: currentDeliveryDate,
                 cart: JSON.parse(JSON.stringify(orderCart)) 
             };
 
+            // Save immediately to local state
             if (isUpdate) {
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) transactionHistory[idx] = transactionData;
             } else {
                 transactionHistory.push(transactionData);
             }
-
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
-            syncOrderToLampohSheet(transactionData);
 
-            if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
-                fetch(GAS_DB_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(transactionData)
-                }).catch(err => console.error("Database sync failed", err));
-            }
-            
-            sendTelegramOrderAlert(currentCustomer, currentDeliveryDate, orderCart, isUpdate, cartChanges);
-            
-            setTimeout(() => {
+            // Build Telegram alert payload
+            const telegramMsg = buildTelegramMessage(currentCustomer, currentDeliveryDate, orderCart, isUpdate, cartChanges, currentOrderNumber);
+            const appBaseUrl = window.location.href.split('?')[0];
+            const telegramPayload = { 
+                chat_id: TELEGRAM_CHAT_ID, 
+                text: telegramMsg,
+                appUrl: appBaseUrl,
+                orderNumber: currentOrderNumber
+            };
+
+            if (!willSendOnline) {
+                // Queue into offline outbox
+                addToOfflineQueue({
+                    orderNumber: currentOrderNumber,
+                    transactionData: transactionData,
+                    telegramPayload: telegramPayload,
+                    updatedAt: now,
+                    isUpdate: isUpdate
+                });
+
                 submitBtn.disabled = false;
                 submitBtnText.innerText = "Kirim Pesanan";
-                showToast(`Pesanan #${currentOrderNumber} terkirim!`, "success", 4000);
+                showToast(`Pesanan #${currentOrderNumber} tersimpan di lokal (Offline)! Akan otomatis dikirim saat online.`, "warning", 5000);
                 resetAppUI();
                 updateHistoryCountBadge();
-            }, 500);
+                updateOfflineQueueBanner();
+                populateHistoryList();
+                return;
+            }
+
+            // Attempt online dispatch
+            try {
+                const sheetPromise = syncOrderToLampohSheet(transactionData);
+                const dbPromise = (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) ?
+                    fetch(GAS_DB_URL, {
+                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(transactionData)
+                    }) : Promise.resolve();
+                const tgPromise = sendTelegramPayload(telegramPayload);
+
+                await Promise.all([sheetPromise, dbPromise, tgPromise]);
+
+                transactionData.syncStatus = 'synced';
+                removeFromOfflineQueue(currentOrderNumber);
+                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                showToast(`Pesanan #${currentOrderNumber} berhasil dikirim ke server & Telegram!`, "success", 4000);
+            } catch (netErr) {
+                console.warn("Gagal mengirim online, dialihkan ke antrean offline:", netErr);
+                transactionData.syncStatus = 'pending';
+                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                addToOfflineQueue({
+                    orderNumber: currentOrderNumber,
+                    transactionData: transactionData,
+                    telegramPayload: telegramPayload,
+                    updatedAt: now,
+                    isUpdate: isUpdate
+                });
+                showToast(`Koneksi terputus saat mengirim. Pesanan #${currentOrderNumber} aman disimpan di antrean offline.`, "warning", 5000);
+            }
+
+            submitBtn.disabled = false;
+            submitBtnText.innerText = "Kirim Pesanan";
+            resetAppUI();
+            updateHistoryCountBadge();
+            updateOfflineQueueBanner();
+            populateHistoryList();
         }
 
         function syncOrderToLampohSheet(transactionData) {
-            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
-            fetch(GAS_SHEET_SYNC_URL, {
+            if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return Promise.resolve();
+            return fetch(GAS_SHEET_SYNC_URL, {
                 method: 'POST',
                 mode: 'no-cors', 
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(transactionData)
-            }).catch(err => console.error("Sheet sync failed", err));
+            });
         }
 
         async function fetchLatestHistory() {
@@ -2541,10 +2922,15 @@
                 refreshBtn.disabled = true;
             }
             try {
+                // If there are pending outbox items, attempt flush first
+                if (isNetworkOnline && getOfflineQueue().length > 0) {
+                    await flushOfflineQueue();
+                }
+
                 const response = await fetch(GAS_SHEET_SYNC_URL + '?t=' + new Date().getTime());
-                const data = await response.json();
-                if (data && Array.isArray(data) && data.length > 0) {
-                    transactionHistory = data;
+                const serverData = await response.json();
+                if (serverData && Array.isArray(serverData) && serverData.length > 0) {
+                    transactionHistory = smartMergeHistory(serverData, transactionHistory);
                     localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
                     populateHistoryList();
                     showToast("Riwayat disinkronkan", "success");
@@ -2558,6 +2944,7 @@
                     refreshBtn.disabled = false;
                 }
                 updateHistoryCountBadge();
+                updateOfflineQueueBanner();
             }
         }
 
@@ -2566,9 +2953,7 @@
         }
 
         // --- Telegram Alerts ---
-        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
-            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
-            
+        function buildTelegramMessage(customer, deliveryDate, cart, isUpdate, changes, orderNum) {
             let message = "";
             if (isUpdate) {
                 message += `🔄 *ORDER UPDATED!*\n`;
@@ -2578,7 +2963,7 @@
             
             message += `👤 *Customer:* ${customer || "No Customer"}\n`;
             message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
-            if (currentOrderNumber) message += `🧾 *Order ID:* ${currentOrderNumber}\n\n`;
+            if (orderNum) message += `🧾 *Order ID:* ${orderNum}\n\n`;
             
             if (isUpdate && changes) {
                 let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
@@ -2626,17 +3011,27 @@
             cart.forEach((item, index) => { 
                 message += `${index + 1}. ${item.name} - ${item.qty} ${item.uom}${item.note ? ` _(Note: ${item.note})_` : ''}\n`; 
             });
-            
-            const appBaseUrl = window.location.href.split('?')[0];
 
-            fetch(GAS_WEB_APP_URL, {
+            return message;
+        }
+
+        function sendTelegramPayload(payload) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR') || !payload) return Promise.resolve();
+            return fetch(GAS_WEB_APP_URL, {
                 method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ 
-                    chat_id: TELEGRAM_CHAT_ID, 
-                    text: message,
-                    appUrl: appBaseUrl,
-                    orderNumber: currentOrderNumber
-                })
+                body: JSON.stringify(payload)
+            });
+        }
+
+        function sendTelegramOrderAlert(customer, deliveryDate, cart, isUpdate, changes) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes('PASTE_YOUR')) return;
+            const message = buildTelegramMessage(customer, deliveryDate, cart, isUpdate, changes, currentOrderNumber);
+            const appBaseUrl = window.location.href.split('?')[0];
+            sendTelegramPayload({
+                chat_id: TELEGRAM_CHAT_ID, 
+                text: message,
+                appUrl: appBaseUrl,
+                orderNumber: currentOrderNumber
             }).catch(err => console.error("Failed to route message through Google Script", err));
         }
 
@@ -2734,15 +3129,19 @@
                     });
                 }
                 const formattedTxQty = Number.isInteger(txTotalQty) ? txTotalQty : txTotalQty.toFixed(1);
+                const isPending = tx.syncStatus === 'pending';
+                const pendingBadge = isPending ? `
+                    <span class="pending-sync-pill" title="Pesanan tersimpan di memori lokal, menunggu koneksi internet untuk dikirim ke server & Telegram" onclick="event.stopPropagation(); flushOfflineQueue();">
+                        ⏳ Menunggu Sinyal
+                    </span>
+                ` : '';
 
                 card.innerHTML = `
                     <div class="history-card-header" ${isConsolidationMode ? `onclick="toggleCheckbox(${originalIndex})"` : ''} style="${isConsolidationMode ? 'cursor: pointer;' : ''}">
                         <div class="history-meta-left">
                             ${checkBlock}
-                            <span class="order-id-badge" onclick="copyToClipboard('${orderNum}')" title="Klik salin ID">
-                                #${orderNum}
-                            </span>
                             <span class="customer-pill">${custName}</span>
+                            ${pendingBadge}
                             <span class="delivery-date-pill">
                                 📅 Deliv: ${delDateStr}
                             </span>
@@ -2885,42 +3284,89 @@
         function downloadHistoryCSV(index) {
             const transaction = transactionHistory[index];
             if (!transaction || !transaction.cart) return;
-            let csvContent = "data:text/csv;charset=utf-8,product,variant,sku,qty,uom,note\n";
-            const sanitize = (str) => { return str ? String(str).replace(/"/g, "").replace(/,/g, ".") : ""; };
-            transaction.cart.forEach(item => { 
-                csvContent += `${sanitize(item.name)},${sanitize(item.variant)},${sanitize(item.sku)},${sanitize(item.qty)},${sanitize(item.uom)},${sanitize(item.note || "")}\n`; 
-            });
-            const currentDeliveryDate = transaction.deliveryDate;
-            let deliveryFormatted = "UnknownDate";
-            if (currentDeliveryDate) {
-                let dObj;
-                if (currentDeliveryDate.length === 10 && currentDeliveryDate.indexOf('-') === 4) {
-                    const parts = currentDeliveryDate.split('-');
-                    dObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                } else { dObj = new Date(currentDeliveryDate); }
-                if (!isNaN(dObj.getTime())) {
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const dd = String(dObj.getDate()).padStart(2, '0');
-                    const mmm = months[dObj.getMonth()];
-                    const yy = String(dObj.getFullYear()).substring(2);
-                    deliveryFormatted = `${dd}${mmm}${yy}`;
+
+            const templateHeader = "CUSTOMER NO,NUMBER,BRANCH,DATE,TAXABLE,ADDRESS,TOTAL INCLUDING VAT,TAX INVOICE NUMBER,ADVANCE INVOICE,INVOICE DISCOUNT (%),INVOICE DISCOUNT (Rp),DESCRIPTION,PO NO,SHIPPING,SHIPPING DATE,FOB,PAYMENT TERMS,DUE DATE,PAYING BANK,PAYMENT VALUE,CUSTOM CHARACTER 1,CUSTOM CHARACTER 2,CUSTOM CHARACTER 3,CUSTOM CHARACTER 4,CUSTOM CHARACTER 5,CUSTOM CHARACTER 6,CUSTOM CHARACTER 7,CUSTOM CHARACTER 8,CUSTOM CHARACTER 9,CUSTOM CHARACTER 10,CUSTOM NUMBER 1,CUSTOM NUMBER 2,CUSTOM NUMBER 3,CUSTOM NUMBER 4,CUSTOM NUMBER 5,CUSTOM NUMBER 6,CUSTOM NUMBER 7,CUSTOM NUMBER 8,CUSTOM NUMBER 9,CUSTOM NUMBER 10,CUSTOM DATE 1,CUSTOM DATE 2,VA NUMBER,ACCOUNT RECEIVABLE NUMBER,PAYMENT WITH UNIQUE CODE,SUB COMPANY CODE,ITEM:ITEM NO,ITEM:QUANTITY,ITEM:UNITPRICE,ITEM:UNIT,ITEM:WAREHOUSE NAME ,ITEM:NAME,ITEM:ITEM DISCOUNT (%),ITEM:ITEM DISCOUNT (RP),ITEM:ITEM NOTES,ITEM:SALESMAN ID,ITEM:DEPT NAME,ITEM:PROJECT NO,ITEM:CUSTOM CHARACTER 1,ITEM:CUSTOM CHARACTER 2,ITEM:CUSTOM CHARACTER 3,ITEM:CUSTOM CHARACTER 4,ITEM:CUSTOM CHARACTER 5,ITEM:CUSTOM CHARACTER 6,ITEM:CUSTOM CHARACTER 7,ITEM:CUSTOM CHARACTER 8,ITEM:CUSTOM CHARACTER 9,ITEM:CUSTOM CHARACTER 10,ITEM:CUSTOM CHARACTER 11,ITEM:CUSTOM CHARACTER 12,ITEM:CUSTOM CHARACTER 13,ITEM:CUSTOM CHARACTER 14,ITEM:CUSTOM CHARACTER 15,ITEM:CUSTOM NUMBER 1,ITEM:CUSTOM NUMBER 2,ITEM:CUSTOM NUMBER 3,ITEM:CUSTOM NUMBER 4,ITEM:CUSTOM NUMBER 5,ITEM:CUSTOM NUMBER 6,ITEM:CUSTOM NUMBER 7,ITEM:CUSTOM NUMBER 8,ITEM:CUSTOM NUMBER 9,ITEM:CUSTOM NUMBER 10,ITEM:CUSTOM DATE 1,ITEM:CUSTOM DATE 2,ITEM:CUSTOM FINANCE CATEGORY 1,ITEM:CUSTOM FINANCE CATEGORY 2,ITEM:CUSTOM FINANCE CATEGORY 3,ITEM:CUSTOM FINANCE CATEGORY 4,ITEM:CUSTOM FINANCE CATEGORY 5,ITEM:CUSTOM FINANCE CATEGORY 6,ITEM:CUSTOM FINANCE CATEGORY 7,ITEM:CUSTOM FINANCE CATEGORY 8,ITEM:CUSTOM FINANCE CATEGORY 9,ITEM:CUSTOM FINANCE CATEGORY 10,ITEM:DELIVERY ORDER NO.,ITEM:SALES ORDER NO,EXPENSE:ACCOUNT NO,EXPENSE:EXPENSE VALUE,EXPENSE:EXPENSE NAME,EXPENSE:EXPENSE NOTE,EXPENSE:DEPT NAME,EXPENSE:PROJECT NO,EXPENSE:FINANCIAL CATEGORY 1,EXPENSE:FINANCIAL CATEGORY 2,EXPENSE:FINANCIAL CATEGORY 3,EXPENSE:FINANCIAL CATEGORY 4,EXPENSE:FINANCIAL CATEGORY 5,EXPENSE:FINANCIAL CATEGORY 6,EXPENSE:FINANCIAL CATEGORY 7,EXPENSE:FINANCIAL CATEGORY 8,EXPENSE:FINANCIAL CATEGORY 9,EXPENSE:FINANCIAL CATEGORY 10,EXPENSE:SALES ORDER NO,";
+
+            const headers = templateHeader.split(',');
+            const colCount = headers.length;
+
+            const idxCustNo = headers.indexOf('CUSTOMER NO');
+            const idxDate = headers.indexOf('DATE');
+            const idxItemNo = headers.indexOf('ITEM:ITEM NO');
+            const idxQty = headers.indexOf('ITEM:QUANTITY');
+            const idxUnit = headers.indexOf('ITEM:UNIT');
+            const idxWarehouse = headers.indexOf('ITEM:WAREHOUSE NAME ');
+            const idxNote = headers.indexOf('ITEM:ITEM NOTES');
+
+            const customerName = transaction.customer || "No Customer";
+            const customerNo = customerShortNames[customerName] || customerName;
+
+            let dateStr = "";
+            if (transaction.deliveryDate) {
+                if (transaction.deliveryDate.length === 10 && transaction.deliveryDate.indexOf('-') === 4) {
+                    const parts = transaction.deliveryDate.split('-');
+                    dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                } else {
+                    const dObj = new Date(transaction.deliveryDate);
+                    if (!isNaN(dObj.getTime())) {
+                        const dd = String(dObj.getDate()).padStart(2, '0');
+                        const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+                        const yyyy = dObj.getFullYear();
+                        dateStr = `${dd}/${mm}/${yyyy}`;
+                    }
                 }
             }
+            if (!dateStr) {
+                const today = new Date();
+                dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+            }
+
+            const escapeCsv = (str) => {
+                if (str === null || str === undefined) return '';
+                const s = String(str);
+                if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+                    return '"' + s.replace(/"/g, '""') + '"';
+                }
+                return s;
+            };
+
+            const rows = [templateHeader];
+
+            (transaction.cart || []).forEach(item => {
+                const row = new Array(colCount).fill('');
+                if (idxCustNo !== -1) row[idxCustNo] = escapeCsv(customerNo);
+                if (idxDate !== -1) row[idxDate] = escapeCsv(dateStr);
+                if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(item.sku || '');
+                if (idxQty !== -1) row[idxQty] = escapeCsv(item.qty || '');
+                if (idxUnit !== -1) row[idxUnit] = escapeCsv(item.uom || '');
+                if (idxWarehouse !== -1) row[idxWarehouse] = 'Utama';
+                if (idxNote !== -1) row[idxNote] = escapeCsv(item.note || '');
+                rows.push(row.join(','));
+            });
+
+            const csvString = rows.join('\r\n');
+
+            let deliveryFormatted = dateStr.replace(/\//g, '');
             let timestampFormatted = "UnknownTime";
             const tDate = new Date(transaction.timestamp);
             if (!isNaN(tDate.getTime())) {
                 timestampFormatted = `${tDate.getFullYear()}${String(tDate.getMonth()+1).padStart(2,'0')}${String(tDate.getDate()).padStart(2,'0')} ${String(tDate.getHours()).padStart(2,'0')}_${String(tDate.getMinutes()).padStart(2,'0')}_${String(tDate.getSeconds()).padStart(2,'0')}`;
-            } else { timestampFormatted = transaction.timestamp.replace(/[\/\\:]/g, '_'); }
-            const safeCustomerName = transaction.customer && transaction.customer !== "No Customer" ? transaction.customer : "New";
+            } else {
+                timestampFormatted = (transaction.timestamp || '').replace(/[\/\\:]/g, '_');
+            }
+            const safeCustomerName = customerNo !== "No Customer" ? customerNo : "New";
             const fileName = `${safeCustomerName} for ${deliveryFormatted} - ${timestampFormatted}.csv`;
-            const encodedUri = encodeURI(csvContent); 
-            const link = document.createElement("a"); 
-            link.setAttribute("href", encodedUri); 
+
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
             link.setAttribute("download", fileName);
-            document.body.appendChild(link); 
-            link.click(); 
+            document.body.appendChild(link);
+            link.click();
             document.body.removeChild(link);
-            showToast(`CSV diunduh`, "success");
+            URL.revokeObjectURL(url);
+            showToast(`CSV Accurate untuk ${customerNo} diunduh`, "success");
         }
 
         // --- Surat Jalan PDF Engine ---
@@ -3205,9 +3651,11 @@
 
         // --- Initialization on Load ---
         window.onload = async function() {
+            startConnectionMonitor();
             updateDeliveryDisplay();
             renderCart();
             updateHistoryCountBadge();
+            updateOfflineQueueBanner();
 
             // Load items catalog
             try {

@@ -780,6 +780,16 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: #fafbfc; }
 
+        @keyframes highlight-new-row {
+            0% { background-color: #d1fae5; }
+            50% { background-color: #ecfdf5; }
+            100% { background-color: transparent; }
+        }
+
+        .newly-added-row td {
+            animation: highlight-new-row 1.8s ease-out;
+        }
+
         .td-actions {
             display: flex;
             align-items: center;
@@ -2391,13 +2401,25 @@
 
             renderCart();
 
-            // Clear inputs and refocus
+            // Clear inputs and refocus (preventScroll avoids resetting scroll position)
             searchInput.value = '';
             selectedSkuInput.value = '';
             selectedUomBadge.style.display = 'none';
             uomHintText.innerText = 'Qty';
             qtyInput.value = '';
-            searchInput.focus();
+            if (searchInput) searchInput.focus({ preventScroll: true });
+
+            // Auto-scroll to the very bottom smoothly and highlight the new row
+            setTimeout(() => {
+                const lastRow = document.querySelector('#cartBody tr:last-child');
+                if (lastRow) {
+                    lastRow.classList.add('newly-added-row');
+                }
+                window.scrollTo({
+                    top: document.documentElement.scrollHeight || document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 50);
 
             showToast(`${product.name} (${formattedQty} ${product.uom}) ditambahkan`, "success");
         }

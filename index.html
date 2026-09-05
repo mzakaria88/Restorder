@@ -2853,6 +2853,29 @@
             updateHistoryCountBadge();
         }
 
+        function enrichCartItemSku(item) {
+            if (!item) return '';
+            if (item.sku && String(item.sku).trim()) return String(item.sku).trim();
+            if (!catalogData || catalogData.length === 0) return '';
+            const itemName = (item.name || '').trim().toLowerCase();
+            const itemUom = (item.uom || '').trim().toLowerCase();
+            
+            // Priority 1: Match by Name AND UOM
+            const matchBoth = catalogData.find(p => 
+                (p.name || '').trim().toLowerCase() === itemName && 
+                (p.uom || '').trim().toLowerCase() === itemUom &&
+                p.sku
+            );
+            if (matchBoth) return matchBoth.sku;
+
+            // Priority 2: Fallback to match by Name only
+            const matchName = catalogData.find(p => 
+                (p.name || '').trim().toLowerCase() === itemName && 
+                p.sku
+            );
+            return matchName ? matchName.sku : '';
+        }
+
         function smartMergeHistory(serverData, localHistory) {
             if (!Array.isArray(serverData)) return localHistory || [];
             if (!Array.isArray(localHistory) || localHistory.length === 0) return serverData;
@@ -2862,6 +2885,11 @@
             serverData.forEach(sItem => {
                 if (sItem && sItem.orderNumber) {
                     if (!sItem.syncStatus) sItem.syncStatus = 'synced';
+                    if (Array.isArray(sItem.cart)) {
+                        sItem.cart.forEach(cItem => {
+                            if (!cItem.sku) cItem.sku = enrichCartItemSku(cItem);
+                        });
+                    }
                     mergedMap.set(sItem.orderNumber, sItem);
                 }
             });
@@ -2886,9 +2914,25 @@
                         mergedMap.set(lItem.orderNumber, sItem);
                     }
                 } else {
-                    // Already synced: retain server item, but transfer local metadata if helpful
+                    // Already synced: retain server item, but transfer local metadata & cart SKUs
                     if (lItem.updatedAt && !sItem.updatedAt) {
                         sItem.updatedAt = lItem.updatedAt;
+                    }
+                    if (Array.isArray(sItem.cart) && Array.isArray(lItem.cart)) {
+                        sItem.cart.forEach((sCartItem, idx) => {
+                            if (!sCartItem.sku) {
+                                const lMatch = lItem.cart.find(lCartItem => 
+                                    lCartItem.name === sCartItem.name && 
+                                    (lCartItem.uom || '').toLowerCase() === (sCartItem.uom || '').toLowerCase() &&
+                                    lCartItem.sku
+                                ) || lItem.cart[idx];
+                                if (lMatch && lMatch.sku) {
+                                    sCartItem.sku = lMatch.sku;
+                                } else {
+                                    sCartItem.sku = enrichCartItemSku(sCartItem);
+                                }
+                            }
+                        });
                     }
                 }
             });
@@ -2933,7 +2977,10 @@
                 syncStatus: willSendOnline ? 'synced' : 'pending',
                 customer: currentCustomer || "No Customer",
                 deliveryDate: currentDeliveryDate,
-                cart: JSON.parse(JSON.stringify(orderCart)) 
+                cart: JSON.parse(JSON.stringify(orderCart)).map(item => ({
+                    ...item,
+                    sku: item.sku || enrichCartItemSku(item)
+                })) 
             };
 
             // Save immediately to local state
@@ -3357,7 +3404,10 @@
         function loadHistoryItem(index) {
             const doLoad = () => {
                 const loaded = transactionHistory[index];
-                orderCart = JSON.parse(JSON.stringify(loaded.cart));
+                orderCart = JSON.parse(JSON.stringify(loaded.cart || [])).map(item => ({
+                    ...item,
+                    sku: item.sku || enrichCartItemSku(item)
+                }));
                 currentOrderNumber = loaded.orderNumber;
                 
                 document.getElementById('editModeLabel').innerText = `Mode Edit Pesanan: ${currentOrderNumber}`;
@@ -3449,10 +3499,11 @@
 
             (transaction.cart || []).forEach(item => {
                 const row = new Array(colCount).fill('');
+                const itemSku = item.sku || enrichCartItemSku(item);
                 if (idxCustNo !== -1) row[idxCustNo] = escapeCsv(customerNo);
                 if (idxNumber !== -1) row[idxNumber] = escapeCsv(orderNo);
                 if (idxDate !== -1) row[idxDate] = escapeCsv(dateStr);
-                if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(item.sku || '');
+                if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(itemSku);
                 if (idxQty !== -1) row[idxQty] = escapeCsv(item.qty || '');
                 if (idxUnit !== -1) row[idxUnit] = escapeCsv(item.uom || '');
                 if (idxWarehouse !== -1) row[idxWarehouse] = 'Utama';

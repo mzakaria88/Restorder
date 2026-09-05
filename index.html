@@ -3404,6 +3404,7 @@
             const colCount = headers.length;
 
             const idxCustNo = headers.indexOf('CUSTOMER NO');
+            const idxNumber = headers.indexOf('NUMBER');
             const idxDate = headers.indexOf('DATE');
             const idxItemNo = headers.indexOf('ITEM:ITEM NO');
             const idxQty = headers.indexOf('ITEM:QUANTITY');
@@ -3413,6 +3414,7 @@
 
             const customerName = transaction.customer || "No Customer";
             const customerNo = customerShortNames[customerName] || customerName;
+            const orderNo = transaction.orderNumber || '';
 
             let dateStr = "";
             if (transaction.deliveryDate) {
@@ -3448,6 +3450,7 @@
             (transaction.cart || []).forEach(item => {
                 const row = new Array(colCount).fill('');
                 if (idxCustNo !== -1) row[idxCustNo] = escapeCsv(customerNo);
+                if (idxNumber !== -1) row[idxNumber] = escapeCsv(orderNo);
                 if (idxDate !== -1) row[idxDate] = escapeCsv(dateStr);
                 if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(item.sku || '');
                 if (idxQty !== -1) row[idxQty] = escapeCsv(item.qty || '');

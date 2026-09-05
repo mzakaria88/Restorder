@@ -1763,7 +1763,36 @@
         let currentFocusItem = -1;
         let currentFocusCustomer = -1;
         
-        let transactionHistory = JSON.parse(localStorage.getItem('npn_order_history')) || [];
+        let transactionHistory = [];
+        try {
+            const rawHist = localStorage.getItem('npn_order_history');
+            if (rawHist) {
+                const parsed = JSON.parse(rawHist);
+                if (Array.isArray(parsed)) transactionHistory = parsed;
+            }
+        } catch (e) {
+            console.warn("Gagal membaca riwayat pesanan dari localStorage:", e);
+            transactionHistory = [];
+        }
+
+        // Restore cached catalog and customers immediately for 0ms initial render
+        try {
+            const cachedCat = localStorage.getItem('npn_cached_catalog');
+            if (cachedCat) {
+                const parsed = JSON.parse(cachedCat);
+                if (Array.isArray(parsed) && parsed.length > 0) catalogData = parsed;
+            }
+        } catch (e) {}
+
+        try {
+            const cachedCust = localStorage.getItem('npn_cached_customers');
+            if (cachedCust) {
+                const parsed = JSON.parse(cachedCust);
+                if (parsed.list && Array.isArray(parsed.list)) customerDataList = parsed.list;
+                if (parsed.shortNames && typeof parsed.shortNames === 'object') customerShortNames = parsed.shortNames;
+            }
+        } catch (e) {}
+
         let currentOrderNumber = null;
         let isConsolidationMode = false;
         let activeNoteEditIndex = -1;
@@ -2212,8 +2241,37 @@
         });
 
         // --- Catalog & Customer CSV Data Fetching ---
+        function applyCatalogState() {
+            const searchInput = document.getElementById('searchInput');
+            const statusText = document.getElementById('systemStatusText');
+            const statusDot = document.getElementById('systemStatusDot');
+
+            if (catalogData.length > 0) {
+                if (searchInput) {
+                    searchInput.placeholder = `Ketik nama barang (${catalogData.length} item siap)...`;
+                    searchInput.disabled = false;
+                }
+                if (statusText) {
+                    statusText.innerText = isNetworkOnline ? `${catalogData.length} Item Ready` : `${catalogData.length} Item (Offline)`;
+                }
+                if (statusDot) {
+                    statusDot.style.backgroundColor = isNetworkOnline ? 'var(--accent)' : 'var(--warning)';
+                }
+            } else {
+                if (searchInput) {
+                    searchInput.placeholder = "Katalog kosong";
+                }
+                if (statusText) {
+                    statusText.innerText = isNetworkOnline ? "Katalog Kosong" : "Katalog Offline";
+                }
+                if (statusDot) {
+                    statusDot.style.backgroundColor = 'var(--danger)';
+                }
+            }
+        }
+
         function parseItemCSV(text) {
-            catalogData = []; 
+            const parsedList = []; 
             const lines = text.split('\n');
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -2225,27 +2283,20 @@
                     variant: cols[2] ? cols[2].trim() : '',
                     uom: cols[3] ? cols[3].trim() : ''
                 };
-                if (product.name) catalogData.push(product);
+                if (product.name) parsedList.push(product);
             }
-            const searchInput = document.getElementById('searchInput');
-            if (catalogData.length > 0) {
-                searchInput.placeholder = `Ketik nama barang (${catalogData.length} item siap)...`;
-                searchInput.disabled = false;
-                if (isNetworkOnline) {
-                    document.getElementById('systemStatusText').innerText = `${catalogData.length} Item Ready`;
-                    document.getElementById('systemStatusDot').style.backgroundColor = 'var(--accent)';
-                }
-            } else {
-                searchInput.placeholder = "Katalog kosong";
-                if (isNetworkOnline) {
-                    document.getElementById('systemStatusText').innerText = "Katalog Kosong";
-                }
+            if (parsedList.length > 0) {
+                catalogData = parsedList;
+                try {
+                    localStorage.setItem('npn_cached_catalog', JSON.stringify(catalogData));
+                } catch (e) {}
             }
+            applyCatalogState();
         }
 
         function parseCustomerCSV(text) {
-            customerDataList = [];
-            customerShortNames = {}; 
+            const list = [];
+            const shortNames = {}; 
             const lines = text.split('\n');
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
@@ -2254,9 +2305,16 @@
                 const customerName = cols[0] ? cols[0].trim() : ''; 
                 const shortName = cols[1] ? cols[1].trim() : customerName; 
                 if (customerName) {
-                    customerDataList.push(customerName);
-                    customerShortNames[customerName] = shortName; 
+                    list.push(customerName);
+                    shortNames[customerName] = shortName; 
                 }
+            }
+            if (list.length > 0) {
+                customerDataList = list;
+                customerShortNames = shortNames;
+                try {
+                    localStorage.setItem('npn_cached_customers', JSON.stringify({ list: customerDataList, shortNames: customerShortNames }));
+                } catch (e) {}
             }
         }
 
@@ -3705,24 +3763,101 @@
             }
         });
 
-        // --- Initialization on Load ---
-        window.onload = async function() {
-            startConnectionMonitor();
-            updateDeliveryDisplay();
-            renderCart();
-            updateHistoryCountBadge();
-            updateOfflineQueueBanner();
-
-            // Load items catalog
+        // --- High-Reliability Non-Blocking Initialization Engine ---
+        async function loadCatalogData() {
             try {
-                const response = await fetch(itemSheetUrl + '&t=' + new Date().getTime());
+                const response = await fetchWithTimeout(itemSheetUrl + '&t=' + Date.now(), {}, 10000);
                 if (response.ok) {
                     const csvText = await response.text();
                     parseItemCSV(csvText);
                 } else {
-                    document.getElementById('systemStatusText').innerText = "Gagal memuat katalog";
-                    document.getElementById('systemStatusDot').style.backgroundColor = 'var(--danger)';
+                    handleCatalogLoadFailure("Gagal memuat katalog");
                 }
             } catch (error) {
-                console.error("Gagal memuat katalog", error);
-                document.getElementById('systemStatusText
+                console.warn("Gagal memuat katalog dari cloud:", error);
+                handleCatalogLoadFailure(catalogData.length > 0 ? `${catalogData.length} Item Ready (Offline)` : "Katalog Offline");
+            }
+        }
+
+        function handleCatalogLoadFailure(msg) {
+            const statusText = document.getElementById('systemStatusText');
+            const statusDot = document.getElementById('systemStatusDot');
+            if (catalogData.length > 0) {
+                applyCatalogState();
+            } else {
+                if (statusText) statusText.innerText = msg;
+                if (statusDot) statusDot.style.backgroundColor = 'var(--danger)';
+            }
+        }
+
+        async function loadCustomerData() {
+            if (!customerSheetUrl) return;
+            try {
+                const response = await fetchWithTimeout(customerSheetUrl + '&t=' + Date.now(), {}, 10000);
+                if (response.ok) {
+                    const csvText = await response.text();
+                    parseCustomerCSV(csvText);
+                }
+            } catch (error) {
+                console.warn("Gagal memuat data customer dari cloud:", error);
+            }
+        }
+
+        function checkAutoPrintQuery() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const printSJOrder = urlParams.get('printSJ');
+
+                if (printSJOrder && transactionHistory.length > 0) {
+                    const historyIndex = transactionHistory.findIndex(t => t.orderNumber === printSJOrder);
+                    if (historyIndex !== -1) {
+                        setTimeout(() => {
+                            generateSuratJalan(historyIndex);
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }, 500);
+                    } else {
+                        showToast("Order " + printSJOrder + " tidak ditemukan di database.", "warning");
+                    }
+                }
+            } catch (e) {}
+        }
+
+        let isAppInitialized = false;
+        async function initializeApp() {
+            if (isAppInitialized) return;
+            isAppInitialized = true;
+
+            // 1. Instant local DOM sync (0ms latency, never waits for network)
+            updateDeliveryDisplay();
+            renderCart();
+            updateHistoryCountBadge();
+            updateOfflineQueueBanner();
+            applyCatalogState();
+
+            // 2. Start connection monitor
+            try {
+                startConnectionMonitor();
+            } catch (e) {
+                console.warn("Connection monitor init warning:", e);
+            }
+
+            // 3. Load cloud data concurrently with safety timeouts
+            Promise.allSettled([
+                loadCatalogData(),
+                loadCustomerData(),
+                fetchLatestHistory()
+            ]).then(() => {
+                checkAutoPrintQuery();
+            });
+        }
+
+        // Multi-stage trigger: Runs immediately if DOM is already parsed (since script is at bottom of body)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
+        window.addEventListener('load', initializeApp);
+    </script>
+</body>
+</html>

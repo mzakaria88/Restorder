@@ -1413,6 +1413,7 @@
                             <input type="text" id="searchInput" placeholder="Ketik nama barang (contoh: Kentang, Bawang...)" disabled autocomplete="off">
                             <span id="selectedUomBadge" class="input-uom-tag">KG</span>
                             <input type="hidden" id="selectedSku">
+                            <input type="hidden" id="selectedUom">
                             <div id="autocomplete-list" class="autocomplete-items"></div>
                         </div>
                     </div>
@@ -2264,6 +2265,7 @@
         const qtyInput = document.getElementById('qtyInput');
         const autocompleteList = document.getElementById('autocomplete-list');
         const selectedSkuInput = document.getElementById('selectedSku');
+        const selectedUomInput = document.getElementById('selectedUom');
         const selectedUomBadge = document.getElementById('selectedUomBadge');
         const uomHintText = document.getElementById('uomHintText');
 
@@ -2271,12 +2273,16 @@
             const val = this.value;
             autocompleteList.innerHTML = '';
             selectedSkuInput.value = '';
+            if (selectedUomInput) selectedUomInput.value = '';
             selectedUomBadge.style.display = 'none';
             uomHintText.innerText = 'Qty';
             currentFocusItem = -1;
             if (!val) return false;
 
-            let scoredMatches = catalogData.map(item => ({ item, score: getMatchScore(val, item.name) })).filter(m => m.score > 0);
+            let scoredMatches = catalogData.map(item => {
+                const searchTarget = `${item.name} ${item.uom} ${item.variant || ''}`.trim();
+                return { item, score: getMatchScore(val, searchTarget) };
+            }).filter(m => m.score > 0);
             scoredMatches.sort((a, b) => b.score - a.score);
 
             if (scoredMatches.length === 0) {
@@ -2338,6 +2344,7 @@
         function selectItem(item) {
             searchInput.value = `${item.name} (${item.uom})`;
             selectedSkuInput.value = item.sku;
+            if (selectedUomInput) selectedUomInput.value = item.uom;
             selectedUomBadge.innerText = item.uom;
             selectedUomBadge.style.display = 'inline-block';
             uomHintText.innerText = item.uom;
@@ -2364,6 +2371,7 @@
         // --- Cart Management ---
         function addToCart() {
             const selectedSku = selectedSkuInput.value;
+            const selectedUom = ((selectedUomInput && selectedUomInput.value) ? selectedUomInput.value : (selectedUomBadge.innerText || '')).trim();
             const rawQty = parseFloat(qtyInput.value);
             
             if (!selectedSku) {
@@ -2378,7 +2386,12 @@
             }
 
             const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
-            let product = catalogData.find(p => p.sku === selectedSku);
+            
+            // Match BOTH SKU and UOM because catalog data has multiple rows sharing identical SKUs across units!
+            let product = catalogData.find(p => p.sku === selectedSku && p.uom.toLowerCase() === selectedUom.toLowerCase());
+            if (!product) {
+                product = catalogData.find(p => p.sku === selectedSku);
+            }
             
             if (!product) {
                 // Fallback for custom or direct text item
@@ -2386,16 +2399,18 @@
                     sku: selectedSku,
                     name: searchInput.value || "Item",
                     variant: "",
-                    uom: selectedUomBadge.innerText || "PCS"
+                    uom: selectedUom || "PCS"
                 };
             }
+
+            const finalUom = selectedUom || product.uom || "PCS";
             
             orderCart.push({
                 sku: product.sku,
                 name: product.name,
                 variant: product.variant || "",
                 qty: formattedQty,
-                uom: product.uom || "PCS",
+                uom: finalUom,
                 note: ""
             });
 
@@ -2404,6 +2419,7 @@
             // Clear inputs and refocus (preventScroll avoids resetting scroll position)
             searchInput.value = '';
             selectedSkuInput.value = '';
+            if (selectedUomInput) selectedUomInput.value = '';
             selectedUomBadge.style.display = 'none';
             uomHintText.innerText = 'Qty';
             qtyInput.value = '';
@@ -2421,7 +2437,7 @@
                 });
             }, 50);
 
-            showToast(`${product.name} (${formattedQty} ${product.uom}) ditambahkan`, "success");
+            showToast(`${product.name} (${formattedQty} ${finalUom}) ditambahkan`, "success");
         }
 
         function renderCart() {
@@ -2566,6 +2582,12 @@
             document.getElementById('summaryCustomer').innerText = "-";
             currentDeliveryDate = getTomorrowDateString();
             updateDeliveryDisplay();
+            if (searchInput) searchInput.value = '';
+            if (selectedSkuInput) selectedSkuInput.value = '';
+            if (selectedUomInput) selectedUomInput.value = '';
+            if (selectedUomBadge) selectedUomBadge.style.display = 'none';
+            if (uomHintText) uomHintText.innerText = 'Qty';
+            if (qtyInput) qtyInput.value = '';
             renderCart();
         }
 
@@ -2580,7 +2602,7 @@
             
             for (let i = newItems.length - 1; i >= 0; i--) {
                 let nItem = newItems[i];
-                let matchIdx = oldItems.findIndex(o => o.name === nItem.name && o.note === nItem.note);
+                let matchIdx = oldItems.findIndex(o => o.name === nItem.name && (o.uom || '').toLowerCase() === (nItem.uom || '').toLowerCase() && o.note === nItem.note);
                 
                 if (matchIdx !== -1) {
                     let oItem = oldItems[matchIdx];
@@ -2606,7 +2628,7 @@
                 let nItem = newItems[i];
                 if (nItem.name.toLowerCase() === "custom order") continue;
 
-                let matchIdx = oldItems.findIndex(o => o.name === nItem.name);
+                let matchIdx = oldItems.findIndex(o => o.name === nItem.name && (o.uom || '').toLowerCase() === (nItem.uom || '').toLowerCase());
                 if (matchIdx !== -1) {
                     let oItem = oldItems[matchIdx];
                     modified.push({
@@ -3549,8 +3571,9 @@
             selectedTx.forEach(tx => {
                 const currentCust = tx.customer || "No Customer";
                 (tx.cart || []).forEach(cartItem => {
-                    if (!itemMatrix[cartItem.name]) {
-                        itemMatrix[cartItem.name] = {
+                    const matrixKey = `${cartItem.name}___${cartItem.uom || ''}`;
+                    if (!itemMatrix[matrixKey]) {
+                        itemMatrix[matrixKey] = {
                             name: cartItem.name,
                             uom: cartItem.uom,
                             customerQtys: {},
@@ -3558,14 +3581,14 @@
                         };
                     }
                     let val = parseFloat(cartItem.qty) || 0;
-                    if (!itemMatrix[cartItem.name].customerQtys[currentCust]) {
-                        itemMatrix[cartItem.name].customerQtys[currentCust] = 0;
+                    if (!itemMatrix[matrixKey].customerQtys[currentCust]) {
+                        itemMatrix[matrixKey].customerQtys[currentCust] = 0;
                     }
-                    itemMatrix[cartItem.name].customerQtys[currentCust] += val;
+                    itemMatrix[matrixKey].customerQtys[currentCust] += val;
                     
                     if (cartItem.note && cartItem.note.trim()) {
                         const shortCustName = customerShortNames[currentCust] || currentCust;
-                        itemMatrix[cartItem.name].notes.push(`${shortCustName}: ${cartItem.note.trim()}`);
+                        itemMatrix[matrixKey].notes.push(`${shortCustName}: ${cartItem.note.trim()}`);
                     }
                 });
             });
@@ -3702,41 +3725,4 @@
                 }
             } catch (error) {
                 console.error("Gagal memuat katalog", error);
-                document.getElementById('systemStatusText').innerText = "Katalog Offline";
-                document.getElementById('systemStatusDot').style.backgroundColor = 'var(--danger)';
-            }
-
-            // Load customers
-            try {
-                if (customerSheetUrl) {
-                    const response = await fetch(customerSheetUrl + '&t=' + new Date().getTime());
-                    if (response.ok) {
-                        const csvText = await response.text();
-                        parseCustomerCSV(csvText);
-                    }
-                }
-            } catch (error) {
-                console.error("Gagal memuat data customer", error);
-            }
-
-            await fetchLatestHistory();
-
-            // Auto-print SJ via query parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const printSJOrder = urlParams.get('printSJ');
-
-            if (printSJOrder && transactionHistory.length > 0) {
-                const historyIndex = transactionHistory.findIndex(t => t.orderNumber === printSJOrder);
-                if (historyIndex !== -1) {
-                    setTimeout(() => {
-                        generateSuratJalan(historyIndex);
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    }, 500);
-                } else {
-                    showToast("Order " + printSJOrder + " tidak ditemukan di database.", "warning");
-                }
-            }
-        };
-    </script>
-</body>
-</html>
+                document.getElementById('systemStatusText

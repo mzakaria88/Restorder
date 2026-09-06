@@ -916,6 +916,81 @@
             position: relative;
         }
 
+        .history-search-box input {
+            padding-right: 34px !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .history-search-box.item-search-mode input {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .history-item-search-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            z-index: 2;
+        }
+
+        .history-item-search-btn:hover {
+            background: #dc2626;
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .history-item-search-btn.active-reset {
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .history-item-search-btn.active-reset:hover {
+            background: #b91c1c;
+        }
+
+        .history-item-filter-notice {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            margin-bottom: 0.75rem;
+            font-size: 0.78rem;
+            color: #991b1b;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .matched-item-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+            width: fit-content;
+        }
+
         .history-actions-group {
             display: flex;
             align-items: center;
@@ -1540,14 +1615,22 @@
         <section id="tab-history" class="tab-panel">
             <div class="card" style="padding: 0.85rem;">
                 <div class="history-controls">
-                    <div class="history-search-box">
+                    <div class="history-search-box" id="historySearchBox">
                         <span class="input-leading-icon">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                         </span>
-                        <input type="text" id="historySearchInput" placeholder="Cari Order ID, customer, atau tanggal..." oninput="filterHistoryList()">
+                        <input type="text" id="historySearchInput" placeholder="Cari Order ID, customer, atau tanggal..." oninput="handleHistorySearchInput()">
+                        <button type="button" id="toggleItemSearchBtn" class="history-item-search-btn" title="Mode pencarian barang" onclick="toggleHistoryItemSearchMode()">
+                            <svg id="itemSearchIconSvg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                            </svg>
+                        </button>
+                        <div id="historyItemAutocompleteList" class="autocomplete-items" style="display: none;"></div>
                     </div>
 
                     <div class="history-actions-group">
@@ -1567,6 +1650,9 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Item Search Filter Notice & Summary Bar -->
+                <div id="historyItemFilterNotice" class="history-item-filter-notice" style="display: none;"></div>
 
                 <!-- Consolidation Alert Bar -->
                 <div id="consolidationActions" class="consolidation-alert-bar">
@@ -2479,7 +2565,7 @@
                             <span class="item-name">${match.item.name}</span>
                             <span class="item-uom">${match.item.uom}</span>
                         </div>
-                        ${(match.item.variant || match.item.sku) ? `<span class="item-meta">${match.item.variant ? match.item.variant + ' • ' : ''}SKU: ${match.item.sku || '-'}</span>` : ''}
+                        ${match.item.variant ? `<span class="item-meta">${match.item.variant}</span>` : ''}
                     </div>
                 `;
                 optionDiv.addEventListener("click", () => selectItem(match.item));
@@ -2613,8 +2699,6 @@
                     behavior: 'smooth'
                 });
             }, 50);
-
-            showToast(`${product.name} (${formattedQty} ${finalUom}) ditambahkan`, "success");
         }
 
         function renderCart() {
@@ -3332,6 +3416,197 @@
             populateHistoryList();
         }
 
+        // --- History Tab: Item Search Mode Controller ---
+        let isItemSearchMode = false;
+        let selectedHistoryItem = null;
+        let currentFocusHistoryItem = -1;
+
+        function toggleHistoryItemSearchMode() {
+            if (!isItemSearchMode) {
+                isItemSearchMode = true;
+                selectedHistoryItem = null;
+                const searchBox = document.getElementById('historySearchBox');
+                const searchInput = document.getElementById('historySearchInput');
+                const toggleBtn = document.getElementById('toggleItemSearchBtn');
+                if (searchBox) searchBox.classList.add('item-search-mode');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.placeholder = 'Ketik nama barang yang ingin dicari...';
+                    searchInput.focus();
+                }
+                if (toggleBtn) {
+                    toggleBtn.classList.add('active-reset');
+                    toggleBtn.title = 'Keluar dari mode pencarian barang (Reset)';
+                    toggleBtn.innerHTML = `
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+                }
+                const autoList = document.getElementById('historyItemAutocompleteList');
+                if (autoList) {
+                    autoList.innerHTML = '';
+                    autoList.style.display = 'none';
+                }
+                populateHistoryList();
+            } else {
+                resetHistoryItemSearchMode();
+            }
+        }
+
+        function resetHistoryItemSearchMode() {
+            isItemSearchMode = false;
+            selectedHistoryItem = null;
+            const searchBox = document.getElementById('historySearchBox');
+            const searchInput = document.getElementById('historySearchInput');
+            const toggleBtn = document.getElementById('toggleItemSearchBtn');
+            const notice = document.getElementById('historyItemFilterNotice');
+            const autoList = document.getElementById('historyItemAutocompleteList');
+            if (searchBox) searchBox.classList.remove('item-search-mode');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.placeholder = 'Cari Order ID, customer, atau tanggal...';
+            }
+            if (toggleBtn) {
+                toggleBtn.classList.remove('active-reset');
+                toggleBtn.title = 'Mode pencarian barang';
+                toggleBtn.innerHTML = `
+                    <svg id="itemSearchIconSvg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                `;
+            }
+            if (notice) notice.style.display = 'none';
+            if (autoList) {
+                autoList.innerHTML = '';
+                autoList.style.display = 'none';
+            }
+            populateHistoryList();
+        }
+
+        function handleHistorySearchInput() {
+            const searchInput = document.getElementById('historySearchInput');
+            const autoList = document.getElementById('historyItemAutocompleteList');
+            if (!searchInput || !autoList) return;
+
+            if (!isItemSearchMode) {
+                autoList.style.display = 'none';
+                populateHistoryList();
+                return;
+            }
+
+            const val = searchInput.value.trim();
+            currentFocusHistoryItem = -1;
+
+            if (!val) {
+                autoList.innerHTML = '';
+                autoList.style.display = 'none';
+                selectedHistoryItem = null;
+                populateHistoryList();
+                return;
+            }
+
+            let scoredMatches = catalogData.map(item => {
+                const searchTarget = `${item.name} ${item.uom} ${item.variant || ''}`.trim();
+                return { item, score: getMatchScore(val, searchTarget) };
+            }).filter(m => m.score > 0);
+            scoredMatches.sort((a, b) => b.score - a.score);
+
+            autoList.innerHTML = '';
+            if (scoredMatches.length === 0) {
+                const emptyDiv = document.createElement("div");
+                emptyDiv.style.padding = '8px 12px';
+                emptyDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Barang tidak ditemukan di katalog</span>`;
+                autoList.appendChild(emptyDiv);
+                autoList.style.display = 'block';
+                return;
+            }
+
+            scoredMatches.slice(0, 20).forEach((match, index) => {
+                const optionDiv = document.createElement("div");
+                optionDiv.className = 'autocomplete-item';
+                if (index === 0) {
+                    optionDiv.classList.add('active');
+                    currentFocusHistoryItem = 0;
+                }
+                optionDiv.innerHTML = `
+                    <div class="item-info">
+                        <div class="item-title-row">
+                            <span class="item-name">${match.item.name}</span>
+                            <span class="item-uom">${match.item.uom}</span>
+                        </div>
+                        ${match.item.variant ? `<span class="item-meta">${match.item.variant}</span>` : ''}
+                    </div>
+                `;
+                optionDiv.addEventListener("click", () => selectHistorySearchItem(match.item));
+                optionDiv.addEventListener("mouseenter", () => {
+                    const allItems = autoList.querySelectorAll('.autocomplete-item');
+                    allItems.forEach(el => el.classList.remove('active'));
+                    optionDiv.classList.add('active');
+                    currentFocusHistoryItem = index;
+                });
+                autoList.appendChild(optionDiv);
+            });
+            autoList.style.display = 'block';
+            autoList.scrollTop = 0;
+        }
+
+        function selectHistorySearchItem(item) {
+            selectedHistoryItem = item;
+            const searchInput = document.getElementById('historySearchInput');
+            const autoList = document.getElementById('historyItemAutocompleteList');
+            if (searchInput) {
+                searchInput.value = `${item.name} (${item.uom})`;
+            }
+            if (autoList) {
+                autoList.innerHTML = '';
+                autoList.style.display = 'none';
+            }
+            populateHistoryList();
+        }
+
+        // Keyboard navigation and click-outside for history item autocomplete
+        document.addEventListener('DOMContentLoaded', () => {
+            const hSearchInput = document.getElementById('historySearchInput');
+            if (hSearchInput) {
+                hSearchInput.addEventListener('keydown', function(e) {
+                    if (!isItemSearchMode) return;
+                    const autoList = document.getElementById('historyItemAutocompleteList');
+                    if (!autoList || autoList.style.display === 'none') return;
+                    const items = autoList.querySelectorAll('.autocomplete-item');
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        currentFocusHistoryItem = addActive(items, ++currentFocusHistoryItem);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        currentFocusHistoryItem = addActive(items, --currentFocusHistoryItem);
+                    } else if (e.key === 'Enter' || e.key === 'Tab') {
+                        if (items.length > 0) {
+                            e.preventDefault();
+                            if (currentFocusHistoryItem > -1 && items[currentFocusHistoryItem]) {
+                                items[currentFocusHistoryItem].click();
+                            } else {
+                                items[0].click();
+                            }
+                        }
+                    } else if (e.key === 'Escape') {
+                        autoList.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const searchBox = document.getElementById('historySearchBox');
+            const autoList = document.getElementById('historyItemAutocompleteList');
+            if (autoList && searchBox && !searchBox.contains(e.target)) {
+                autoList.style.display = 'none';
+            }
+        });
+
         function filterHistoryList() {
             populateHistoryList();
         }
@@ -3340,7 +3615,8 @@
             const container = document.getElementById('historyListContainer');
             container.innerHTML = '';
             
-            const searchKeyword = (document.getElementById('historySearchInput')?.value || '').toLowerCase().trim();
+            const searchInputEl = document.getElementById('historySearchInput');
+            const searchKeyword = (searchInputEl?.value || '').toLowerCase().trim();
 
             if (transactionHistory.length === 0) {
                 container.innerHTML = `
@@ -3375,6 +3651,8 @@
 
             let renderedCount = 0;
             let lastGroupDate = null;
+            let totalCumulativeItemQty = 0;
+            let matchedOrdersCount = 0;
 
             sortedHistory.forEach(({ tx, originalIndex }) => {
                 const custName = tx.customer || "No Customer";
@@ -3382,12 +3660,58 @@
                 const orderNum = tx.orderNumber || "Tanpa ID";
 
                 // Filter check
-                if (searchKeyword) {
+                let matchedCartItems = [];
+                if (isItemSearchMode) {
+                    if (selectedHistoryItem) {
+                        const sName = (selectedHistoryItem.name || '').trim().toLowerCase();
+                        const sUom = (selectedHistoryItem.uom || '').trim().toLowerCase();
+                        const sSku = (selectedHistoryItem.sku || '').trim().toLowerCase();
+
+                        matchedCartItems = (tx.cart || []).filter(cItem => {
+                            const cName = (cItem.name || '').trim().toLowerCase();
+                            const cUom = (cItem.uom || '').trim().toLowerCase();
+                            const cSku = (cItem.sku || '').trim().toLowerCase();
+                            if (sSku && cSku && sSku === cSku && sUom === cUom) return true;
+                            return cName === sName && (cUom === sUom || !cUom || !sUom);
+                        });
+
+                        if (matchedCartItems.length === 0) return;
+                    } else if (searchKeyword) {
+                        matchedCartItems = (tx.cart || []).filter(cItem => {
+                            const cName = (cItem.name || '').toLowerCase();
+                            return cName.includes(searchKeyword);
+                        });
+                        if (matchedCartItems.length === 0) return;
+                    }
+                } else if (searchKeyword) {
                     const matchText = `${orderNum} ${custName} ${delDateStr}`.toLowerCase();
                     if (!matchText.includes(searchKeyword)) return;
                 }
 
                 renderedCount++;
+
+                // Track item totals when item filtering is active
+                let orderItemQty = 0;
+                let matchedItemBadgeHtml = '';
+                if (isItemSearchMode && matchedCartItems.length > 0) {
+                    matchedOrdersCount++;
+                    matchedCartItems.forEach(ci => {
+                        orderItemQty += parseFloat(ci.qty) || 0;
+                    });
+                    totalCumulativeItemQty += orderItemQty;
+                    const formattedOrderItemQty = Number.isInteger(orderItemQty) ? orderItemQty.toString() : orderItemQty.toFixed(2);
+                    const displayItemName = selectedHistoryItem ? selectedHistoryItem.name : matchedCartItems[0].name;
+                    const displayUom = selectedHistoryItem ? selectedHistoryItem.uom : matchedCartItems[0].uom;
+                    const itemNotes = matchedCartItems.map(ci => ci.note).filter(Boolean).join(', ');
+
+                    matchedItemBadgeHtml = `
+                        <div class="matched-item-badge">
+                            <span>📦 <b>${displayItemName}</b>:</span>
+                            <span style="font-size: 0.8rem; color: #b91c1c;">${formattedOrderItemQty} ${displayUom}</span>
+                            ${itemNotes ? `<span style="font-size: 0.68rem; font-weight: normal; color: #7f1d1d; font-style: italic;">(${itemNotes})</span>` : ''}
+                        </div>
+                    `;
+                }
 
                 // Visual Date Group Header
                 const groupDateKey = tx.deliveryDate || 'no-date';
@@ -3431,8 +3755,9 @@
                 if (tx.cart && tx.cart.length > 0) {
                     tx.cart.forEach((cItem, i) => {
                         txTotalQty += parseFloat(cItem.qty) || 0;
+                        const isThisItemMatched = matchedCartItems.includes(cItem);
                         drawerRows += `
-                            <tr>
+                            <tr style="${isThisItemMatched ? 'background: #fef2f2; font-weight: 600;' : ''}">
                                 <td style="text-align: center; color: var(--text-muted);">${i + 1}</td>
                                 <td><b>${cItem.name}</b> ${cItem.variant ? `<span style="font-size: 0.65rem; color: var(--text-muted);">(${cItem.variant})</span>` : ''}</td>
                                 <td style="text-align: center; font-weight: 700;">${cItem.qty}</td>
@@ -3473,6 +3798,7 @@
                         </div>
                         ${actionsBlock}
                     </div>
+                    ${matchedItemBadgeHtml}
 
                     <!-- Expandable Item Drawer -->
                     <div id="history-drawer-${originalIndex}" class="history-items-drawer">
@@ -3493,8 +3819,38 @@
                 container.appendChild(card);
             });
 
+            // Update Item Filter Notice Banner
+            const noticeEl = document.getElementById('historyItemFilterNotice');
+            if (noticeEl) {
+                if (isItemSearchMode) {
+                    noticeEl.style.display = 'flex';
+                    if (selectedHistoryItem) {
+                        const formattedTotal = Number.isInteger(totalCumulativeItemQty) ? totalCumulativeItemQty.toString() : totalCumulativeItemQty.toFixed(2);
+                        noticeEl.innerHTML = `
+                            <div>
+                                🔍 Menampilkan <b>${matchedOrdersCount}</b> order dengan barang: <b>${selectedHistoryItem.name}</b> &bull; Total: <b>${formattedTotal} ${selectedHistoryItem.uom}</b>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.7rem; border-color: #fca5a5; color: #991b1b; background: #ffffff;" onclick="resetHistoryItemSearchMode()">Hapus Filter</button>
+                        `;
+                    } else {
+                        noticeEl.innerHTML = `
+                            <div>
+                                💡 <b>Mode Pencarian Barang Aktif:</b> Ketik nama barang & pilih dari rekomendasi.
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.7rem; border-color: #fca5a5; color: #991b1b; background: #ffffff;" onclick="resetHistoryItemSearchMode()">Batal</button>
+                        `;
+                    }
+                } else {
+                    noticeEl.style.display = 'none';
+                }
+            }
+
             if (renderedCount === 0) {
-                container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada transaksi cocok dengan "${searchKeyword}"</div>`;
+                if (isItemSearchMode && selectedHistoryItem) {
+                    container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada pesanan yang memuat "${selectedHistoryItem.name} (${selectedHistoryItem.uom})"</div>`;
+                } else {
+                    container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada transaksi cocok dengan "${searchKeyword}"</div>`;
+                }
             }
         }
 

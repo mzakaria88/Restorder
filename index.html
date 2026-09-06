@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RestOrder by NPN — Sistem Pemesanan & Rekapitulasi</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>RestOrder by NPN — Sistem Pemesanan</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1602,7 +1605,7 @@
                             <div class="step-number-badge">4</div>
                             <div class="guide-step-title">Kirim Pesanan</div>
                             <div class="guide-step-text">
-                                Klik <b>Kirim Pesanan</b>. Data otomatis masuk ke database, sinkron Google Sheet, dan notifikasi terkirim ke Telegram logistik NPN.
+                                Klik <b>Kirim Pesanan</b>. Data otomatis masuk ke database orderan kami.
                             </div>
                         </div>
                     </div>
@@ -1763,6 +1766,19 @@
         let currentFocusItem = -1;
         let currentFocusCustomer = -1;
         
+        // --- Version Control & Silent Auto Cache Reset ---
+        const CURRENT_APP_DATA_VERSION = "2026-09-06";
+        try {
+            if (localStorage.getItem('npn_data_version') !== CURRENT_APP_DATA_VERSION) {
+                localStorage.removeItem('npn_cached_catalog');
+                localStorage.removeItem('npn_cached_customers');
+                localStorage.removeItem('npn_order_history');
+                localStorage.setItem('npn_data_version', CURRENT_APP_DATA_VERSION);
+            }
+        } catch (e) {
+            console.warn("Version cache migration error:", e);
+        }
+
         let transactionHistory = [];
         try {
             const rawHist = localStorage.getItem('npn_order_history');
@@ -3026,7 +3042,7 @@
             }
 
             // Online feedback: Saved locally instantly, now transmitting in background
-            showToast(`Pesanan #${currentOrderNumber} tersimpan! Mengirim ke cloud & Telegram...`, "success", 3000);
+            showToast(`Pesanan #${currentOrderNumber} tersimpan! Mengirim ke cloud`, "success", 3000);
 
             // Non-blocking background worker with safety timeout
             (async () => {
@@ -3291,7 +3307,7 @@
                 const formattedTxQty = Number.isInteger(txTotalQty) ? txTotalQty : txTotalQty.toFixed(1);
                 const isPending = tx.syncStatus === 'pending';
                 const pendingBadge = isPending ? `
-                    <span class="pending-sync-pill" title="Pesanan tersimpan di memori lokal, menunggu koneksi internet untuk dikirim ke server & Telegram" onclick="event.stopPropagation(); flushOfflineQueue();">
+                    <span class="pending-sync-pill" title="Pesanan tersimpan di memori lokal, menunggu koneksi internet untuk dikirim ke server" onclick="event.stopPropagation(); flushOfflineQueue();">
                         ⏳ Menunggu Sinyal
                     </span>
                 ` : '';

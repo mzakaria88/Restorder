@@ -956,6 +956,36 @@
             box-shadow: var(--shadow-sm);
         }
 
+        .history-date-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0 6px 0;
+            padding: 2px 2px;
+        }
+        .history-date-group-header:first-child {
+            margin-top: 2px;
+        }
+        .history-date-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            letter-spacing: 0.01em;
+            box-shadow: var(--shadow-xs);
+        }
+        .history-date-line {
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
         .history-card-header {
             display: flex;
             align-items: center;
@@ -1950,6 +1980,79 @@
             const mmm = months[dLocal.getMonth()];
             const yyyy = dLocal.getFullYear();
             return `${dd} ${mmm} ${yyyy}`;
+        }
+
+        function formatDateFullDisplay(dateString) {
+            if (!dateString) return "Tanpa Tanggal Kirim";
+            let dLocal;
+            if (typeof dateString === 'string' && dateString.length === 10 && dateString.indexOf('-') === 4) {
+                const parts = dateString.split('-');
+                dLocal = new Date(parts[0], parts[1] - 1, parts[2]);
+            } else {
+                dLocal = new Date(dateString);
+            }
+            if (isNaN(dLocal.getTime())) return dateString;
+            const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const dd = String(dLocal.getDate()).padStart(2, '0');
+            const mmm = months[dLocal.getMonth()];
+            const yyyy = dLocal.getFullYear();
+            return `${dd} ${mmm} ${yyyy}`;
+        }
+
+        function getOrderDeliveryTime(tx) {
+            if (!tx || !tx.deliveryDate) return 0;
+            const str = String(tx.deliveryDate).trim();
+            if (str.length === 10 && str.indexOf('-') === 4) {
+                const parts = str.split('-');
+                return new Date(parts[0], parts[1] - 1, parts[2]).getTime() || 0;
+            }
+            const dMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+            if (dMatch) {
+                return new Date(dMatch[3], dMatch[2] - 1, dMatch[1]).getTime() || 0;
+            }
+            const d = new Date(str).getTime();
+            return isNaN(d) ? 0 : d;
+        }
+
+        function getOrderUpdatedTime(tx) {
+            if (!tx) return 0;
+            if (tx.updatedAt && !isNaN(Number(tx.updatedAt))) {
+                return Number(tx.updatedAt);
+            }
+            if (tx.timestamp) {
+                const str = String(tx.timestamp).trim();
+                const dMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[,\s]+(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?)?/);
+                if (dMatch) {
+                    const day = parseInt(dMatch[1], 10);
+                    const month = parseInt(dMatch[2], 10) - 1;
+                    const year = parseInt(dMatch[3], 10);
+                    const hour = parseInt(dMatch[4] || '0', 10);
+                    const min = parseInt(dMatch[5] || '0', 10);
+                    const sec = parseInt(dMatch[6] || '0', 10);
+                    const parsedDate = new Date(year, month, day, hour, min, sec);
+                    if (!isNaN(parsedDate.getTime())) return parsedDate.getTime();
+                }
+                const parsed = new Date(str).getTime();
+                if (!isNaN(parsed)) return parsed;
+            }
+            return 0;
+        }
+
+        function sortTransactionHistory(historyList) {
+            if (!Array.isArray(historyList)) return [];
+            return historyList.sort((a, b) => {
+                const delivA = getOrderDeliveryTime(a);
+                const delivB = getOrderDeliveryTime(b);
+                if (delivB !== delivA) {
+                    return delivB - delivA; // Tanggal kirim paling baru di atas
+                }
+                const updatedA = getOrderUpdatedTime(a);
+                const updatedB = getOrderUpdatedTime(b);
+                if (updatedB !== updatedA) {
+                    return updatedB - updatedA; // Terakhir diubah paling baru di atas
+                }
+                return (b.orderNumber || '').localeCompare(a.orderNumber || '');
+            });
         }
 
         let currentDeliveryDate = getTomorrowDateString();
@@ -2953,7 +3056,7 @@
                 }
             });
 
-            return Array.from(mergedMap.values());
+            return sortTransactionHistory(Array.from(mergedMap.values()));
         }
 
         async function proceedOrderSubmission() {
@@ -3003,9 +3106,11 @@
             if (isUpdate) {
                 const idx = transactionHistory.findIndex(t => t.orderNumber === currentOrderNumber);
                 if (idx !== -1) transactionHistory[idx] = transactionData;
+                else transactionHistory.push(transactionData);
             } else {
                 transactionHistory.push(transactionData);
             }
+            sortTransactionHistory(transactionHistory);
             localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
 
             // Build Telegram alert payload
@@ -3250,11 +3355,28 @@
                 return;
             }
 
-            const reversedHistory = [...transactionHistory].reverse();
-            let renderedCount = 0;
+            // Build indexed copy to preserve originalIndex mapping for all actions
+            const sortedHistory = transactionHistory.map((tx, originalIndex) => ({ tx, originalIndex }));
+            sortedHistory.sort((a, b) => {
+                // 1. Sortir Utama: Tanggal Kirim (terbaru di atas)
+                const delivA = getOrderDeliveryTime(a.tx);
+                const delivB = getOrderDeliveryTime(b.tx);
+                if (delivB !== delivA) {
+                    return delivB - delivA;
+                }
+                // 2. Sortir Sekunder: Terakhir Modifikasi (terbaru di atas)
+                const updatedA = getOrderUpdatedTime(a.tx);
+                const updatedB = getOrderUpdatedTime(b.tx);
+                if (updatedB !== updatedA) {
+                    return updatedB - updatedA;
+                }
+                return (b.tx.orderNumber || '').localeCompare(a.tx.orderNumber || '');
+            });
 
-            reversedHistory.forEach((tx, reversedIndex) => {
-                const originalIndex = transactionHistory.length - 1 - reversedIndex;
+            let renderedCount = 0;
+            let lastGroupDate = null;
+
+            sortedHistory.forEach(({ tx, originalIndex }) => {
                 const custName = tx.customer || "No Customer";
                 const delDateStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : "Unknown Date";
                 const orderNum = tx.orderNumber || "Tanpa ID";
@@ -3266,6 +3388,22 @@
                 }
 
                 renderedCount++;
+
+                // Visual Date Group Header
+                const groupDateKey = tx.deliveryDate || 'no-date';
+                if (groupDateKey !== lastGroupDate) {
+                    lastGroupDate = groupDateKey;
+                    const dateHeader = document.createElement('div');
+                    dateHeader.className = 'history-date-group-header';
+                    dateHeader.innerHTML = `
+                        <span class="history-date-badge">
+                            📅 ${formatDateFullDisplay(tx.deliveryDate)}
+                        </span>
+                        <div class="history-date-line"></div>
+                    `;
+                    container.appendChild(dateHeader);
+                }
+
                 const card = document.createElement('div');
                 card.className = 'history-order-card';
 
@@ -3312,6 +3450,15 @@
                     </span>
                 ` : '';
 
+                let updateTimeDisplay = '';
+                const uTime = getOrderUpdatedTime(tx);
+                if (uTime > 0) {
+                    const uDate = new Date(uTime);
+                    const hh = String(uDate.getHours()).padStart(2, '0');
+                    const mm = String(uDate.getMinutes()).padStart(2, '0');
+                    updateTimeDisplay = `<span style="font-size: 0.7rem; color: var(--text-muted);" title="Waktu update: ${uDate.toLocaleString('id-ID')}">&bull; 🕒 ${hh}:${mm}</span>`;
+                }
+
                 card.innerHTML = `
                     <div class="history-card-header" ${isConsolidationMode ? `onclick="toggleCheckbox(${originalIndex})"` : ''} style="${isConsolidationMode ? 'cursor: pointer;' : ''}">
                         <div class="history-meta-left">
@@ -3322,6 +3469,7 @@
                                 📅 Deliv: ${delDateStr}
                             </span>
                             <span style="font-size: 0.7rem; color: var(--text-muted);">&bull; ${tx.cart ? tx.cart.length : 0} item (${formattedTxQty} total)</span>
+                            ${updateTimeDisplay}
                         </div>
                         ${actionsBlock}
                     </div>

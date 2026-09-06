@@ -961,6 +961,57 @@
             background: #b91c1c;
         }
 
+        .history-item-uom-container {
+            display: none;
+            align-items: center;
+            gap: 6px 10px;
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            margin-bottom: 0.5rem;
+            font-size: 0.76rem;
+            flex-wrap: wrap;
+        }
+
+        .history-item-uom-title {
+            font-weight: 700;
+            color: #991b1b;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 2px;
+        }
+
+        .history-uom-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ffffff;
+            border: 1px solid #fca5a5;
+            border-radius: 9999px;
+            padding: 2px 9px;
+            font-weight: 600;
+            color: #7f1d1d;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+            font-size: 0.74rem;
+        }
+
+        .history-uom-checkbox-label:hover {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .history-uom-checkbox-label input[type="checkbox"] {
+            accent-color: #ef4444;
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            margin: 0;
+        }
+
         .history-item-filter-notice {
             display: flex;
             align-items: center;
@@ -1508,7 +1559,7 @@
                     <!-- Search Item Form Group -->
                     <div class="form-group">
                         <div class="form-label">
-                            <span>Cari Barang / Komoditas</span>
+                            <span>Cari Barang</span>
                             <span class="kbd-hint">Ctrl + Alt + S</span>
                         </div>
                         <div class="input-with-icon">
@@ -1518,7 +1569,7 @@
                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                 </svg>
                             </span>
-                            <input type="text" id="searchInput" placeholder="Ketik nama barang (contoh: Kentang, Bawang...)" disabled autocomplete="off">
+                            <input type="text" id="searchInput" placeholder="Ketik nama barang..." disabled autocomplete="off">
                             <span id="selectedUomBadge" class="input-uom-tag">KG</span>
                             <input type="hidden" id="selectedSku">
                             <input type="hidden" id="selectedUom">
@@ -1650,6 +1701,9 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Item Search UOM Selection Bar -->
+                <div id="historyItemUomContainer" class="history-item-uom-container" style="display: none;"></div>
 
                 <!-- Item Search Filter Notice & Summary Bar -->
                 <div id="historyItemFilterNotice" class="history-item-filter-notice" style="display: none;"></div>
@@ -2453,7 +2507,7 @@
 
             if (catalogData.length > 0) {
                 if (searchInput) {
-                    searchInput.placeholder = `Ketik nama barang (${catalogData.length} item siap)...`;
+                    searchInput.placeholder = "Ketik nama barang...";
                     searchInput.disabled = false;
                 }
                 if (statusText) {
@@ -2985,6 +3039,20 @@
             if (isFlushingQueue) return;
             const queue = getOfflineQueue();
             if (queue.length === 0) {
+                // Auto-heal ghost pending flags if offline queue is empty
+                let healed = false;
+                transactionHistory.forEach(t => {
+                    if (t.syncStatus === 'pending') {
+                        t.syncStatus = 'synced';
+                        healed = true;
+                    }
+                });
+                if (healed) {
+                    try {
+                        localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                        populateHistoryList();
+                    } catch (e) {}
+                }
                 updateOfflineQueueBanner();
                 return;
             }
@@ -3008,28 +3076,35 @@
 
             for (const item of queue) {
                 try {
-                    const promises = [];
+                    let sheetSuccess = false;
                     if (GAS_SHEET_SYNC_URL && !GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
-                        promises.push(syncOrderToLampohSheet(item.transactionData));
+                        await syncOrderToLampohSheet(item.transactionData);
+                        sheetSuccess = true;
+                    } else {
+                        sheetSuccess = true;
                     }
+
+                    // Background notification to secondary endpoints without blocking sync success
                     if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
-                        promises.push(fetchWithTimeout(GAS_DB_URL, {
+                        fetchWithTimeout(GAS_DB_URL, {
                             method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify(item.transactionData)
-                        }, 12000));
+                        }, 12000).catch(e => console.warn("Backup DB sync warning:", e));
                     }
                     if (item.telegramPayload && GAS_WEB_APP_URL && !GAS_WEB_APP_URL.includes('PASTE_YOUR')) {
-                        promises.push(sendTelegramPayload(item.telegramPayload));
+                        sendTelegramPayload(item.telegramPayload).catch(e => console.warn("Telegram sync warning:", e));
                     }
 
-                    await Promise.all(promises);
-
-                    // Mark as synced in local transactionHistory
-                    const histIdx = transactionHistory.findIndex(t => t.orderNumber === item.orderNumber);
-                    if (histIdx !== -1) {
-                        transactionHistory[histIdx].syncStatus = 'synced';
+                    if (sheetSuccess) {
+                        // Mark as synced in local transactionHistory
+                        const histIdx = transactionHistory.findIndex(t => t.orderNumber === item.orderNumber);
+                        if (histIdx !== -1) {
+                            transactionHistory[histIdx].syncStatus = 'synced';
+                        }
+                        successCount++;
+                    } else {
+                        remainingQueue.push(item);
                     }
-                    successCount++;
                 } catch (err) {
                     console.error("Gagal mengirim pesanan offline:", item.orderNumber, err);
                     remainingQueue.push(item);
@@ -3098,6 +3173,7 @@
             });
 
             // Reconcile with local transactions
+            const activeOfflineQueue = getOfflineQueue();
             localHistory.forEach(lItem => {
                 if (!lItem || !lItem.orderNumber) return;
 
@@ -3107,14 +3183,24 @@
                     // Order exists in local storage but not yet on server (created offline)
                     mergedMap.set(lItem.orderNumber, lItem);
                 } else if (lItem.syncStatus === 'pending') {
-                    // Local copy has un-synced edits
-                    const localTime = lItem.updatedAt || 0;
-                    const serverTime = sItem.updatedAt || 0;
-
-                    if (localTime >= serverTime) {
-                        mergedMap.set(lItem.orderNumber, lItem);
-                    } else {
+                    const isQueued = activeOfflineQueue.some(q => q.orderNumber === lItem.orderNumber);
+                    if (!isQueued) {
+                        // Order is already on server and has no pending offline payload to send! Auto-heal to synced!
+                        lItem.syncStatus = 'synced';
+                        sItem.syncStatus = 'synced';
+                        if (lItem.updatedAt && !sItem.updatedAt) sItem.updatedAt = lItem.updatedAt;
                         mergedMap.set(lItem.orderNumber, sItem);
+                    } else {
+                        // Local copy has un-synced edits actively in offline queue
+                        const localTime = lItem.updatedAt || 0;
+                        const serverTime = sItem.updatedAt || 0;
+
+                        if (localTime >= serverTime) {
+                            mergedMap.set(lItem.orderNumber, lItem);
+                        } else {
+                            sItem.syncStatus = 'synced';
+                            mergedMap.set(lItem.orderNumber, sItem);
+                        }
                     }
                 } else {
                     // Already synced: retain server item, but transfer local metadata & cart SKUs
@@ -3235,24 +3321,34 @@
 
             // Non-blocking background worker with safety timeout
             (async () => {
+                let sheetSuccess = false;
                 try {
-                    const sheetPromise = syncOrderToLampohSheet(transactionData);
-                    const dbPromise = (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) ?
-                        fetchWithTimeout(GAS_DB_URL, {
-                            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
-                            body: JSON.stringify(transactionData)
-                        }, 12000) : Promise.resolve();
-                    const tgPromise = sendTelegramPayload(telegramPayload);
+                    await syncOrderToLampohSheet(transactionData);
+                    sheetSuccess = true;
+                } catch (netErr) {
+                    console.warn("Gagal sync ke Sheet online:", netErr);
+                }
 
-                    await Promise.all([sheetPromise, dbPromise, tgPromise]);
+                // Fire secondary endpoints without risking false offline downgrade
+                if (GAS_DB_URL && !GAS_DB_URL.includes('PASTE_YOUR')) {
+                    fetchWithTimeout(GAS_DB_URL, {
+                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify(transactionData)
+                    }, 12000).catch(err => console.warn("DB backup error:", err));
+                }
+                if (telegramPayload) {
+                    sendTelegramPayload(telegramPayload).catch(err => console.warn("Telegram notification error:", err));
+                }
 
-                    // Successfully synchronized to Google Sheet & Telegram
+                if (sheetSuccess) {
+                    // Successfully synchronized to Google Sheet
                     transactionData.syncStatus = 'synced';
                     removeFromOfflineQueue(currentOrderNumber);
                     localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
                     populateHistoryList();
-                } catch (netErr) {
-                    console.warn("Gagal mengirim online di background, dialihkan ke antrean offline:", netErr);
+                    updateOfflineQueueBanner();
+                } else {
+                    console.warn("Gagal mengirim online di background, dialihkan ke antrean offline");
                     transactionData.syncStatus = 'pending';
                     localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
                     addToOfflineQueue({
@@ -3418,8 +3514,76 @@
 
         // --- History Tab: Item Search Mode Controller ---
         let isItemSearchMode = false;
-        let selectedHistoryItem = null;
+        let selectedHistoryItem = null; // { name: string, allUoms: string[], activeUoms: Set<string> }
         let currentFocusHistoryItem = -1;
+
+        function getAllUomsForProductName(productName) {
+            const targetName = (productName || '').trim().toLowerCase();
+            const uomSet = new Set();
+
+            (catalogData || []).forEach(p => {
+                if ((p.name || '').trim().toLowerCase() === targetName && p.uom && p.uom.trim()) {
+                    uomSet.add(p.uom.trim().toUpperCase());
+                }
+            });
+
+            (transactionHistory || []).forEach(tx => {
+                (tx.cart || []).forEach(cItem => {
+                    if ((cItem.name || '').trim().toLowerCase() === targetName && cItem.uom && cItem.uom.trim()) {
+                        uomSet.add(cItem.uom.trim().toUpperCase());
+                    }
+                });
+            });
+
+            const list = Array.from(uomSet);
+            return list.length > 0 ? list : ['ITEM'];
+        }
+
+        function renderHistoryUomCheckboxes() {
+            const container = document.getElementById('historyItemUomContainer');
+            if (!container) return;
+
+            if (!isItemSearchMode || !selectedHistoryItem || !selectedHistoryItem.allUoms || selectedHistoryItem.allUoms.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+                return;
+            }
+
+            container.style.display = 'flex';
+            let html = `
+                <span class="history-item-uom-title">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    Satuan:
+                </span>
+            `;
+
+            selectedHistoryItem.allUoms.forEach(uom => {
+                const isChecked = selectedHistoryItem.activeUoms && selectedHistoryItem.activeUoms.has(uom);
+                html += `
+                    <label class="history-uom-checkbox-label" title="${isChecked ? 'Klik untuk mengecualikan satuan ini dari perhitungan' : 'Klik untuk memasukkan satuan ini ke perhitungan'}">
+                        <input type="checkbox" value="${uom}" ${isChecked ? 'checked' : ''} onchange="toggleHistoryUomFilter('${uom}')">
+                        <span>${uom}</span>
+                    </label>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleHistoryUomFilter(uom) {
+            if (!selectedHistoryItem || !selectedHistoryItem.activeUoms) return;
+            const uomKey = (uom || '').trim().toUpperCase();
+            if (selectedHistoryItem.activeUoms.has(uomKey)) {
+                selectedHistoryItem.activeUoms.delete(uomKey);
+            } else {
+                selectedHistoryItem.activeUoms.add(uomKey);
+            }
+            renderHistoryUomCheckboxes();
+            populateHistoryList();
+        }
 
         function toggleHistoryItemSearchMode() {
             if (!isItemSearchMode) {
@@ -3449,6 +3613,7 @@
                     autoList.innerHTML = '';
                     autoList.style.display = 'none';
                 }
+                renderHistoryUomCheckboxes();
                 populateHistoryList();
             } else {
                 resetHistoryItemSearchMode();
@@ -3462,6 +3627,7 @@
             const searchInput = document.getElementById('historySearchInput');
             const toggleBtn = document.getElementById('toggleItemSearchBtn');
             const notice = document.getElementById('historyItemFilterNotice');
+            const uomContainer = document.getElementById('historyItemUomContainer');
             const autoList = document.getElementById('historyItemAutocompleteList');
             if (searchBox) searchBox.classList.remove('item-search-mode');
             if (searchInput) {
@@ -3479,7 +3645,14 @@
                     </svg>
                 `;
             }
-            if (notice) notice.style.display = 'none';
+            if (notice) {
+                notice.style.display = 'none';
+                notice.innerHTML = '';
+            }
+            if (uomContainer) {
+                uomContainer.style.display = 'none';
+                uomContainer.innerHTML = '';
+            }
             if (autoList) {
                 autoList.innerHTML = '';
                 autoList.style.display = 'none';
@@ -3505,21 +3678,57 @@
                 autoList.innerHTML = '';
                 autoList.style.display = 'none';
                 selectedHistoryItem = null;
+                renderHistoryUomCheckboxes();
                 populateHistoryList();
                 return;
             }
 
-            let scoredMatches = catalogData.map(item => {
-                const searchTarget = `${item.name} ${item.uom} ${item.variant || ''}`.trim();
-                return { item, score: getMatchScore(val, searchTarget) };
-            }).filter(m => m.score > 0);
+            // Deduplicate items by normalized product name
+            const nameMatchMap = new Map();
+
+            (catalogData || []).forEach(item => {
+                if (!item || !item.name) return;
+                const searchTarget = `${item.name} ${item.uom || ''} ${item.variant || ''}`.trim();
+                const score = getMatchScore(val, searchTarget);
+                if (score > 0) {
+                    const norm = item.name.trim().toLowerCase();
+                    if (!nameMatchMap.has(norm) || nameMatchMap.get(norm).score < score) {
+                        nameMatchMap.set(norm, {
+                            name: item.name.trim(),
+                            variant: item.variant || '',
+                            score: score
+                        });
+                    }
+                }
+            });
+
+            // Also search historical cart items for any unique item names
+            (transactionHistory || []).forEach(tx => {
+                (tx.cart || []).forEach(cItem => {
+                    if (!cItem || !cItem.name) return;
+                    const searchTarget = `${cItem.name} ${cItem.uom || ''}`.trim();
+                    const score = getMatchScore(val, searchTarget);
+                    if (score > 0) {
+                        const norm = cItem.name.trim().toLowerCase();
+                        if (!nameMatchMap.has(norm) || nameMatchMap.get(norm).score < score) {
+                            nameMatchMap.set(norm, {
+                                name: cItem.name.trim(),
+                                variant: cItem.variant || '',
+                                score: score
+                            });
+                        }
+                    }
+                });
+            });
+
+            const scoredMatches = Array.from(nameMatchMap.values());
             scoredMatches.sort((a, b) => b.score - a.score);
 
             autoList.innerHTML = '';
             if (scoredMatches.length === 0) {
                 const emptyDiv = document.createElement("div");
                 emptyDiv.style.padding = '8px 12px';
-                emptyDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Barang tidak ditemukan di katalog</span>`;
+                emptyDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Barang tidak ditemukan</span>`;
                 autoList.appendChild(emptyDiv);
                 autoList.style.display = 'block';
                 return;
@@ -3532,16 +3741,19 @@
                     optionDiv.classList.add('active');
                     currentFocusHistoryItem = 0;
                 }
+                const uomList = getAllUomsForProductName(match.name);
+                const uomBadges = uomList.join(', ');
+
                 optionDiv.innerHTML = `
                     <div class="item-info">
                         <div class="item-title-row">
-                            <span class="item-name">${match.item.name}</span>
-                            <span class="item-uom">${match.item.uom}</span>
+                            <span class="item-name">${match.name}</span>
+                            <span class="item-uom" style="color: #991b1b; font-size: 0.68rem; background: #fee2e2; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${uomBadges}</span>
                         </div>
-                        ${match.item.variant ? `<span class="item-meta">${match.item.variant}</span>` : ''}
+                        ${match.variant ? `<span class="item-meta">${match.variant}</span>` : ''}
                     </div>
                 `;
-                optionDiv.addEventListener("click", () => selectHistorySearchItem(match.item));
+                optionDiv.addEventListener("click", () => selectHistorySearchItem(match.name));
                 optionDiv.addEventListener("mouseenter", () => {
                     const allItems = autoList.querySelectorAll('.autocomplete-item');
                     allItems.forEach(el => el.classList.remove('active'));
@@ -3554,17 +3766,29 @@
             autoList.scrollTop = 0;
         }
 
-        function selectHistorySearchItem(item) {
-            selectedHistoryItem = item;
+        function selectHistorySearchItem(itemOrName) {
+            const rawName = typeof itemOrName === 'string' ? itemOrName : (itemOrName?.name || '');
+            const itemName = rawName.trim();
+            if (!itemName) return;
+
+            const allUoms = getAllUomsForProductName(itemName);
+            selectedHistoryItem = {
+                name: itemName,
+                allUoms: allUoms,
+                activeUoms: new Set(allUoms) // All checked by default
+            };
+
             const searchInput = document.getElementById('historySearchInput');
             const autoList = document.getElementById('historyItemAutocompleteList');
             if (searchInput) {
-                searchInput.value = `${item.name} (${item.uom})`;
+                searchInput.value = itemName;
             }
             if (autoList) {
                 autoList.innerHTML = '';
                 autoList.style.display = 'none';
             }
+
+            renderHistoryUomCheckboxes();
             populateHistoryList();
         }
 
@@ -3631,6 +3855,21 @@
                 return;
             }
 
+            // Auto-heal ghost pending sync states (orders marked pending in local storage but not in offlineQueue)
+            const activeQueue = getOfflineQueue();
+            let historyHealed = false;
+            transactionHistory.forEach(t => {
+                if (t.syncStatus === 'pending' && !activeQueue.some(q => q.orderNumber === t.orderNumber)) {
+                    t.syncStatus = 'synced';
+                    historyHealed = true;
+                }
+            });
+            if (historyHealed) {
+                try {
+                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                } catch (e) {}
+            }
+
             // Build indexed copy to preserve originalIndex mapping for all actions
             const sortedHistory = transactionHistory.map((tx, originalIndex) => ({ tx, originalIndex }));
             sortedHistory.sort((a, b) => {
@@ -3651,7 +3890,7 @@
 
             let renderedCount = 0;
             let lastGroupDate = null;
-            let totalCumulativeItemQty = 0;
+            const totalQtyByUom = {};
             let matchedOrdersCount = 0;
 
             sortedHistory.forEach(({ tx, originalIndex }) => {
@@ -3664,16 +3903,17 @@
                 if (isItemSearchMode) {
                     if (selectedHistoryItem) {
                         const sName = (selectedHistoryItem.name || '').trim().toLowerCase();
-                        const sUom = (selectedHistoryItem.uom || '').trim().toLowerCase();
-                        const sSku = (selectedHistoryItem.sku || '').trim().toLowerCase();
+                        const activeUoms = selectedHistoryItem.activeUoms;
 
-                        matchedCartItems = (tx.cart || []).filter(cItem => {
-                            const cName = (cItem.name || '').trim().toLowerCase();
-                            const cUom = (cItem.uom || '').trim().toLowerCase();
-                            const cSku = (cItem.sku || '').trim().toLowerCase();
-                            if (sSku && cSku && sSku === cSku && sUom === cUom) return true;
-                            return cName === sName && (cUom === sUom || !cUom || !sUom);
-                        });
+                        if (activeUoms && activeUoms.size > 0) {
+                            matchedCartItems = (tx.cart || []).filter(cItem => {
+                                const cName = (cItem.name || '').trim().toLowerCase();
+                                const cUom = (cItem.uom || '').trim().toUpperCase();
+                                return cName === sName && activeUoms.has(cUom);
+                            });
+                        } else {
+                            matchedCartItems = [];
+                        }
 
                         if (matchedCartItems.length === 0) return;
                     } else if (searchKeyword) {
@@ -3691,23 +3931,29 @@
                 renderedCount++;
 
                 // Track item totals when item filtering is active
-                let orderItemQty = 0;
                 let matchedItemBadgeHtml = '';
                 if (isItemSearchMode && matchedCartItems.length > 0) {
                     matchedOrdersCount++;
+                    const orderUomTotals = {};
                     matchedCartItems.forEach(ci => {
-                        orderItemQty += parseFloat(ci.qty) || 0;
+                        const u = (ci.uom || '').trim().toUpperCase() || 'ITEM';
+                        const q = parseFloat(ci.qty) || 0;
+                        orderUomTotals[u] = (orderUomTotals[u] || 0) + q;
+                        totalQtyByUom[u] = (totalQtyByUom[u] || 0) + q;
                     });
-                    totalCumulativeItemQty += orderItemQty;
-                    const formattedOrderItemQty = Number.isInteger(orderItemQty) ? orderItemQty.toString() : orderItemQty.toFixed(2);
+
+                    const orderQtyParts = Object.entries(orderUomTotals).map(([u, q]) => {
+                        const formatted = Number.isInteger(q) ? q.toString() : q.toFixed(2);
+                        return `${formatted} ${u}`;
+                    });
+                    const formattedOrderQty = orderQtyParts.join(' + ');
                     const displayItemName = selectedHistoryItem ? selectedHistoryItem.name : matchedCartItems[0].name;
-                    const displayUom = selectedHistoryItem ? selectedHistoryItem.uom : matchedCartItems[0].uom;
                     const itemNotes = matchedCartItems.map(ci => ci.note).filter(Boolean).join(', ');
 
                     matchedItemBadgeHtml = `
                         <div class="matched-item-badge">
                             <span>📦 <b>${displayItemName}</b>:</span>
-                            <span style="font-size: 0.8rem; color: #b91c1c;">${formattedOrderItemQty} ${displayUom}</span>
+                            <span style="font-size: 0.8rem; color: #b91c1c; font-weight: 700;">${formattedOrderQty}</span>
                             ${itemNotes ? `<span style="font-size: 0.68rem; font-weight: normal; color: #7f1d1d; font-style: italic;">(${itemNotes})</span>` : ''}
                         </div>
                     `;
@@ -3767,8 +4013,7 @@
                         `;
                     });
                 }
-                const formattedTxQty = Number.isInteger(txTotalQty) ? txTotalQty : txTotalQty.toFixed(1);
-                const isPending = tx.syncStatus === 'pending';
+                const isPending = tx.syncStatus === 'pending' && activeQueue.some(q => q.orderNumber === tx.orderNumber);
                 const pendingBadge = isPending ? `
                     <span class="pending-sync-pill" title="Pesanan tersimpan di memori lokal, menunggu koneksi internet untuk dikirim ke server" onclick="event.stopPropagation(); flushOfflineQueue();">
                         ⏳ Menunggu Sinyal
@@ -3793,7 +4038,7 @@
                             <span class="delivery-date-pill">
                                 📅 Deliv: ${delDateStr}
                             </span>
-                            <span style="font-size: 0.7rem; color: var(--text-muted);">&bull; ${tx.cart ? tx.cart.length : 0} item (${formattedTxQty} total)</span>
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">&bull; ${tx.cart ? tx.cart.length : 0} item</span>
                             ${updateTimeDisplay}
                         </div>
                         ${actionsBlock}
@@ -3825,13 +4070,27 @@
                 if (isItemSearchMode) {
                     noticeEl.style.display = 'flex';
                     if (selectedHistoryItem) {
-                        const formattedTotal = Number.isInteger(totalCumulativeItemQty) ? totalCumulativeItemQty.toString() : totalCumulativeItemQty.toFixed(2);
-                        noticeEl.innerHTML = `
-                            <div>
-                                🔍 Menampilkan <b>${matchedOrdersCount}</b> order dengan barang: <b>${selectedHistoryItem.name}</b> &bull; Total: <b>${formattedTotal} ${selectedHistoryItem.uom}</b>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.7rem; border-color: #fca5a5; color: #991b1b; background: #ffffff;" onclick="resetHistoryItemSearchMode()">Hapus Filter</button>
-                        `;
+                        if (selectedHistoryItem.activeUoms && selectedHistoryItem.activeUoms.size === 0) {
+                            noticeEl.innerHTML = `
+                                <div>
+                                    🔍 Menampilkan <b>0</b> order dengan barang: <b>${selectedHistoryItem.name}</b> &bull; <span style="color: #ef4444; font-weight: 600;">(Semua satuan dinonaktifkan &mdash; centang minimal 1 satuan di atas)</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.7rem; border-color: #fca5a5; color: #991b1b; background: #ffffff;" onclick="resetHistoryItemSearchMode()">Hapus Filter</button>
+                            `;
+                        } else {
+                            const totalUomParts = Object.entries(totalQtyByUom).map(([u, q]) => {
+                                const fq = Number.isInteger(q) ? q.toString() : q.toFixed(2);
+                                return `<b>${fq} ${u}</b>`;
+                            });
+                            const totalSummaryText = totalUomParts.length > 0 ? totalUomParts.join(' + ') : '0';
+
+                            noticeEl.innerHTML = `
+                                <div>
+                                    🔍 Menampilkan <b>${matchedOrdersCount}</b> order dengan barang: <b>${selectedHistoryItem.name}</b> &bull; Total: ${totalSummaryText}
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 8px; font-size: 0.7rem; border-color: #fca5a5; color: #991b1b; background: #ffffff;" onclick="resetHistoryItemSearchMode()">Hapus Filter</button>
+                            `;
+                        }
                     } else {
                         noticeEl.innerHTML = `
                             <div>
@@ -3842,12 +4101,18 @@
                     }
                 } else {
                     noticeEl.style.display = 'none';
+                    noticeEl.innerHTML = '';
                 }
             }
 
             if (renderedCount === 0) {
                 if (isItemSearchMode && selectedHistoryItem) {
-                    container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada pesanan yang memuat "${selectedHistoryItem.name} (${selectedHistoryItem.uom})"</div>`;
+                    if (selectedHistoryItem.activeUoms && selectedHistoryItem.activeUoms.size === 0) {
+                        container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Semua satuan dinonaktifkan. Centang minimal 1 satuan di atas untuk melihat hasil pesanan.</div>`;
+                    } else {
+                        const activeUomList = Array.from(selectedHistoryItem.activeUoms || []).join(', ');
+                        container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada pesanan yang memuat "${selectedHistoryItem.name}" dengan satuan [${activeUomList}]</div>`;
+                    }
                 } else {
                     container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada transaksi cocok dengan "${searchKeyword}"</div>`;
                 }

@@ -1532,11 +1532,14 @@
 
                     <div id="datePopover" class="date-popover" onclick="event.stopPropagation()">
                         <div class="date-presets">
-                            <button class="preset-chip" onclick="setPresetDate('tomorrow')">Besok</button>
-                            <button class="preset-chip" onclick="setPresetDate('today')">Hari Ini</button>
-                            <button class="preset-chip" onclick="setPresetDate('dayAfter')">Lusa</button>
+                            <button type="button" class="preset-chip" onclick="setPresetDate('tomorrow')">Besok</button>
+                            <button type="button" class="preset-chip" onclick="setPresetDate('today')">Hari Ini</button>
+                            <button type="button" class="preset-chip" onclick="setPresetDate('dayAfter')">Lusa</button>
                         </div>
-                        <input type="date" id="deliveryDateInput" onchange="onDateInputChange(this.value)">
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <input type="date" id="deliveryDateInput" style="flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem;" oninput="onDateInputChange(this.value)" onchange="onDateInputChange(this.value)" onkeydown="onDateInputKeydown(event)">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="confirmDateSelection()" style="padding: 0 10px; height: 30px; font-size: 0.75rem; white-space: nowrap;">OK</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2215,15 +2218,27 @@
         let currentDeliveryDate = getTomorrowDateString();
 
         function updateDeliveryDisplay() {
-            document.getElementById('deliveryDisplay').innerText = formatDateDisplay(currentDeliveryDate);
-            document.getElementById('deliveryDateInput').value = currentDeliveryDate;
+            const display = document.getElementById('deliveryDisplay');
+            if (display) display.innerText = formatDateDisplay(currentDeliveryDate);
+            const dateInput = document.getElementById('deliveryDateInput');
+            if (dateInput) dateInput.value = currentDeliveryDate;
         }
 
         function toggleDatePopover(e) {
             if (e) e.stopPropagation();
             const popover = document.getElementById('datePopover');
-            popover.style.display = popover.style.display === 'block' ? 'none' : 'block';
-            closeCustomerPopover();
+            const willOpen = popover.style.display !== 'block';
+            if (willOpen) {
+                popover.style.display = 'block';
+                closeCustomerPopover();
+                const dateInput = document.getElementById('deliveryDateInput');
+                if (dateInput) {
+                    dateInput.value = currentDeliveryDate;
+                    setTimeout(() => dateInput.focus(), 50);
+                }
+            } else {
+                confirmDateSelection();
+            }
         }
 
         function closeDatePopover() {
@@ -2244,9 +2259,29 @@
         }
 
         function onDateInputChange(val) {
-            if (val) {
+            // Live update delivery label if valid, without closing popover or interrupting user typing!
+            if (val && !isNaN(new Date(val).getTime())) {
                 currentDeliveryDate = val;
-                updateDeliveryDisplay();
+                const disp = document.getElementById('deliveryDisplay');
+                if (disp) disp.innerText = formatDateDisplay(currentDeliveryDate);
+            }
+        }
+
+        function confirmDateSelection() {
+            const dateInput = document.getElementById('deliveryDateInput');
+            if (dateInput && dateInput.value && !isNaN(new Date(dateInput.value).getTime())) {
+                currentDeliveryDate = dateInput.value;
+            }
+            updateDeliveryDisplay();
+            closeDatePopover();
+        }
+
+        function onDateInputKeydown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmDateSelection();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
                 closeDatePopover();
             }
         }
@@ -2487,7 +2522,7 @@
             setNetworkStatus(false, "Koneksi Terputus");
         });
 
-        // Periodic heartbeat every 20 seconds, automatically paused when tab is hidden to save battery
+        // Periodic heartbeat every 5 seconds, automatically paused when tab is hidden to save battery & data
         function startConnectionMonitor() {
             checkRealInternet(4000).then(isUp => {
                 if (isUp && typeof flushOfflineQueue === 'function' && getOfflineQueue().length > 0) {
@@ -2503,7 +2538,7 @@
                         }
                     });
                 }
-            }, 20000);
+            }, 5000);
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -2698,7 +2733,7 @@
 
             const datePopover = document.getElementById('datePopover');
             if (datePopover.style.display === 'block' && !datePopover.contains(e.target) && !e.target.closest('.meta-chip-item')) {
-                closeDatePopover();
+                confirmDateSelection();
             }
         });
 

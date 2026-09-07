@@ -2369,50 +2369,199 @@
             }
         });
 
-        // --- Levenshtein Fuzzy Search Engine ---
-        function levenshtein(a, b) {
-            const matrix = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
-            for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
-            for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
-            for (let i = 1; i <= a.length; i++) {
-                for (let j = 1; j <= b.length; j++) {
-                    if (a[i - 1] === b[j - 1]) matrix[i][j] = matrix[i - 1][j - 1];
-                    else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+        // --- High-Performance Damerau-Levenshtein Fuzzy Search Engine ---
+        function cleanSearchText(str) {
+            if (!str) return '';
+            return str
+                .toLowerCase()
+                .replace(/[()[\]{}_,./\\:;+*~`'""!@#$%^&=-]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function damerauLevenshtein(a, b) {
+            const aLen = a.length;
+            const bLen = b.length;
+            if (aLen === 0) return bLen;
+            if (bLen === 0) return aLen;
+            if (a === b) return 0;
+
+            const cols = bLen + 2;
+            const d = new Int16Array((aLen + 2) * cols);
+            const maxDist = aLen + bLen;
+            d[0] = maxDist;
+
+            for (let i = 0; i <= aLen; i++) {
+                d[(i + 1) * cols + 0] = maxDist;
+                d[(i + 1) * cols + 1] = i;
+            }
+            for (let j = 0; j <= bLen; j++) {
+                d[0 * cols + (j + 1)] = maxDist;
+                d[1 * cols + (j + 1)] = j;
+            }
+
+            for (let i = 1; i <= aLen; i++) {
+                for (let j = 1; j <= bLen; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    const idx = (i + 1) * cols + (j + 1);
+
+                    let val = Math.min(
+                        d[i * cols + (j + 1)] + 1,        // deletion
+                        d[(i + 1) * cols + j] + 1,        // insertion
+                        d[i * cols + j] + cost             // substitution
+                    );
+
+                    // Transposition check (Damerau: e.g. "ba" <-> "ab")
+                    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+                        const transVal = d[(i - 1) * cols + (j - 1)] + cost;
+                        if (transVal < val) val = transVal;
+                    }
+
+                    d[idx] = val;
                 }
             }
-            return matrix[a.length][b.length];
+            return d[(aLen + 1) * cols + (bLen + 1)];
+        }
+
+        // Backward-compatible alias for any direct callers
+        function levenshtein(a, b) {
+            return damerauLevenshtein(a, b);
         }
 
         function getMatchScore(query, text) {
-            query = query.toLowerCase().trim();
-            text = text.toLowerCase();
-            if (!query) return 0;
-            if (text === query) return 100;
-            if (text.startsWith(query)) return 90;
-            const words = text.split(/\s+/);
-            if (words.some(w => w.startsWith(query))) return 80; 
-            if (text.includes(query)) return 70;
-            let qIdx = 0;
-            for (let i = 0; i < text.length; i++) {
-                if (query[qIdx] === text[i]) qIdx++;
-                if (qIdx === query.length) return 60;
+            const rawQuery = cleanSearchText(query);
+            const cleanTarget = cleanSearchText(text);
+            if (!rawQuery || !cleanTarget) return 0;
+
+            // 1. Exact full match
+            if (cleanTarget === rawQuery) return 100;
+
+            // 2. Starts with query
+            if (cleanTarget.startsWith(rawQuery)) return 96;
+
+            const textWords = cleanTarget.split(' ').filter(Boolean);
+            const queryTokens = rawQuery.split(' ').filter(Boolean);
+
+            // 3. Acronym / Abbreviation match (e.g. "bm" -> "Bawang Merah", "cd" -> "Cabe Domba")
+            const acronym = textWords.map(w => w[0]).join('');
+            if (rawQuery.length >= 2) {
+                if (acronym === rawQuery) return 94;
+                if (acronym.startsWith(rawQuery)) return 91;
             }
-            if (query.length > 2) {
-                const maxTypos = query.length <= 5 ? 2 : 3;
-                for (let w of words) {
-                    let dist = levenshtein(query, w);
-                    if (dist <= maxTypos) return 50 - dist; 
-                    let wordPrefix = w.substring(0, query.length);
-                    if (wordPrefix.length >= query.length - maxTypos) {
-                        let prefixDist = levenshtein(query, wordPrefix);
-                        if (prefixDist <= maxTypos) return 40 - prefixDist;
+
+            // 4. Single-token query specific fast paths
+            if (queryTokens.length === 1) {
+                const q = queryTokens[0];
+                if (textWords.includes(q)) return 92;
+                if (textWords.some(w => w.startsWith(q))) return 88;
+                if (cleanTarget.includes(q)) return 82;
+            }
+
+            // 5. Multi-token query (Token-based matching for unordered / multi-word search)
+            if (queryTokens.length > 1) {
+                let totalTokenScore = 0;
+                let matchedTokenCount = 0;
+                let lastMatchIdx = -1;
+                let inOrder = true;
+
+                for (const token of queryTokens) {
+                    let bestScoreForToken = 0;
+                    let bestWordIdx = -1;
+
+                    textWords.forEach((word, wIdx) => {
+                        let score = 0;
+                        if (word === token) {
+                            score = 1.0;
+                        } else if (word.startsWith(token)) {
+                            score = 0.88;
+                        } else if (word.includes(token)) {
+                            score = 0.78;
+                        } else if (token.length >= 3) {
+                            const maxTypos = token.length <= 4 ? 1 : 2;
+                            const dist = damerauLevenshtein(token, word);
+                            if (dist <= maxTypos) {
+                                score = dist === 1 ? 0.72 : 0.58;
+                            } else {
+                                const wPrefix = word.substring(0, token.length);
+                                const pDist = damerauLevenshtein(token, wPrefix);
+                                if (pDist <= maxTypos) {
+                                    score = pDist === 1 ? 0.68 : 0.52;
+                                }
+                            }
+                        }
+
+                        if (score > bestScoreForToken) {
+                            bestScoreForToken = score;
+                            bestWordIdx = wIdx;
+                        }
+                    });
+
+                    if (bestScoreForToken > 0) {
+                        matchedTokenCount++;
+                        totalTokenScore += bestScoreForToken;
+                        if (bestWordIdx < lastMatchIdx) inOrder = false;
+                        lastMatchIdx = bestWordIdx;
                     }
                 }
-                let textPrefix = text.substring(0, query.length);
-                let textDist = levenshtein(query, textPrefix);
-                if (textDist <= maxTypos) return 30 - textDist;
+
+                // If all query tokens matched something
+                if (matchedTokenCount === queryTokens.length) {
+                    const avg = totalTokenScore / queryTokens.length;
+                    const base = 75 + Math.round(avg * 18);
+                    return inOrder ? Math.min(95, base + 2) : base;
+                }
+
+                // Partial tokens match (e.g. 2 of 3 words matched)
+                if (matchedTokenCount > 0 && queryTokens.length > 2 && matchedTokenCount >= queryTokens.length - 1) {
+                    const ratio = matchedTokenCount / queryTokens.length;
+                    return Math.round(55 * ratio);
+                }
             }
-            return 0; 
+
+            // 6. Single-token Fuzzy Match with Damerau-Levenshtein
+            if (queryTokens.length === 1) {
+                const q = queryTokens[0];
+                if (q.length >= 3) {
+                    const maxTypos = q.length <= 4 ? 1 : 2;
+                    let bestFuzzy = 0;
+
+                    for (const word of textWords) {
+                        const dist = damerauLevenshtein(q, word);
+                        if (dist <= maxTypos) {
+                            const s = dist === 1 ? (76 - (q.length <= 4 ? 4 : 0)) : 62;
+                            if (s > bestFuzzy) bestFuzzy = s;
+                        }
+                        const wPrefix = word.substring(0, q.length);
+                        const pDist = damerauLevenshtein(q, wPrefix);
+                        if (pDist <= maxTypos) {
+                            const s = pDist === 1 ? 70 : 56;
+                            if (s > bestFuzzy) bestFuzzy = s;
+                        }
+                    }
+                    if (bestFuzzy > 0) return bestFuzzy;
+                }
+            }
+
+            // 7. Subsequence Matcher (consecutive bonus)
+            let qIdx = 0;
+            let consecutive = 0;
+            let maxConsecutive = 0;
+            for (let i = 0; i < cleanTarget.length; i++) {
+                if (rawQuery[qIdx] === cleanTarget[i]) {
+                    qIdx++;
+                    consecutive++;
+                    if (consecutive > maxConsecutive) maxConsecutive = consecutive;
+                } else {
+                    consecutive = 0;
+                }
+                if (qIdx === rawQuery.length) break;
+            }
+            if (qIdx === rawQuery.length) {
+                const density = rawQuery.length / cleanTarget.length;
+                return Math.min(50, Math.round(25 + (density * 15) + (maxConsecutive * 2)));
+            }
+
+            return 0;
         }
 
         function addActive(items, focusVar) {

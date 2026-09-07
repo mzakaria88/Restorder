@@ -1888,8 +1888,9 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <span style="font-size: 0.68rem; color: var(--text-muted); margin-right: auto; align-self: center;">Enter: Simpan &bull; Ctrl+Enter: Baris baru</span>
                 <button class="btn btn-sm btn-outline" onclick="closeNoteModal()">Batal</button>
-                <button class="btn btn-sm btn-primary" onclick="saveCurrentNote()">Simpan (Ctrl+Enter)</button>
+                <button class="btn btn-sm btn-primary" onclick="saveCurrentNote()">Simpan (Enter)</button>
             </div>
         </div>
     </div>
@@ -2087,11 +2088,27 @@
             closeNoteModal();
         }
 
-        // Shortcut Ctrl+Enter on note modal
+        // Keyboard shortcuts on note modal: Enter to save, Ctrl+Enter to insert newline, Escape to cancel
         document.getElementById('noteTextInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
+            if (e.key === 'Escape') {
                 e.preventDefault();
-                saveCurrentNote();
+                closeNoteModal();
+            } else if (e.key === 'Enter') {
+                if (e.ctrlKey || e.metaKey) {
+                    // Ctrl+Enter: Insert newline at cursor position
+                    e.preventDefault();
+                    if (!document.execCommand('insertText', false, '\n')) {
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        const val = this.value;
+                        this.value = val.substring(0, start) + '\n' + val.substring(end);
+                        this.selectionStart = this.selectionEnd = start + 1;
+                    }
+                } else if (!e.shiftKey && !e.altKey) {
+                    // Plain Enter: Confirm and save note
+                    e.preventDefault();
+                    saveCurrentNote();
+                }
             }
         });
 

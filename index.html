@@ -1696,11 +1696,12 @@
                             </svg>
                             Sinkronkan
                         </button>
-                        <button class="btn btn-sm btn-outline" id="toggleConsolidateBtn" style="color: var(--accent); border-color: var(--accent);" onclick="toggleConsolidationMode()">
+                        <button class="btn btn-sm btn-outline" id="toggleConsolidateBtn" style="color: var(--accent); border-color: var(--accent);" onclick="toggleConsolidationMode()" title="Tandai pesanan untuk membuat 1 file CSV Accurate atau PDF Rekap">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                             </svg>
-                            Mode Konsolidasi
+                            Tandai & Gabung (CSV/PDF)
                         </button>
                     </div>
                 </div>
@@ -1711,16 +1712,29 @@
                 <!-- Item Search Filter Notice & Summary Bar -->
                 <div id="historyItemFilterNotice" class="history-item-filter-notice" style="display: none;"></div>
 
-                <!-- Consolidation Alert Bar -->
-                <div id="consolidationActions" class="consolidation-alert-bar">
-                    <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-main);">
-                        Centang pesanan yang ingin digabung menjadi 1 PDF rekap.
-                    </span>
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn btn-sm btn-success" onclick="generateConsolidatedPDF()">
+                <!-- Consolidation / Batch Selection Alert Bar -->
+                <div id="consolidationActions" class="consolidation-alert-bar" style="flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">
+                            Pilih Pesanan:
+                        </span>
+                        <span id="consolidateCountBadge" style="font-size: 0.72rem; font-weight: 700; background: #ffffff; color: var(--accent-hover); border: 1px solid var(--accent-border); padding: 2px 8px; border-radius: 9999px;">
+                            0 dipilih
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline" id="toggleSelectAllBtn" style="padding: 2px 8px; font-size: 0.72rem; background: #ffffff;" onclick="toggleSelectAllConsolidation()">
+                            Pilih Semua
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="btn btn-sm btn-primary" id="btnConsolidateCSV" title="Buat dan unduh 1 file CSV Accurate untuk semua pesanan yang ditandai" onclick="generateConsolidatedCSV()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Download 1 CSV
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success" id="btnConsolidatePDF" title="Buat dan unduh PDF rekapitulasi gabungan" onclick="generateConsolidatedPDF()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                             Download PDF Rekap
                         </button>
-                        <button class="btn btn-sm btn-outline" onclick="cancelConsolidationMode()">Batal</button>
+                        <button type="button" class="btn btn-sm btn-outline" style="background: #ffffff;" onclick="cancelConsolidationMode()">Batal</button>
                     </div>
                 </div>
 
@@ -1985,6 +1999,7 @@
 
         let currentOrderNumber = null;
         let isConsolidationMode = false;
+        let selectedHistoryIndices = new Set();
         let activeNoteEditIndex = -1;
         let confirmCallback = null;
 
@@ -3700,14 +3715,17 @@
         // --- TAB 2: Riwayat (History) Rendering ---
         function toggleConsolidationMode() {
             isConsolidationMode = true;
+            selectedHistoryIndices.clear();
             document.getElementById('consolidationActions').style.display = 'flex';
             document.getElementById('toggleConsolidateBtn').style.display = 'none';
             populateHistoryList();
-            showToast("Centang pesanan untuk direkap", "info");
+            updateConsolidationCount();
+            showToast("Centang pesanan untuk membuat CSV gabungan atau PDF rekap", "info");
         }
 
         function cancelConsolidationMode() {
             isConsolidationMode = false;
+            selectedHistoryIndices.clear();
             document.getElementById('consolidationActions').style.display = 'none';
             document.getElementById('toggleConsolidateBtn').style.display = 'inline-flex';
             populateHistoryList();
@@ -4180,7 +4198,8 @@
 
                 let checkBlock = '';
                 if (isConsolidationMode) {
-                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${originalIndex}" style="width: 16px; height: 16px; cursor: pointer;" onclick="event.stopPropagation()">`;
+                    const isChecked = selectedHistoryIndices.has(originalIndex);
+                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${originalIndex}" ${isChecked ? 'checked' : ''} style="width: 16px; height: 16px; cursor: pointer;" onchange="onConsolidateCheckboxChange(${originalIndex}, this.checked)" onclick="event.stopPropagation()">`;
                 }
 
                 let actionsBlock = '';
@@ -4318,11 +4337,73 @@
                     container.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.8rem;">Tidak ada transaksi cocok dengan "${searchKeyword}"</div>`;
                 }
             }
+            if (isConsolidationMode) {
+                updateConsolidationCount();
+            }
         }
 
         function toggleCheckbox(index) {
+            if (selectedHistoryIndices.has(index)) {
+                selectedHistoryIndices.delete(index);
+            } else {
+                selectedHistoryIndices.add(index);
+            }
             const cb = document.querySelector(`.consolidate-checkbox[data-index="${index}"]`);
-            if (cb) cb.checked = !cb.checked;
+            if (cb) cb.checked = selectedHistoryIndices.has(index);
+            updateConsolidationCount();
+        }
+
+        function onConsolidateCheckboxChange(index, isChecked) {
+            if (isChecked) {
+                selectedHistoryIndices.add(index);
+            } else {
+                selectedHistoryIndices.delete(index);
+            }
+            updateConsolidationCount();
+        }
+
+        function toggleSelectAllConsolidation() {
+            const checkboxes = document.querySelectorAll('.consolidate-checkbox');
+            if (checkboxes.length === 0) return;
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.getAttribute('data-index'), 10);
+                if (allChecked) {
+                    cb.checked = false;
+                    selectedHistoryIndices.delete(idx);
+                } else {
+                    cb.checked = true;
+                    selectedHistoryIndices.add(idx);
+                }
+            });
+            updateConsolidationCount();
+        }
+
+        function updateConsolidationCount() {
+            const checkboxes = document.querySelectorAll('.consolidate-checkbox');
+            const checkedCount = selectedHistoryIndices.size;
+            const badge = document.getElementById('consolidateCountBadge');
+            const selectAllBtn = document.getElementById('toggleSelectAllBtn');
+            const btnCsv = document.getElementById('btnConsolidateCSV');
+            const btnPdf = document.getElementById('btnConsolidatePDF');
+
+            if (badge) {
+                badge.textContent = `${checkedCount} dipilih`;
+            }
+            if (selectAllBtn) {
+                const isAll = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+                selectAllBtn.textContent = isAll ? 'Batal Pilih Semua' : 'Pilih Semua';
+            }
+            if (btnCsv) {
+                btnCsv.disabled = checkedCount === 0;
+                btnCsv.style.opacity = checkedCount === 0 ? '0.5' : '1';
+                btnCsv.style.cursor = checkedCount === 0 ? 'not-allowed' : 'pointer';
+            }
+            if (btnPdf) {
+                btnPdf.disabled = checkedCount === 0;
+                btnPdf.style.opacity = checkedCount === 0 ? '0.5' : '1';
+                btnPdf.style.cursor = checkedCount === 0 ? 'not-allowed' : 'pointer';
+            }
         }
 
         function toggleHistoryDrawer(index) {
@@ -4429,14 +4510,15 @@
             }
         }
 
-        // --- Accurate CSV Export ---
-        function downloadHistoryCSV(index) {
-            const transaction = transactionHistory[index];
-            if (!transaction || !transaction.cart) return;
+        // --- Accurate CSV Export Engine ---
+        const ACCURATE_CSV_TEMPLATE_HEADER = "CUSTOMER NO,NUMBER,BRANCH,DATE,TAXABLE,ADDRESS,TOTAL INCLUDING VAT,TAX INVOICE NUMBER,ADVANCE INVOICE,INVOICE DISCOUNT (%),INVOICE DISCOUNT (Rp),DESCRIPTION,PO NO,SHIPPING,SHIPPING DATE,FOB,PAYMENT TERMS,DUE DATE,PAYING BANK,PAYMENT VALUE,CUSTOM CHARACTER 1,CUSTOM CHARACTER 2,CUSTOM CHARACTER 3,CUSTOM CHARACTER 4,CUSTOM CHARACTER 5,CUSTOM CHARACTER 6,CUSTOM CHARACTER 7,CUSTOM CHARACTER 8,CUSTOM CHARACTER 9,CUSTOM CHARACTER 10,CUSTOM NUMBER 1,CUSTOM NUMBER 2,CUSTOM NUMBER 3,CUSTOM NUMBER 4,CUSTOM NUMBER 5,CUSTOM NUMBER 6,CUSTOM NUMBER 7,CUSTOM NUMBER 8,CUSTOM NUMBER 9,CUSTOM NUMBER 10,CUSTOM DATE 1,CUSTOM DATE 2,VA NUMBER,ACCOUNT RECEIVABLE NUMBER,PAYMENT WITH UNIQUE CODE,SUB COMPANY CODE,ITEM:ITEM NO,ITEM:QUANTITY,ITEM:UNITPRICE,ITEM:UNIT,ITEM:WAREHOUSE NAME ,ITEM:NAME,ITEM:ITEM DISCOUNT (%),ITEM:ITEM DISCOUNT (RP),ITEM:ITEM NOTES,ITEM:SALESMAN ID,ITEM:DEPT NAME,ITEM:PROJECT NO,ITEM:CUSTOM CHARACTER 1,ITEM:CUSTOM CHARACTER 2,ITEM:CUSTOM CHARACTER 3,ITEM:CUSTOM CHARACTER 4,ITEM:CUSTOM CHARACTER 5,ITEM:CUSTOM CHARACTER 6,ITEM:CUSTOM CHARACTER 7,ITEM:CUSTOM CHARACTER 8,ITEM:CUSTOM CHARACTER 9,ITEM:CUSTOM CHARACTER 10,ITEM:CUSTOM CHARACTER 11,ITEM:CUSTOM CHARACTER 12,ITEM:CUSTOM CHARACTER 13,ITEM:CUSTOM CHARACTER 14,ITEM:CUSTOM CHARACTER 15,ITEM:CUSTOM NUMBER 1,ITEM:CUSTOM NUMBER 2,ITEM:CUSTOM NUMBER 3,ITEM:CUSTOM NUMBER 4,ITEM:CUSTOM NUMBER 5,ITEM:CUSTOM NUMBER 6,ITEM:CUSTOM NUMBER 7,ITEM:CUSTOM NUMBER 8,ITEM:CUSTOM NUMBER 9,ITEM:CUSTOM NUMBER 10,ITEM:CUSTOM DATE 1,ITEM:CUSTOM DATE 2,ITEM:CUSTOM FINANCE CATEGORY 1,ITEM:CUSTOM FINANCE CATEGORY 2,ITEM:CUSTOM FINANCE CATEGORY 3,ITEM:CUSTOM FINANCE CATEGORY 4,ITEM:CUSTOM FINANCE CATEGORY 5,ITEM:CUSTOM FINANCE CATEGORY 6,ITEM:CUSTOM FINANCE CATEGORY 7,ITEM:CUSTOM FINANCE CATEGORY 8,ITEM:CUSTOM FINANCE CATEGORY 9,ITEM:CUSTOM FINANCE CATEGORY 10,ITEM:DELIVERY ORDER NO.,ITEM:SALES ORDER NO,EXPENSE:ACCOUNT NO,EXPENSE:EXPENSE VALUE,EXPENSE:EXPENSE NAME,EXPENSE:EXPENSE NOTE,EXPENSE:DEPT NAME,EXPENSE:PROJECT NO,EXPENSE:FINANCIAL CATEGORY 1,EXPENSE:FINANCIAL CATEGORY 2,EXPENSE:FINANCIAL CATEGORY 3,EXPENSE:FINANCIAL CATEGORY 4,EXPENSE:FINANCIAL CATEGORY 5,EXPENSE:FINANCIAL CATEGORY 6,EXPENSE:FINANCIAL CATEGORY 7,EXPENSE:FINANCIAL CATEGORY 8,EXPENSE:FINANCIAL CATEGORY 9,EXPENSE:FINANCIAL CATEGORY 10,EXPENSE:SALES ORDER NO,";
 
-            const templateHeader = "CUSTOMER NO,NUMBER,BRANCH,DATE,TAXABLE,ADDRESS,TOTAL INCLUDING VAT,TAX INVOICE NUMBER,ADVANCE INVOICE,INVOICE DISCOUNT (%),INVOICE DISCOUNT (Rp),DESCRIPTION,PO NO,SHIPPING,SHIPPING DATE,FOB,PAYMENT TERMS,DUE DATE,PAYING BANK,PAYMENT VALUE,CUSTOM CHARACTER 1,CUSTOM CHARACTER 2,CUSTOM CHARACTER 3,CUSTOM CHARACTER 4,CUSTOM CHARACTER 5,CUSTOM CHARACTER 6,CUSTOM CHARACTER 7,CUSTOM CHARACTER 8,CUSTOM CHARACTER 9,CUSTOM CHARACTER 10,CUSTOM NUMBER 1,CUSTOM NUMBER 2,CUSTOM NUMBER 3,CUSTOM NUMBER 4,CUSTOM NUMBER 5,CUSTOM NUMBER 6,CUSTOM NUMBER 7,CUSTOM NUMBER 8,CUSTOM NUMBER 9,CUSTOM NUMBER 10,CUSTOM DATE 1,CUSTOM DATE 2,VA NUMBER,ACCOUNT RECEIVABLE NUMBER,PAYMENT WITH UNIQUE CODE,SUB COMPANY CODE,ITEM:ITEM NO,ITEM:QUANTITY,ITEM:UNITPRICE,ITEM:UNIT,ITEM:WAREHOUSE NAME ,ITEM:NAME,ITEM:ITEM DISCOUNT (%),ITEM:ITEM DISCOUNT (RP),ITEM:ITEM NOTES,ITEM:SALESMAN ID,ITEM:DEPT NAME,ITEM:PROJECT NO,ITEM:CUSTOM CHARACTER 1,ITEM:CUSTOM CHARACTER 2,ITEM:CUSTOM CHARACTER 3,ITEM:CUSTOM CHARACTER 4,ITEM:CUSTOM CHARACTER 5,ITEM:CUSTOM CHARACTER 6,ITEM:CUSTOM CHARACTER 7,ITEM:CUSTOM CHARACTER 8,ITEM:CUSTOM CHARACTER 9,ITEM:CUSTOM CHARACTER 10,ITEM:CUSTOM CHARACTER 11,ITEM:CUSTOM CHARACTER 12,ITEM:CUSTOM CHARACTER 13,ITEM:CUSTOM CHARACTER 14,ITEM:CUSTOM CHARACTER 15,ITEM:CUSTOM NUMBER 1,ITEM:CUSTOM NUMBER 2,ITEM:CUSTOM NUMBER 3,ITEM:CUSTOM NUMBER 4,ITEM:CUSTOM NUMBER 5,ITEM:CUSTOM NUMBER 6,ITEM:CUSTOM NUMBER 7,ITEM:CUSTOM NUMBER 8,ITEM:CUSTOM NUMBER 9,ITEM:CUSTOM NUMBER 10,ITEM:CUSTOM DATE 1,ITEM:CUSTOM DATE 2,ITEM:CUSTOM FINANCE CATEGORY 1,ITEM:CUSTOM FINANCE CATEGORY 2,ITEM:CUSTOM FINANCE CATEGORY 3,ITEM:CUSTOM FINANCE CATEGORY 4,ITEM:CUSTOM FINANCE CATEGORY 5,ITEM:CUSTOM FINANCE CATEGORY 6,ITEM:CUSTOM FINANCE CATEGORY 7,ITEM:CUSTOM FINANCE CATEGORY 8,ITEM:CUSTOM FINANCE CATEGORY 9,ITEM:CUSTOM FINANCE CATEGORY 10,ITEM:DELIVERY ORDER NO.,ITEM:SALES ORDER NO,EXPENSE:ACCOUNT NO,EXPENSE:EXPENSE VALUE,EXPENSE:EXPENSE NAME,EXPENSE:EXPENSE NOTE,EXPENSE:DEPT NAME,EXPENSE:PROJECT NO,EXPENSE:FINANCIAL CATEGORY 1,EXPENSE:FINANCIAL CATEGORY 2,EXPENSE:FINANCIAL CATEGORY 3,EXPENSE:FINANCIAL CATEGORY 4,EXPENSE:FINANCIAL CATEGORY 5,EXPENSE:FINANCIAL CATEGORY 6,EXPENSE:FINANCIAL CATEGORY 7,EXPENSE:FINANCIAL CATEGORY 8,EXPENSE:FINANCIAL CATEGORY 9,EXPENSE:FINANCIAL CATEGORY 10,EXPENSE:SALES ORDER NO,";
+        function buildAccurateCsvRowsForTransaction(transaction) {
+            if (!transaction || !transaction.cart || transaction.cart.length === 0) {
+                return { itemRows: [], dateStr: "", customerNo: "No Customer", safeCustomerName: "New" };
+            }
 
-            const headers = templateHeader.split(',');
+            const headers = ACCURATE_CSV_TEMPLATE_HEADER.split(',');
             const colCount = headers.length;
 
             const idxCustNo = headers.indexOf('CUSTOMER NO');
@@ -4481,8 +4563,7 @@
                 return s;
             };
 
-            const rows = [templateHeader];
-
+            const itemRows = [];
             (transaction.cart || []).forEach(item => {
                 const row = new Array(colCount).fill('');
                 const itemSku = item.sku || enrichCartItemSku(item);
@@ -4494,9 +4575,21 @@
                 if (idxUnit !== -1) row[idxUnit] = escapeCsv(item.uom || '');
                 if (idxWarehouse !== -1) row[idxWarehouse] = 'Utama';
                 if (idxNote !== -1) row[idxNote] = escapeCsv(item.note || '');
-                rows.push(row.join(','));
+                itemRows.push(row.join(','));
             });
 
+            const safeCustomerName = customerNo !== "No Customer" ? customerNo : "New";
+            return { itemRows, dateStr, customerNo, safeCustomerName };
+        }
+
+        function downloadHistoryCSV(index) {
+            const transaction = transactionHistory[index];
+            if (!transaction || !transaction.cart) return;
+
+            const { itemRows, dateStr, customerNo, safeCustomerName } = buildAccurateCsvRowsForTransaction(transaction);
+            if (itemRows.length === 0) return;
+
+            const rows = [ACCURATE_CSV_TEMPLATE_HEADER, ...itemRows];
             const csvString = rows.join('\r\n');
 
             let deliveryFormatted = dateStr.replace(/\//g, '');
@@ -4507,7 +4600,6 @@
             } else {
                 timestampFormatted = (transaction.timestamp || '').replace(/[\/\\:]/g, '_');
             }
-            const safeCustomerName = customerNo !== "No Customer" ? customerNo : "New";
             const fileName = `${safeCustomerName} for ${deliveryFormatted} - ${timestampFormatted}.csv`;
 
             const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
@@ -4520,6 +4612,72 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             showToast(`CSV Accurate untuk ${customerNo} diunduh`, "success");
+        }
+
+        // --- Consolidated Accurate CSV Export ---
+        function generateConsolidatedCSV() {
+            let selectedIndices = Array.from(selectedHistoryIndices);
+            if (selectedIndices.length === 0) {
+                const checkboxes = document.querySelectorAll('.consolidate-checkbox:checked');
+                selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
+            }
+
+            if (selectedIndices.length === 0) {
+                showToast("Centang minimal 1 pesanan untuk diekspor ke CSV", "warning");
+                return;
+            }
+
+            const selectedTx = selectedIndices
+                .map(idx => transactionHistory[idx])
+                .filter(tx => tx && tx.cart && tx.cart.length > 0);
+
+            if (selectedTx.length === 0) {
+                showToast("Tidak ada barang dalam pesanan yang dipilih", "warning");
+                return;
+            }
+
+            const allItemRows = [];
+            selectedTx.forEach(tx => {
+                const { itemRows } = buildAccurateCsvRowsForTransaction(tx);
+                allItemRows.push(...itemRows);
+            });
+
+            if (allItemRows.length === 0) {
+                showToast("Tidak ada baris barang yang dapat diekspor ke CSV", "warning");
+                return;
+            }
+
+            const rows = [ACCURATE_CSV_TEMPLATE_HEADER, ...allItemRows];
+            const csvString = rows.join('\r\n');
+
+            let deliveryTag = "";
+            const uniqueDeliveryDates = [...new Set(selectedTx.map(t => {
+                if (t.deliveryDate && t.deliveryDate.length === 10 && t.deliveryDate.indexOf('-') === 4) {
+                    const parts = t.deliveryDate.split('-');
+                    return `${parts[2]}${parts[1]}${parts[0]}`;
+                }
+                return "";
+            }).filter(Boolean))];
+            if (uniqueDeliveryDates.length === 1) {
+                deliveryTag = ` for ${uniqueDeliveryDates[0]}`;
+            }
+
+            const now = new Date();
+            const timeStamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const fileName = `Accurate Gabungan${deliveryTag} (${selectedTx.length} Pesanan) - ${timeStamp}.csv`;
+
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            cancelConsolidationMode();
+            showToast(`1 File CSV berhasil diunduh (${selectedTx.length} pesanan, ${allItemRows.length} baris barang)`, "success");
         }
 
         // --- Surat Jalan PDF Engine ---
@@ -4654,13 +4812,17 @@
 
         // --- Consolidated PDF Engine ---
         function generateConsolidatedPDF() {
-            const checkboxes = document.querySelectorAll('.consolidate-checkbox:checked');
-            if (checkboxes.length === 0) {
+            let selectedIndices = Array.from(selectedHistoryIndices);
+            if (selectedIndices.length === 0) {
+                const checkboxes = document.querySelectorAll('.consolidate-checkbox:checked');
+                selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
+            }
+
+            if (selectedIndices.length === 0) {
                 showToast("Centang minimal 1 pesanan untuk direkap", "warning");
                 return;
             }
 
-            const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
             const selectedTx = selectedIndices.map(idx => transactionHistory[idx]);
             
             const uniqueCustomers = [...new Set(selectedTx.map(t => t.customer || "No Customer"))];
@@ -4866,6 +5028,12 @@
         async function initializeApp() {
             if (isAppInitialized) return;
             isAppInitialized = true;
+
+            // Ensure dark-mode is cleared
+            try {
+                localStorage.removeItem('npn_theme');
+                document.documentElement.classList.remove('dark-mode');
+            } catch(e) {}
 
             // 1. Instant local DOM sync (0ms latency, never waits for network)
             updateDeliveryDisplay();

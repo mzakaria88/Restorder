@@ -3002,6 +3002,9 @@
                     } else if (typeof fetchLatestHistory === 'function') {
                         fetchLatestHistory();
                     }
+                    if (typeof isAdminSessionActive === 'function' && isAdminSessionActive() && typeof fetchLastPricesDatabase === 'function') {
+                        fetchLastPricesDatabase();
+                    }
                 }
             } else {
                 dot.style.backgroundColor = 'var(--danger)';
@@ -3756,23 +3759,30 @@
                         }
                     }
                 } else {
-                    // Already synced: retain server item, but transfer local metadata & cart SKUs
+                    // Already synced: retain server item, but transfer local metadata, cart SKUs, and prices
                     if (lItem.updatedAt && !sItem.updatedAt) {
                         sItem.updatedAt = lItem.updatedAt;
                     }
+                    if (lItem.totalAmount && !sItem.totalAmount) {
+                        sItem.totalAmount = lItem.totalAmount;
+                    }
                     if (Array.isArray(sItem.cart) && Array.isArray(lItem.cart)) {
                         sItem.cart.forEach((sCartItem, idx) => {
+                            const lMatch = lItem.cart.find(lCartItem => 
+                                lCartItem.name === sCartItem.name && 
+                                (lCartItem.uom || '').toLowerCase() === (sCartItem.uom || '').toLowerCase()
+                            ) || lItem.cart[idx];
+
                             if (!sCartItem.sku) {
-                                const lMatch = lItem.cart.find(lCartItem => 
-                                    lCartItem.name === sCartItem.name && 
-                                    (lCartItem.uom || '').toLowerCase() === (sCartItem.uom || '').toLowerCase() &&
-                                    lCartItem.sku
-                                ) || lItem.cart[idx];
                                 if (lMatch && lMatch.sku) {
                                     sCartItem.sku = lMatch.sku;
                                 } else {
                                     sCartItem.sku = enrichCartItemSku(sCartItem);
                                 }
+                            }
+                            if ((sCartItem.unitPrice === undefined || sCartItem.unitPrice === null || sCartItem.unitPrice === '') && lMatch && lMatch.unitPrice !== undefined && lMatch.unitPrice !== null && lMatch.unitPrice !== '') {
+                                sCartItem.unitPrice = lMatch.unitPrice;
+                                sCartItem.itemTotal = lMatch.itemTotal;
                             }
                         });
                     }
@@ -3944,6 +3954,18 @@
                 const response = await fetch(GAS_SHEET_SYNC_URL + '?t=' + new Date().getTime());
                 const serverData = await response.json();
                 if (serverData && Array.isArray(serverData) && serverData.length > 0) {
+                    // Sanitasi ketat: Jika pengguna bukan admin, hilangkan seluruh data harga sebelum disimpan
+                    if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive()) {
+                        serverData.forEach(order => {
+                            delete order.totalAmount;
+                            if (Array.isArray(order.cart)) {
+                                order.cart.forEach(item => {
+                                    delete item.unitPrice;
+                                    delete item.itemTotal;
+                                });
+                            }
+                        });
+                    }
                     transactionHistory = smartMergeHistory(serverData, transactionHistory);
                     localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
                     populateHistoryList();
@@ -5045,8 +5067,51 @@
         // ADMIN PRICING & LAST PRICES ENGINE
         // ==========================================
         const LAST_PRICES_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS7BH6cM-qJqE-yclygjq-XzvT924W5OqOZdqxkiq61Ahfw-BjTpG5kpio0U0YiiU4ocKXtlrbCfqQd/pub?output=csv';
+        const LAST_PRICES_CACHE_TTL_MS = 12 * 60 * 60 * 1000; // Cache lokal berlaku selama 12 jam (43.200.000 ms)
         let lastPricesMap = new Map();
         let activeAdminOrderIndex = -1;
+
+        function saveCachedLastPrices(csvText) {
+            if (!csvText) return;
+            try {
+                const timestamp = Date.now();
+                const payload = {
+                    timestamp: timestamp,
+                    csvText: csvText
+                };
+                localStorage.setItem('npn_cached_last_prices', JSON.stringify(payload));
+                localStorage.setItem('npn_cached_last_prices_time', String(timestamp));
+            } catch (e) {}
+        }
+
+        function getCachedLastPrices(enforceTtl = true) {
+            try {
+                const raw = localStorage.getItem('npn_cached_last_prices');
+                if (!raw) return null;
+
+                let csvText = raw;
+                let timestamp = 0;
+
+                if (raw.startsWith('{') && raw.includes('"csvText"')) {
+                    const parsed = JSON.parse(raw);
+                    csvText = parsed.csvText;
+                    timestamp = parsed.timestamp || 0;
+                } else {
+                    const tRaw = localStorage.getItem('npn_cached_last_prices_time');
+                    timestamp = tRaw ? parseInt(tRaw, 10) : 0;
+                }
+
+                const isExpired = timestamp > 0 && (Date.now() - timestamp > LAST_PRICES_CACHE_TTL_MS);
+
+                if (enforceTtl && isExpired) {
+                    return { csvText: null, isExpired: true, timestamp };
+                }
+
+                return { csvText, isExpired, timestamp };
+            } catch (e) {
+                return null;
+            }
+        }
 
         function normalizeCustomerPricingKey(customerName) {
             if (!customerName) return '';
@@ -5058,6 +5123,21 @@
         }
 
         async function fetchLastPricesDatabase(isManualRefresh = false) {
+            // Guard ketat: Jangan pernah mengunduh atau menyimpan harga jika sesi admin tidak aktif
+            if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive()) {
+                return;
+            }
+
+            // Jika bukan refresh manual, dan cache lokal masih valid (< 12 jam) serta sudah termuat di memori, gunakan cache
+            if (!isManualRefresh && lastPricesMap.size > 0) {
+                const validCache = getCachedLastPrices(true);
+                if (validCache && validCache.csvText) {
+                    const statusEl = document.getElementById('adminPriceDbStatus');
+                    if (statusEl) statusEl.innerText = `📊 Database: ${lastPricesMap.size} harga termuat`;
+                    return;
+                }
+            }
+
             const statusEl = document.getElementById('adminPriceDbStatus');
             if (statusEl) statusEl.innerText = "📊 Database: Mengunduh...";
             try {
@@ -5065,9 +5145,8 @@
                 const csvText = await response.text();
                 if (csvText && csvText.trim().length > 0) {
                     parseLastPricesCSV(csvText);
-                    try {
-                        localStorage.setItem('npn_cached_last_prices', csvText);
-                    } catch (e) {}
+                    saveCachedLastPrices(csvText);
+
                     if (statusEl) statusEl.innerText = `📊 Database: ${lastPricesMap.size} harga termuat`;
                     if (isManualRefresh) showToast(`Database harga diperbarui (${lastPricesMap.size} harga)`, "success");
                     updateAdminUnpricedBadge();
@@ -5077,10 +5156,11 @@
             } catch (err) {
                 console.warn("Gagal mengunduh Google Sheet harga terakhir:", err);
                 try {
-                    const cached = localStorage.getItem('npn_cached_last_prices');
-                    if (cached) {
-                        parseLastPricesCSV(cached);
-                        if (statusEl) statusEl.innerText = `📊 Database (Offline): ${lastPricesMap.size} harga`;
+                    const cachedData = getCachedLastPrices(false);
+                    if (cachedData && cachedData.csvText) {
+                        parseLastPricesCSV(cachedData.csvText);
+                        const expNotice = cachedData.isExpired ? " (>12j)" : "";
+                        if (statusEl) statusEl.innerText = `📊 Database (Offline${expNotice}): ${lastPricesMap.size} harga`;
                     } else {
                         if (statusEl) statusEl.innerText = "📊 Database: Gagal termuat";
                     }
@@ -5171,6 +5251,12 @@
         }
 
         function renderAdminTab() {
+            // Cek apakah cache lokal database harga sudah kedaluwarsa (> 12 jam)
+            const cacheInfo = getCachedLastPrices(true);
+            if (!cacheInfo || !cacheInfo.csvText) {
+                fetchLastPricesDatabase();
+            }
+
             renderAdminOrdersList();
             updateAdminUnpricedBadge();
             const logoutBtn = document.getElementById('adminLogoutBtn');
@@ -5526,7 +5612,7 @@
             // Save prices first from inputs if modified
             saveAdminOrderPrices(orderIndex);
 
-            const { itemRows, dateStr, customerNo, safeCustomerName } = buildAccurateCsvRowsForTransaction(tx);
+            const { itemRows, dateStr, customerNo, safeCustomerName } = buildAccurateCsvRowsForTransaction(tx, true);
             if (itemRows.length === 0) {
                 showToast("Tidak ada baris barang untuk diekspor", "warning");
                 return;
@@ -5658,6 +5744,12 @@
                     if (uInput) uInput.value = '';
                     if (pInput) pInput.value = '';
                     showToast("Login Admin Berhasil (Sesi aktif 7 hari)", "success");
+                    if (typeof fetchLastPricesDatabase === 'function') {
+                        fetchLastPricesDatabase();
+                    }
+                    if (typeof fetchLatestHistory === 'function') {
+                        fetchLatestHistory();
+                    }
                     switchTab('tab-admin');
                 } else {
                     if (errEl) {
@@ -5681,6 +5773,25 @@
 
         function logoutAdmin() {
             localStorage.removeItem('npn_admin_session');
+            localStorage.removeItem('npn_cached_last_prices');
+            localStorage.removeItem('npn_cached_last_prices_time');
+            if (typeof lastPricesMap !== 'undefined' && lastPricesMap) {
+                lastPricesMap.clear();
+            }
+            if (Array.isArray(transactionHistory)) {
+                transactionHistory.forEach(order => {
+                    delete order.totalAmount;
+                    if (Array.isArray(order.cart)) {
+                        order.cart.forEach(item => {
+                            delete item.unitPrice;
+                            delete item.itemTotal;
+                        });
+                    }
+                });
+                try {
+                    localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                } catch (e) {}
+            }
             showToast("Admin logout berhasil", "info");
             switchTab('tab-order');
         }
@@ -5688,7 +5799,7 @@
         // --- Accurate CSV Export Engine ---
         const ACCURATE_CSV_TEMPLATE_HEADER = "CUSTOMER NO,NUMBER,BRANCH,DATE,TAXABLE,ADDRESS,TOTAL INCLUDING VAT,TAX INVOICE NUMBER,ADVANCE INVOICE,INVOICE DISCOUNT (%),INVOICE DISCOUNT (Rp),DESCRIPTION,PO NO,SHIPPING,SHIPPING DATE,FOB,PAYMENT TERMS,DUE DATE,PAYING BANK,PAYMENT VALUE,CUSTOM CHARACTER 1,CUSTOM CHARACTER 2,CUSTOM CHARACTER 3,CUSTOM CHARACTER 4,CUSTOM CHARACTER 5,CUSTOM CHARACTER 6,CUSTOM CHARACTER 7,CUSTOM CHARACTER 8,CUSTOM CHARACTER 9,CUSTOM CHARACTER 10,CUSTOM NUMBER 1,CUSTOM NUMBER 2,CUSTOM NUMBER 3,CUSTOM NUMBER 4,CUSTOM NUMBER 5,CUSTOM NUMBER 6,CUSTOM NUMBER 7,CUSTOM NUMBER 8,CUSTOM NUMBER 9,CUSTOM NUMBER 10,CUSTOM DATE 1,CUSTOM DATE 2,VA NUMBER,ACCOUNT RECEIVABLE NUMBER,PAYMENT WITH UNIQUE CODE,SUB COMPANY CODE,ITEM:ITEM NO,ITEM:QUANTITY,ITEM:UNITPRICE,ITEM:UNIT,ITEM:WAREHOUSE NAME ,ITEM:NAME,ITEM:ITEM DISCOUNT (%),ITEM:ITEM DISCOUNT (RP),ITEM:ITEM NOTES,ITEM:SALESMAN ID,ITEM:DEPT NAME,ITEM:PROJECT NO,ITEM:CUSTOM CHARACTER 1,ITEM:CUSTOM CHARACTER 2,ITEM:CUSTOM CHARACTER 3,ITEM:CUSTOM CHARACTER 4,ITEM:CUSTOM CHARACTER 5,ITEM:CUSTOM CHARACTER 6,ITEM:CUSTOM CHARACTER 7,ITEM:CUSTOM CHARACTER 8,ITEM:CUSTOM CHARACTER 9,ITEM:CUSTOM CHARACTER 10,ITEM:CUSTOM CHARACTER 11,ITEM:CUSTOM CHARACTER 12,ITEM:CUSTOM CHARACTER 13,ITEM:CUSTOM CHARACTER 14,ITEM:CUSTOM CHARACTER 15,ITEM:CUSTOM NUMBER 1,ITEM:CUSTOM NUMBER 2,ITEM:CUSTOM NUMBER 3,ITEM:CUSTOM NUMBER 4,ITEM:CUSTOM NUMBER 5,ITEM:CUSTOM NUMBER 6,ITEM:CUSTOM NUMBER 7,ITEM:CUSTOM NUMBER 8,ITEM:CUSTOM NUMBER 9,ITEM:CUSTOM NUMBER 10,ITEM:CUSTOM DATE 1,ITEM:CUSTOM DATE 2,ITEM:CUSTOM FINANCE CATEGORY 1,ITEM:CUSTOM FINANCE CATEGORY 2,ITEM:CUSTOM FINANCE CATEGORY 3,ITEM:CUSTOM FINANCE CATEGORY 4,ITEM:CUSTOM FINANCE CATEGORY 5,ITEM:CUSTOM FINANCE CATEGORY 6,ITEM:CUSTOM FINANCE CATEGORY 7,ITEM:CUSTOM FINANCE CATEGORY 8,ITEM:CUSTOM FINANCE CATEGORY 9,ITEM:CUSTOM FINANCE CATEGORY 10,ITEM:DELIVERY ORDER NO.,ITEM:SALES ORDER NO,EXPENSE:ACCOUNT NO,EXPENSE:EXPENSE VALUE,EXPENSE:EXPENSE NAME,EXPENSE:EXPENSE NOTE,EXPENSE:DEPT NAME,EXPENSE:PROJECT NO,EXPENSE:FINANCIAL CATEGORY 1,EXPENSE:FINANCIAL CATEGORY 2,EXPENSE:FINANCIAL CATEGORY 3,EXPENSE:FINANCIAL CATEGORY 4,EXPENSE:FINANCIAL CATEGORY 5,EXPENSE:FINANCIAL CATEGORY 6,EXPENSE:FINANCIAL CATEGORY 7,EXPENSE:FINANCIAL CATEGORY 8,EXPENSE:FINANCIAL CATEGORY 9,EXPENSE:FINANCIAL CATEGORY 10,EXPENSE:SALES ORDER NO,";
 
-        function buildAccurateCsvRowsForTransaction(transaction) {
+        function buildAccurateCsvRowsForTransaction(transaction, includePrices = false) {
             if (!transaction || !transaction.cart || transaction.cart.length === 0) {
                 return { itemRows: [], dateStr: "", customerNo: "No Customer", safeCustomerName: "New" };
             }
@@ -5750,7 +5861,7 @@
                 if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(itemSku);
                 if (idxQty !== -1) row[idxQty] = escapeCsv(item.qty || '');
                 if (idxUnit !== -1) row[idxUnit] = escapeCsv(item.uom || '');
-                if (idxUnitPrice !== -1 && item.unitPrice) row[idxUnitPrice] = escapeCsv(item.unitPrice);
+                if (idxUnitPrice !== -1 && includePrices && item.unitPrice) row[idxUnitPrice] = escapeCsv(item.unitPrice);
                 if (idxItemName !== -1) row[idxItemName] = escapeCsv(item.name || '');
                 if (idxWarehouse !== -1) row[idxWarehouse] = 'Utama';
                 if (idxNote !== -1) row[idxNote] = escapeCsv(item.note || '');
@@ -5816,8 +5927,9 @@
             }
 
             const allItemRows = [];
+            const allowPricesInBatch = (typeof isAdminSessionActive === 'function' && isAdminSessionActive());
             selectedTx.forEach(tx => {
-                const { itemRows } = buildAccurateCsvRowsForTransaction(tx);
+                const { itemRows } = buildAccurateCsvRowsForTransaction(tx, allowPricesInBatch);
                 allItemRows.push(...itemRows);
             });
 
@@ -6215,12 +6327,24 @@
             } catch(e) {}
 
             // 1. Instant local DOM sync (0ms latency, never waits for network)
-            try {
-                const cachedLastPrices = localStorage.getItem('npn_cached_last_prices');
-                if (cachedLastPrices) {
-                    parseLastPricesCSV(cachedLastPrices);
-                }
-            } catch (e) {}
+            if (typeof isAdminSessionActive === 'function' && isAdminSessionActive()) {
+                try {
+                    const cachedData = getCachedLastPrices(true);
+                    if (cachedData && cachedData.csvText) {
+                        parseLastPricesCSV(cachedData.csvText);
+                    }
+                } catch (e) {}
+            } else if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive() && Array.isArray(transactionHistory)) {
+                transactionHistory.forEach(order => {
+                    delete order.totalAmount;
+                    if (Array.isArray(order.cart)) {
+                        order.cart.forEach(item => {
+                            delete item.unitPrice;
+                            delete item.itemTotal;
+                        });
+                    }
+                });
+            }
             updateDeliveryDisplay();
             renderCart();
             updateHistoryCountBadge();
@@ -6238,11 +6362,12 @@
             }
 
             // 3. Load cloud data concurrently with safety timeouts
+            const shouldFetchPrices = (typeof isAdminSessionActive === 'function' && isAdminSessionActive() && typeof fetchLastPricesDatabase === 'function');
             Promise.allSettled([
                 loadCatalogData(),
                 loadCustomerData(),
                 fetchLatestHistory(),
-                typeof fetchLastPricesDatabase === 'function' ? fetchLastPricesDatabase() : Promise.resolve()
+                shouldFetchPrices ? fetchLastPricesDatabase() : Promise.resolve()
             ]).then(() => {
                 checkAutoPrintQuery();
             });

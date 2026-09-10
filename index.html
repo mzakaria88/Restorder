@@ -1430,6 +1430,199 @@
             gap: 6px;
         }
 
+        /* ========================================== */
+        /* TAB ADMIN PRICING STYLES                  */
+        /* ========================================== */
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .admin-sidebar-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .admin-orders-scroll {
+            max-height: 580px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-right: 2px;
+        }
+
+        .admin-order-item {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 9px 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .admin-order-item:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+        }
+
+        .admin-order-item.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .admin-order-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .admin-order-item-cust {
+            font-weight: 700;
+            font-size: 0.82rem;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .admin-order-item-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .admin-status-badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .admin-status-unpriced {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .admin-status-priced {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .lampoh-tag {
+            background: #e0e7ff;
+            color: #3730a3;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            border: 1px solid #c7d2fe;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .admin-table th {
+            background: #f8fafc;
+            padding: 8px 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+            text-align: left;
+        }
+
+        .admin-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .admin-price-input {
+            width: 110px;
+            padding: 5px 8px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: right;
+            outline: none;
+            transition: border-color var(--transition-fast);
+        }
+
+        .admin-price-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+        }
+
+        .admin-subtotal-cell {
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .skip-db-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .skip-db-checkbox {
+            cursor: pointer;
+            width: 13px;
+            height: 13px;
+        }
+
+        .admin-editor-card {
+            background: #ffffff;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .admin-grand-total-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 0.85rem;
+        }
+
         /* Toast Notifications */
         #toastContainer {
             position: fixed;
@@ -1533,6 +1726,13 @@
                 </svg>
                 Riwayat
                 <span class="tab-badge" id="historyCountBadge">0</span>
+            </button>
+
+            <button class="tab-btn" id="btn-tab-admin" onclick="switchTab('tab-admin')">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Admin
             </button>
 
             <button class="tab-btn" id="btn-tab-guide" onclick="switchTab('tab-guide')">
@@ -1796,7 +1996,67 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- TAB 3: PANDUAN PENGGUNAAN                  -->
+        <!-- TAB 3: ADMIN PENETAPAN HARGA               -->
+        <!-- ========================================== -->
+        <section id="tab-admin" class="tab-panel">
+            <div class="card" style="padding: 0.85rem; margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                            <span>🛡️ Panel Admin</span>
+                            <span class="lampoh-tag">💡 Harga Terpadu Lampoh</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                            Tetapkan harga satuan pada pesanan yang sudah dibuat di riwayat. Harga terakhir <i>(Last Prices)</i> otomatis terisi sebagai acuan.
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="adminPriceDbStatus" style="font-size: 0.72rem; color: var(--text-muted); background: #f1f5f9; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+                            📊 Database: Memuat...
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline" style="font-size: 0.72rem; padding: 4px 8px;" onclick="fetchLastPricesDatabase(true)">🔄 Refresh Harga</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="adminLogoutBtn" style="display: none; font-size: 0.72rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;" onclick="logoutAdmin()">🚪 Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-layout">
+                <!-- Left Sidebar: List of Orders -->
+                <div class="admin-sidebar-card">
+                    <div class="card" style="padding: 0.75rem;">
+                        <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+                            <input type="text" id="adminOrderSearchInput" placeholder="Cari No. Order atau Customer..." oninput="renderAdminOrdersList()" style="width: 100%; padding: 6px 10px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;">
+                            <div style="display: flex; gap: 6px;">
+                                <select id="adminStatusFilter" onchange="renderAdminOrdersList()" style="flex: 1; padding: 4px 8px; font-size: 0.72rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #ffffff;">
+                                    <option value="all">Semua Status Harga</option>
+                                    <option value="unpriced">⚠️ Belum Berharga</option>
+                                    <option value="priced">✅ Sudah Berharga</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="adminOrdersListContainer" class="admin-orders-scroll">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Area: Active Order Pricing Detail -->
+                <div id="adminOrderPricingContainer">
+                    <div class="card" style="padding: 40px 16px; text-align: center; color: var(--text-muted);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">Pilih Pesanan untuk Diberi Harga</div>
+                        <div style="font-size: 0.75rem; margin-top: 4px;">Pilih salah satu pesanan di daftar sebelah kiri untuk melihat rincian barang dan menetapkan harga.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: PANDUAN PENGGUNAAN                  -->
         <!-- ========================================== -->
         <section id="tab-guide" class="tab-panel">
             <div class="guide-container">
@@ -1944,6 +2204,45 @@
         </div>
     </div>
 
+    <!-- Admin Login Modal -->
+    <div id="adminAuthModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width: 360px;">
+            <div class="modal-header">
+                <h3>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Akses Khusus Admin
+                </h3>
+                <button class="btn-sm btn-outline" style="padding: 0 6px; height: 22px;" onclick="closeAdminAuthModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                    Tab Admin diproteksi. Masukkan username dan password admin untuk membuka fitur penetapan harga.
+                </p>
+                <form id="adminLoginForm" onsubmit="event.preventDefault(); submitAdminLogin();">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 3px;">Username</label>
+                            <input type="text" id="adminUsernameInput" autocomplete="username" placeholder="Username admin..." style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 3px;">Password</label>
+                            <input type="password" id="adminPasswordInput" autocomplete="current-password" placeholder="Password admin..." style="width: 100%; padding: 7px 10px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none;">
+                        </div>
+                        <div id="adminLoginError" style="display: none; color: #ef4444; font-size: 0.72rem; font-weight: 600;"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <span style="font-size: 0.65rem; color: var(--text-muted); margin-right: auto; align-self: center;">🔒 Ingat sesi 7 hari</span>
+                <button type="button" class="btn btn-sm btn-outline" onclick="closeAdminAuthModal()">Batal</button>
+                <button type="button" class="btn btn-sm btn-primary" id="adminLoginSubmitBtn" onclick="submitAdminLogin()">Masuk (Enter)</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirmation Modal -->
     <div id="confirmModal" class="modal-backdrop">
         <div class="modal-box" style="max-width: 380px;">
@@ -2037,6 +2336,12 @@
 
         // --- Tab Navigation Controller ---
         function switchTab(tabId) {
+            if (tabId === 'tab-admin') {
+                if (!isAdminSessionActive()) {
+                    openAdminAuthModal();
+                    return;
+                }
+            }
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
@@ -2047,6 +2352,10 @@
             if (tabId === 'tab-history') {
                 document.getElementById('btn-tab-history').classList.add('active');
                 populateHistoryList();
+            }
+            if (tabId === 'tab-admin') {
+                document.getElementById('btn-tab-admin').classList.add('active');
+                renderAdminTab();
             }
             if (tabId === 'tab-guide') document.getElementById('btn-tab-guide').classList.add('active');
 
@@ -3648,7 +3957,11 @@
         }
 
         function updateHistoryCountBadge() {
-            document.getElementById('historyCountBadge').innerText = transactionHistory.length;
+            const badge = document.getElementById('historyCountBadge');
+            if (badge) badge.innerText = transactionHistory.length;
+            if (typeof updateAdminUnpricedBadge === 'function') {
+                updateAdminUnpricedBadge();
+            }
         }
 
         // --- Telegram Alerts ---
@@ -4722,6 +5035,602 @@
             }
         }
 
+        // ==========================================
+        // ADMIN PRICING & LAST PRICES ENGINE
+        // ==========================================
+        const LAST_PRICES_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS7BH6cM-qJqE-yclygjq-XzvT924W5OqOZdqxkiq61Ahfw-BjTpG5kpio0U0YiiU4ocKXtlrbCfqQd/pub?output=csv';
+        let lastPricesMap = new Map();
+        let activeAdminOrderIndex = -1;
+
+        function normalizeCustomerPricingKey(customerName) {
+            if (!customerName) return '';
+            const lower = customerName.toLowerCase().trim();
+            if (lower.includes('lampoh')) {
+                return 'LAMPOH';
+            }
+            return customerName.trim().toUpperCase();
+        }
+
+        async function fetchLastPricesDatabase(isManualRefresh = false) {
+            const statusEl = document.getElementById('adminPriceDbStatus');
+            if (statusEl) statusEl.innerText = "📊 Database: Mengunduh...";
+            try {
+                const response = await fetchWithTimeout(LAST_PRICES_SHEET_URL + '&t=' + Date.now(), {}, 10000);
+                const csvText = await response.text();
+                if (csvText && csvText.trim().length > 0) {
+                    parseLastPricesCSV(csvText);
+                    try {
+                        localStorage.setItem('npn_cached_last_prices', csvText);
+                    } catch (e) {}
+                    if (statusEl) statusEl.innerText = `📊 Database: ${lastPricesMap.size} harga termuat`;
+                    if (isManualRefresh) showToast(`Database harga diperbarui (${lastPricesMap.size} harga)`, "success");
+                    updateAdminUnpricedBadge();
+                    renderAdminOrdersList();
+                    if (activeAdminOrderIndex >= 0) renderAdminOrderPricingDetail(activeAdminOrderIndex);
+                }
+            } catch (err) {
+                console.warn("Gagal mengunduh Google Sheet harga terakhir:", err);
+                try {
+                    const cached = localStorage.getItem('npn_cached_last_prices');
+                    if (cached) {
+                        parseLastPricesCSV(cached);
+                        if (statusEl) statusEl.innerText = `📊 Database (Offline): ${lastPricesMap.size} harga`;
+                    } else {
+                        if (statusEl) statusEl.innerText = "📊 Database: Gagal termuat";
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function parseLastPricesCSV(csvText) {
+            if (!csvText) return;
+            const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            if (!lines || lines.length <= 1) return;
+            const headerCols = parseCsvRow(lines[0]);
+            const headers = headerCols.map(h => (h || '').trim().toUpperCase());
+            const idxCust = headers.indexOf('CUSTOMER NO');
+            const idxSku = headers.indexOf('ITEM:ITEM NO');
+            const idxName = headers.indexOf('ITEM:NAME');
+            const idxUnit = headers.indexOf('ITEM:UNIT');
+            let idxPrice = headers.indexOf('ITEM:UNIT PRICE');
+            if (idxPrice === -1) idxPrice = headers.indexOf('LAST PRICE');
+
+            lines.slice(1).forEach(line => {
+                const row = parseCsvRow(line);
+                if (!row || row.length === 0) return;
+                const custKey = normalizeCustomerPricingKey(row[idxCust] || '');
+                const sku = (row[idxSku] || '').trim();
+                const name = (row[idxName] || '').trim().toLowerCase();
+                const unit = (row[idxUnit] || '').trim().toUpperCase();
+                const rawPrice = (idxPrice !== -1 ? row[idxPrice] : '') || '';
+                const priceVal = parseFloat(String(rawPrice).replace(/[^0-9.-]/g, '')) || 0;
+
+                if (priceVal > 0) {
+                    if (sku) {
+                        lastPricesMap.set(`${custKey}___SKU:${sku}___${unit}`, priceVal);
+                        if (!lastPricesMap.has(`*___SKU:${sku}___${unit}`)) {
+                            lastPricesMap.set(`*___SKU:${sku}___${unit}`, priceVal);
+                        }
+                    }
+                    if (name) {
+                        lastPricesMap.set(`${custKey}___NAME:${name}___${unit}`, priceVal);
+                        if (!lastPricesMap.has(`*___NAME:${name}___${unit}`)) {
+                            lastPricesMap.set(`*___NAME:${name}___${unit}`, priceVal);
+                        }
+                    }
+                }
+            });
+        }
+
+        function getLastPriceForItem(customerName, cartItem) {
+            const custKey = normalizeCustomerPricingKey(customerName);
+            const sku = (cartItem.sku || enrichCartItemSku(cartItem) || '').trim();
+            const name = (cartItem.name || '').trim().toLowerCase();
+            const uom = (cartItem.uom || '').trim().toUpperCase();
+
+            // 1. Customer + SKU + UOM
+            if (sku && lastPricesMap.has(`${custKey}___SKU:${sku}___${uom}`)) {
+                return lastPricesMap.get(`${custKey}___SKU:${sku}___${uom}`);
+            }
+            // 2. Customer + Name + UOM
+            if (name && lastPricesMap.has(`${custKey}___NAME:${name}___${uom}`)) {
+                return lastPricesMap.get(`${custKey}___NAME:${name}___${uom}`);
+            }
+            // 3. General + SKU + UOM
+            if (sku && lastPricesMap.has(`*___SKU:${sku}___${uom}`)) {
+                return lastPricesMap.get(`*___SKU:${sku}___${uom}`);
+            }
+            // 4. General + Name + UOM
+            if (name && lastPricesMap.has(`*___NAME:${name}___${uom}`)) {
+                return lastPricesMap.get(`*___NAME:${name}___${uom}`);
+            }
+            return 0;
+        }
+
+        function isOrderFullyPriced(tx) {
+            if (!tx || !tx.cart || tx.cart.length === 0) return false;
+            return tx.cart.every(ci => parseFloat(ci.unitPrice) > 0);
+        }
+
+        function updateAdminUnpricedBadge() {
+            const badge = document.getElementById('adminUnpricedBadge');
+            if (!badge) return;
+            const unpricedCount = transactionHistory.filter(tx => !isOrderFullyPriced(tx)).length;
+            if (unpricedCount > 0) {
+                badge.innerText = unpricedCount;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function renderAdminTab() {
+            renderAdminOrdersList();
+            updateAdminUnpricedBadge();
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.style.display = 'inline-block';
+            }
+            if (activeAdminOrderIndex >= 0 && activeAdminOrderIndex < transactionHistory.length) {
+                renderAdminOrderPricingDetail(activeAdminOrderIndex);
+            }
+        }
+
+        function renderAdminOrdersList() {
+            const container = document.getElementById('adminOrdersListContainer');
+            if (!container) return;
+
+            const searchInput = document.getElementById('adminOrderSearchInput');
+            const searchKeyword = (searchInput?.value || '').trim().toLowerCase();
+            const statusFilter = document.getElementById('adminStatusFilter')?.value || 'all';
+
+            if (transactionHistory.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px 10px; color: var(--text-muted); font-size: 0.75rem;">
+                        Belum ada riwayat pesanan
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = transactionHistory.map((tx, idx) => ({ tx, idx }));
+
+            // Apply search filter
+            if (searchKeyword) {
+                filtered = filtered.filter(({ tx }) => {
+                    const str = `${tx.orderNumber || ''} ${tx.customer || ''} ${tx.deliveryDate || ''}`.toLowerCase();
+                    return str.includes(searchKeyword);
+                });
+            }
+
+            // Apply status filter
+            if (statusFilter === 'unpriced') {
+                filtered = filtered.filter(({ tx }) => !isOrderFullyPriced(tx));
+            } else if (statusFilter === 'priced') {
+                filtered = filtered.filter(({ tx }) => isOrderFullyPriced(tx));
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 20px 10px; color: var(--text-muted); font-size: 0.75rem;">
+                        Tidak ada pesanan yang sesuai filter
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(({ tx, idx }) => {
+                const isPriced = isOrderFullyPriced(tx);
+                const isActive = activeAdminOrderIndex === idx;
+                const custName = tx.customer || "No Customer";
+                const isLampoh = custName.toLowerCase().includes('lampoh');
+                const delivDate = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
+                const totalAmount = tx.totalAmount ? `Rp ${formatRupiahNumber(tx.totalAmount)}` : null;
+
+                return `
+                    <div class="admin-order-item ${isActive ? 'active' : ''}" onclick="selectAdminOrder(${idx})">
+                        <div class="admin-order-item-header">
+                            <span class="admin-order-item-cust" title="${escapeHtml(custName)}">
+                                ${escapeHtml(custName)}
+                            </span>
+                            ${isLampoh ? '<span class="lampoh-tag">Lampoh</span>' : ''}
+                        </div>
+                        <div class="admin-order-item-meta">
+                            <span>#${escapeHtml(tx.orderNumber || 'ID')}</span>
+                            <span>&bull;</span>
+                            <span>📅 ${delivDate}</span>
+                            <span>&bull;</span>
+                            <span>${tx.cart ? tx.cart.length : 0} item</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
+                            <span class="admin-status-badge ${isPriced ? 'admin-status-priced' : 'admin-status-unpriced'}">
+                                ${isPriced ? '✅ Sudah Berharga' : '⚠️ Belum Berharga'}
+                            </span>
+                            ${totalAmount ? `<span style="font-size: 0.72rem; font-weight: 700; color: #059669;">${totalAmount}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectAdminOrder(orderIndex) {
+            activeAdminOrderIndex = orderIndex;
+            renderAdminOrdersList();
+            renderAdminOrderPricingDetail(orderIndex);
+        }
+
+        function formatRupiahNumber(val) {
+            const num = parseFloat(val) || 0;
+            return num.toLocaleString('id-ID');
+        }
+
+        function renderAdminOrderPricingDetail(orderIndex) {
+            const container = document.getElementById('adminOrderPricingContainer');
+            if (!container) return;
+
+            const tx = transactionHistory[orderIndex];
+            if (!tx) {
+                container.innerHTML = `<div class="card" style="padding: 20px; text-align: center; color: var(--text-muted);">Pesanan tidak ditemukan</div>`;
+                return;
+            }
+
+            const custName = tx.customer || "No Customer";
+            const isLampoh = custName.toLowerCase().includes('lampoh');
+            const delivDate = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : 'Unknown Date';
+            const orderNo = tx.orderNumber || 'Tanpa ID';
+
+            let tableRows = '';
+            let currentGrandTotal = 0;
+
+            (tx.cart || []).forEach((cItem, i) => {
+                const qty = parseFloat(cItem.qty) || 0;
+                let unitPrice = 0;
+                if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '') {
+                    unitPrice = parseFloat(cItem.unitPrice) || 0;
+                } else {
+                    unitPrice = getLastPriceForItem(custName, cItem);
+                }
+
+                const subtotal = qty * unitPrice;
+                currentGrandTotal += subtotal;
+
+                tableRows += `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted); width: 30px;">${i + 1}</td>
+                        <td>
+                            <b>${escapeHtml(cItem.name)}</b>
+                            ${cItem.variant ? `<span style="font-size: 0.68rem; color: var(--text-muted);">(${escapeHtml(cItem.variant)})</span>` : ''}
+                            ${cItem.note ? `<div style="font-size: 0.68rem; color: var(--text-secondary); font-style: italic;">📝 ${escapeHtml(cItem.note)}</div>` : ''}
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <b>${escapeHtml(cItem.qty)}</b> <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cItem.uom)}</span>
+                        </td>
+                        <td style="text-align: right; width: 140px;">
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
+                                <input type="number" 
+                                    id="admin-price-input-${i}" 
+                                    class="admin-price-input" 
+                                    value="${unitPrice > 0 ? unitPrice : ''}" 
+                                    placeholder="0" 
+                                    min="0"
+                                    step="100"
+                                    oninput="onAdminPriceInputChanged(${orderIndex})"
+                                >
+                            </div>
+                        </td>
+                        <td class="admin-subtotal-cell" id="admin-subtotal-${i}">
+                            Rp ${formatRupiahNumber(subtotal)}
+                        </td>
+                        <td style="text-align: center; width: 90px;">
+                            <label class="skip-db-label" title="Centang jika harga ini khusus untuk order saat ini saja dan TIDAK ingin disimpan ke database harga terakhir">
+                                <input type="checkbox" id="admin-skip-db-${i}" class="skip-db-checkbox">
+                                <span>Skip DB</span>
+                            </label>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="admin-editor-card">
+                    <!-- Order Header Info -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${escapeHtml(custName)}</span>
+                                ${isLampoh ? '<span class="lampoh-tag">💡 Outlet Lampoh (Harga Terpadu)</span>' : ''}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                                <span>No. Order: <b>${escapeHtml(orderNo)}</b></span> &bull; 
+                                <span>📅 Kirim: <b>${delivDate}</b></span> &bull; 
+                                <span>${tx.cart ? tx.cart.length : 0} item</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" class="btn btn-sm btn-outline" title="Salin teks rincian pesanan" onclick="copyHistoryText(${orderIndex})">📋 Salin TXT</button>
+                            <button type="button" class="btn btn-sm btn-outline" title="Download CSV Accurate dengan harga" onclick="downloadAdminOrderCSV(${orderIndex})">📊 CSV Accurate</button>
+                            <button type="button" class="btn btn-sm btn-primary" title="Simpan perubahan harga" onclick="saveAdminOrderPrices(${orderIndex})">💾 Simpan Harga</button>
+                        </div>
+                    </div>
+
+                    <!-- Items Table -->
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;">No</th>
+                                    <th>Nama Barang</th>
+                                    <th style="text-align: center;">Qty</th>
+                                    <th style="text-align: right;">Harga Satuan</th>
+                                    <th style="text-align: right;">Subtotal</th>
+                                    <th style="text-align: center;" title="Centang jika tidak ingin memperbarui harga di database">Jangan Simpan DB</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Grand Total Bar -->
+                    <div class="admin-grand-total-bar">
+                        <div style="color: var(--text-secondary); font-weight: 600; font-size: 0.75rem;">
+                            💡 Centang <i>"Skip DB"</i> jika harga berubah khusus dan tidak ingin disimpan ke Google Sheet harga terakhir.
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600; color: var(--text-muted);">Total Nilai Pesanan:</span>
+                            <span id="adminGrandTotalDisplay" style="font-size: 1.15rem; font-weight: 800; color: #059669;">
+                                Rp ${formatRupiahNumber(currentGrandTotal)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function onAdminPriceInputChanged(orderIndex) {
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart) return;
+
+            let grandTotal = 0;
+            tx.cart.forEach((cItem, i) => {
+                const qty = parseFloat(cItem.qty) || 0;
+                const inputEl = document.getElementById(`admin-price-input-${i}`);
+                const price = parseFloat(inputEl?.value) || 0;
+                const subtotal = qty * price;
+                grandTotal += subtotal;
+
+                const subtotalEl = document.getElementById(`admin-subtotal-${i}`);
+                if (subtotalEl) {
+                    subtotalEl.innerText = `Rp ${formatRupiahNumber(subtotal)}`;
+                }
+            });
+
+            const grandTotalEl = document.getElementById('adminGrandTotalDisplay');
+            if (grandTotalEl) {
+                grandTotalEl.innerText = `Rp ${formatRupiahNumber(grandTotal)}`;
+            }
+        }
+
+        function saveAdminOrderPrices(orderIndex) {
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart) return;
+
+            const custName = tx.customer || "No Customer";
+            const custKey = normalizeCustomerPricingKey(custName);
+
+            let totalAmount = 0;
+            let updatedToDbCount = 0;
+
+            tx.cart.forEach((cItem, i) => {
+                const inputEl = document.getElementById(`admin-price-input-${i}`);
+                const skipDbEl = document.getElementById(`admin-skip-db-${i}`);
+                const price = parseFloat(inputEl?.value) || 0;
+                const qty = parseFloat(cItem.qty) || 0;
+                const subtotal = qty * price;
+
+                cItem.unitPrice = price;
+                cItem.itemTotal = subtotal;
+                totalAmount += subtotal;
+
+                // If not skipped, update lastPricesMap!
+                const isSkipped = skipDbEl ? skipDbEl.checked : false;
+                if (!isSkipped && price > 0) {
+                    const sku = (cItem.sku || enrichCartItemSku(cItem) || '').trim();
+                    const name = (cItem.name || '').trim().toLowerCase();
+                    const uom = (cItem.uom || '').trim().toUpperCase();
+
+                    if (sku) {
+                        lastPricesMap.set(`${custKey}___SKU:${sku}___${uom}`, price);
+                        lastPricesMap.set(`*___SKU:${sku}___${uom}`, price);
+                    }
+                    if (name) {
+                        lastPricesMap.set(`${custKey}___NAME:${name}___${uom}`, price);
+                        lastPricesMap.set(`*___NAME:${name}___${uom}`, price);
+                    }
+                    updatedToDbCount++;
+                }
+            });
+
+            tx.totalAmount = totalAmount;
+            tx.updatedAt = Date.now();
+
+            // Save to local storage
+            try {
+                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+            } catch (e) {
+                console.warn("Gagal menyimpan ke localStorage:", e);
+            }
+
+            // Sync to Google Sheet order history if online
+            if (typeof syncOrderToLampohSheet === 'function') {
+                syncOrderToLampohSheet(tx).catch(e => console.warn("Background sheet sync:", e));
+            }
+
+            showToast(`Harga pesanan disimpan (Total: Rp ${formatRupiahNumber(totalAmount)})`, "success");
+            updateAdminUnpricedBadge();
+            renderAdminOrdersList();
+            renderAdminOrderPricingDetail(orderIndex);
+        }
+
+        function downloadAdminOrderCSV(orderIndex) {
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart) return;
+
+            // Save prices first from inputs if modified
+            saveAdminOrderPrices(orderIndex);
+
+            const { itemRows, dateStr, customerNo, safeCustomerName } = buildAccurateCsvRowsForTransaction(tx);
+            if (itemRows.length === 0) {
+                showToast("Tidak ada baris barang untuk diekspor", "warning");
+                return;
+            }
+
+            const rows = [ACCURATE_CSV_TEMPLATE_HEADER, ...itemRows];
+            const csvString = rows.join('\r\n');
+
+            let deliveryFormatted = dateStr.replace(/\//g, '-');
+            const now = new Date();
+            const timestampFormatted = `${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const fileName = `${safeCustomerName} (Berharga) for ${deliveryFormatted} - ${timestampFormatted}.csv`;
+
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast(`CSV Berharga untuk ${customerNo} berhasil diunduh`, "success");
+        }
+
+        // ==========================================
+        // ADMIN AUTHENTICATION CONTROLLER (7-DAY SESSION)
+        // ==========================================
+        function isAdminSessionActive() {
+            try {
+                const sessionRaw = localStorage.getItem('npn_admin_session');
+                if (!sessionRaw) return false;
+                const session = JSON.parse(sessionRaw);
+                if (session && session.expiresAt && Date.now() < session.expiresAt) {
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function openAdminAuthModal() {
+            const modal = document.getElementById('adminAuthModal');
+            const errEl = document.getElementById('adminLoginError');
+            const submitBtn = document.getElementById('adminLoginSubmitBtn');
+            const uInput = document.getElementById('adminUsernameInput');
+            const pInput = document.getElementById('adminPasswordInput');
+
+            if (errEl) errEl.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Masuk (Enter)";
+            }
+            if (modal) modal.style.display = 'flex';
+            setTimeout(() => uInput?.focus(), 60);
+        }
+
+        function closeAdminAuthModal() {
+            const modal = document.getElementById('adminAuthModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitAdminLogin() {
+            const uInput = document.getElementById('adminUsernameInput');
+            const pInput = document.getElementById('adminPasswordInput');
+            const errEl = document.getElementById('adminLoginError');
+            const submitBtn = document.getElementById('adminLoginSubmitBtn');
+
+            const username = (uInput?.value || '').trim();
+            const password = (pInput?.value || '').trim();
+
+            if (!username || !password) {
+                if (errEl) {
+                    errEl.innerText = "Masukkan username dan password admin.";
+                    errEl.style.display = 'block';
+                }
+                return;
+            }
+
+            if (errEl) errEl.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Memverifikasi...";
+            }
+
+            try {
+                if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) {
+                    throw new Error("URL Google Apps Script belum disetel.");
+                }
+
+                // Option A: Validasi Server-Side via Google Apps Script
+                const authUrl = `${GAS_SHEET_SYNC_URL}?action=adminLogin&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&t=${Date.now()}`;
+                const response = await fetchWithTimeout(authUrl, { method: 'GET' }, 12000);
+
+                if (!response.ok) {
+                    throw new Error(`Server status HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                // Cek jika GAS belum di-deploy dengan handler adminLogin
+                if (Array.isArray(result)) {
+                    if (errEl) {
+                        errEl.innerText = "Google Apps Script belum diperbarui dengan handler 'adminLogin'. Silakan pasang kode GAS yang disediakan.";
+                        errEl.style.display = 'block';
+                    }
+                    return;
+                }
+
+                if (result && result.success) {
+                    const session = {
+                        username: result.username || username,
+                        token: result.token || ('npn_tok_' + Math.random().toString(36).substring(2)),
+                        loginAt: Date.now(),
+                        expiresAt: result.expiresAt || (Date.now() + (7 * 24 * 60 * 60 * 1000))
+                    };
+                    localStorage.setItem('npn_admin_session', JSON.stringify(session));
+                    closeAdminAuthModal();
+                    if (uInput) uInput.value = '';
+                    if (pInput) pInput.value = '';
+                    showToast("Login Admin Berhasil (Sesi aktif 7 hari)", "success");
+                    switchTab('tab-admin');
+                } else {
+                    if (errEl) {
+                        errEl.innerText = (result && result.message) ? result.message : "Username atau password admin salah.";
+                        errEl.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.warn("GAS Admin Auth Error:", err);
+                if (errEl) {
+                    errEl.innerText = "Gagal memverifikasi ke Google Apps Script. Periksa koneksi internet atau script deployment.";
+                    errEl.style.display = 'block';
+                }
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = "Masuk (Enter)";
+                }
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('npn_admin_session');
+            showToast("Admin logout berhasil", "info");
+            switchTab('tab-order');
+        }
+
         // --- Accurate CSV Export Engine ---
         const ACCURATE_CSV_TEMPLATE_HEADER = "CUSTOMER NO,NUMBER,BRANCH,DATE,TAXABLE,ADDRESS,TOTAL INCLUDING VAT,TAX INVOICE NUMBER,ADVANCE INVOICE,INVOICE DISCOUNT (%),INVOICE DISCOUNT (Rp),DESCRIPTION,PO NO,SHIPPING,SHIPPING DATE,FOB,PAYMENT TERMS,DUE DATE,PAYING BANK,PAYMENT VALUE,CUSTOM CHARACTER 1,CUSTOM CHARACTER 2,CUSTOM CHARACTER 3,CUSTOM CHARACTER 4,CUSTOM CHARACTER 5,CUSTOM CHARACTER 6,CUSTOM CHARACTER 7,CUSTOM CHARACTER 8,CUSTOM CHARACTER 9,CUSTOM CHARACTER 10,CUSTOM NUMBER 1,CUSTOM NUMBER 2,CUSTOM NUMBER 3,CUSTOM NUMBER 4,CUSTOM NUMBER 5,CUSTOM NUMBER 6,CUSTOM NUMBER 7,CUSTOM NUMBER 8,CUSTOM NUMBER 9,CUSTOM NUMBER 10,CUSTOM DATE 1,CUSTOM DATE 2,VA NUMBER,ACCOUNT RECEIVABLE NUMBER,PAYMENT WITH UNIQUE CODE,SUB COMPANY CODE,ITEM:ITEM NO,ITEM:QUANTITY,ITEM:UNITPRICE,ITEM:UNIT,ITEM:WAREHOUSE NAME ,ITEM:NAME,ITEM:ITEM DISCOUNT (%),ITEM:ITEM DISCOUNT (RP),ITEM:ITEM NOTES,ITEM:SALESMAN ID,ITEM:DEPT NAME,ITEM:PROJECT NO,ITEM:CUSTOM CHARACTER 1,ITEM:CUSTOM CHARACTER 2,ITEM:CUSTOM CHARACTER 3,ITEM:CUSTOM CHARACTER 4,ITEM:CUSTOM CHARACTER 5,ITEM:CUSTOM CHARACTER 6,ITEM:CUSTOM CHARACTER 7,ITEM:CUSTOM CHARACTER 8,ITEM:CUSTOM CHARACTER 9,ITEM:CUSTOM CHARACTER 10,ITEM:CUSTOM CHARACTER 11,ITEM:CUSTOM CHARACTER 12,ITEM:CUSTOM CHARACTER 13,ITEM:CUSTOM CHARACTER 14,ITEM:CUSTOM CHARACTER 15,ITEM:CUSTOM NUMBER 1,ITEM:CUSTOM NUMBER 2,ITEM:CUSTOM NUMBER 3,ITEM:CUSTOM NUMBER 4,ITEM:CUSTOM NUMBER 5,ITEM:CUSTOM NUMBER 6,ITEM:CUSTOM NUMBER 7,ITEM:CUSTOM NUMBER 8,ITEM:CUSTOM NUMBER 9,ITEM:CUSTOM NUMBER 10,ITEM:CUSTOM DATE 1,ITEM:CUSTOM DATE 2,ITEM:CUSTOM FINANCE CATEGORY 1,ITEM:CUSTOM FINANCE CATEGORY 2,ITEM:CUSTOM FINANCE CATEGORY 3,ITEM:CUSTOM FINANCE CATEGORY 4,ITEM:CUSTOM FINANCE CATEGORY 5,ITEM:CUSTOM FINANCE CATEGORY 6,ITEM:CUSTOM FINANCE CATEGORY 7,ITEM:CUSTOM FINANCE CATEGORY 8,ITEM:CUSTOM FINANCE CATEGORY 9,ITEM:CUSTOM FINANCE CATEGORY 10,ITEM:DELIVERY ORDER NO.,ITEM:SALES ORDER NO,EXPENSE:ACCOUNT NO,EXPENSE:EXPENSE VALUE,EXPENSE:EXPENSE NAME,EXPENSE:EXPENSE NOTE,EXPENSE:DEPT NAME,EXPENSE:PROJECT NO,EXPENSE:FINANCIAL CATEGORY 1,EXPENSE:FINANCIAL CATEGORY 2,EXPENSE:FINANCIAL CATEGORY 3,EXPENSE:FINANCIAL CATEGORY 4,EXPENSE:FINANCIAL CATEGORY 5,EXPENSE:FINANCIAL CATEGORY 6,EXPENSE:FINANCIAL CATEGORY 7,EXPENSE:FINANCIAL CATEGORY 8,EXPENSE:FINANCIAL CATEGORY 9,EXPENSE:FINANCIAL CATEGORY 10,EXPENSE:SALES ORDER NO,";
 
@@ -4739,6 +5648,8 @@
             const idxItemNo = headers.indexOf('ITEM:ITEM NO');
             const idxQty = headers.indexOf('ITEM:QUANTITY');
             const idxUnit = headers.indexOf('ITEM:UNIT');
+            const idxUnitPrice = headers.indexOf('ITEM:UNITPRICE');
+            const idxItemName = headers.indexOf('ITEM:NAME');
             const idxWarehouse = headers.indexOf('ITEM:WAREHOUSE NAME ');
             const idxNote = headers.indexOf('ITEM:ITEM NOTES');
 
@@ -4785,6 +5696,8 @@
                 if (idxItemNo !== -1) row[idxItemNo] = escapeCsv(itemSku);
                 if (idxQty !== -1) row[idxQty] = escapeCsv(item.qty || '');
                 if (idxUnit !== -1) row[idxUnit] = escapeCsv(item.uom || '');
+                if (idxUnitPrice !== -1 && item.unitPrice) row[idxUnitPrice] = escapeCsv(item.unitPrice);
+                if (idxItemName !== -1) row[idxItemName] = escapeCsv(item.name || '');
                 if (idxWarehouse !== -1) row[idxWarehouse] = 'Utama';
                 if (idxNote !== -1) row[idxNote] = escapeCsv(item.note || '');
                 itemRows.push(row.join(','));
@@ -5248,11 +6161,20 @@
             } catch(e) {}
 
             // 1. Instant local DOM sync (0ms latency, never waits for network)
+            try {
+                const cachedLastPrices = localStorage.getItem('npn_cached_last_prices');
+                if (cachedLastPrices) {
+                    parseLastPricesCSV(cachedLastPrices);
+                }
+            } catch (e) {}
             updateDeliveryDisplay();
             renderCart();
             updateHistoryCountBadge();
             updateOfflineQueueBanner();
             applyCatalogState();
+            if (typeof updateAdminUnpricedBadge === 'function') {
+                updateAdminUnpricedBadge();
+            }
 
             // 2. Start connection monitor
             try {
@@ -5265,7 +6187,8 @@
             Promise.allSettled([
                 loadCatalogData(),
                 loadCustomerData(),
-                fetchLatestHistory()
+                fetchLatestHistory(),
+                typeof fetchLastPricesDatabase === 'function' ? fetchLastPricesDatabase() : Promise.resolve()
             ]).then(() => {
                 checkAutoPrintQuery();
             });

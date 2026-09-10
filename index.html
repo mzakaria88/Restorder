@@ -2289,7 +2289,7 @@
         let currentFocusCustomer = -1;
         
         // --- Version Control & Silent Auto Cache Reset ---
-        const CURRENT_APP_DATA_VERSION = "2026-09-11";
+        const CURRENT_APP_DATA_VERSION = "2026-09-06";
         try {
             if (localStorage.getItem('npn_data_version') !== CURRENT_APP_DATA_VERSION) {
                 localStorage.removeItem('npn_cached_catalog');
@@ -5298,6 +5298,21 @@
             } else if (statusFilter === 'priced') {
                 filtered = filtered.filter(({ tx }) => isOrderFullyPriced(tx));
             }
+
+            // Sortir: Tanggal Delivery paling baru di atas (descending)
+            filtered.sort((a, b) => {
+                const delivA = getOrderDeliveryTime(a.tx);
+                const delivB = getOrderDeliveryTime(b.tx);
+                if (delivB !== delivA) {
+                    return delivB - delivA;
+                }
+                const updatedA = getOrderUpdatedTime(a.tx);
+                const updatedB = getOrderUpdatedTime(b.tx);
+                if (updatedB !== updatedA) {
+                    return updatedB - updatedA;
+                }
+                return (b.tx.orderNumber || '').localeCompare(a.tx.orderNumber || '');
+            });
 
             if (filtered.length === 0) {
                 container.innerHTML = `

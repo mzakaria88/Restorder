@@ -1042,6 +1042,70 @@
             width: fit-content;
         }
 
+        mark.search-highlight {
+            background-color: #fef08a;
+            color: #854d0e;
+            padding: 0 3px;
+            border-radius: 3px;
+            font-weight: 700;
+        }
+
+        .search-match-snippets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+            align-items: center;
+        }
+
+        .search-match-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-left: 3px solid #f59e0b;
+            border-radius: var(--radius-sm);
+            padding: 2.5px 8px;
+            font-size: 0.72rem;
+            color: #334155;
+            line-height: 1.4;
+            max-width: 100%;
+            word-break: break-word;
+        }
+
+        .search-match-pill .match-pill-item-name {
+            font-weight: 700;
+            color: #0f172a;
+            flex-shrink: 0;
+        }
+
+        .search-match-pill .match-pill-note {
+            color: #475569;
+            font-style: italic;
+        }
+
+        .search-match-pill .match-pill-qty {
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.68rem;
+        }
+
+        .search-match-pill .match-pill-sep {
+            color: #cbd5e1;
+            font-size: 0.65rem;
+        }
+
+        .search-match-more {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+        }
+
         .history-actions-group {
             display: flex;
             align-items: center;
@@ -1366,27 +1430,6 @@
             gap: 6px;
         }
 
-        .note-suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-
-        .note-chip {
-            font-size: 0.68rem;
-            padding: 2px 7px;
-            border-radius: 9999px;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-        .note-chip:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: var(--primary-light);
-        }
-
         /* Toast Notifications */
         #toastContainer {
             position: fixed;
@@ -1676,7 +1719,7 @@
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                         </span>
-                        <input type="text" id="historySearchInput" placeholder="Cari Order ID, customer, atau tanggal..." oninput="handleHistorySearchInput()">
+                        <input type="text" id="historySearchInput" placeholder="Cari customer, barang, catatan, order ID..." oninput="handleHistorySearchInput()">
                         <button type="button" id="toggleItemSearchBtn" class="history-item-search-btn" title="Mode pencarian barang" onclick="toggleHistoryItemSearchMode()">
                             <svg id="itemSearchIconSvg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -1891,18 +1934,7 @@
             </div>
             <div class="modal-body">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);" id="noteItemTitle">Nama Barang</div>
-                <textarea id="noteTextInput" rows="2" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.8rem; outline: none; resize: vertical;" placeholder="Contoh: Potong 15, kirim subuh, pilih yg segar..."></textarea>
-                
-                <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pilihan Cepat:</span>
-                    <div class="note-suggestions">
-                        <span class="note-chip" onclick="appendNoteSuggestion('Potong 15')">+ Potong 15</span>
-                        <span class="note-chip" onclick="appendNoteSuggestion('Potong 10')">+ Potong 10</span>
-                        <span class="note-chip" onclick="appendNoteSuggestion('Kirim pagi')">+ Kirim pagi</span>
-                        <span class="note-chip" onclick="appendNoteSuggestion('Pilih yg segar')">+ Pilih yg segar</span>
-                        <span class="note-chip" onclick="appendNoteSuggestion('Kemasan rapi')">+ Kemasan rapi</span>
-                    </div>
-                </div>
+                <textarea id="noteTextInput" rows="3" style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.8rem; outline: none; resize: vertical;" placeholder="Contoh: Potong 15, kirim subuh, pilih yg segar..."></textarea>
             </div>
             <div class="modal-footer">
                 <span style="font-size: 0.68rem; color: var(--text-muted); margin-right: auto; align-self: center;">Enter: Simpan &bull; Ctrl+Enter: Baris baru</span>
@@ -2084,16 +2116,6 @@
         function closeNoteModal() {
             document.getElementById('noteModal').style.display = 'none';
             activeNoteEditIndex = -1;
-        }
-
-        function appendNoteSuggestion(text) {
-            const input = document.getElementById('noteTextInput');
-            if (!input.value.trim()) {
-                input.value = text;
-            } else {
-                input.value = input.value.trim() + ', ' + text;
-            }
-            input.focus();
         }
 
         function saveCurrentNote() {
@@ -4054,6 +4076,91 @@
             populateHistoryList();
         }
 
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeRegExp(str) {
+            return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightInText(safeText, tokens) {
+            if (!safeText || !tokens || tokens.length === 0) return safeText;
+            const validTokens = tokens.map(t => t.trim()).filter(t => t.length > 0);
+            if (validTokens.length === 0) return safeText;
+
+            // Sort longest first to avoid partial replacement of substrings
+            validTokens.sort((a, b) => b.length - a.length);
+            const pattern = validTokens.map(escapeRegExp).join('|');
+            const regex = new RegExp(`(${pattern})`, 'gi');
+            return safeText.replace(regex, '<mark class="search-highlight">$1</mark>');
+        }
+
+        function createTextSnippet(fullText, queryTokens, maxContextChars = 28) {
+            if (!fullText) return '';
+            const text = String(fullText).trim();
+            if (!text) return '';
+
+            const validTokens = (queryTokens || []).map(t => t.trim().toLowerCase()).filter(Boolean);
+            if (validTokens.length === 0) {
+                return escapeHtml(text.length > 60 ? text.slice(0, 60) + '...' : text);
+            }
+
+            const lower = text.toLowerCase();
+            let earliestMatchIdx = -1;
+            let matchLen = 0;
+
+            const fullQuery = validTokens.join(' ');
+            if (fullQuery.length > 0 && lower.includes(fullQuery)) {
+                earliestMatchIdx = lower.indexOf(fullQuery);
+                matchLen = fullQuery.length;
+            } else {
+                for (const token of validTokens) {
+                    const idx = lower.indexOf(token);
+                    if (idx !== -1) {
+                        if (earliestMatchIdx === -1 || idx < earliestMatchIdx) {
+                            earliestMatchIdx = idx;
+                            matchLen = token.length;
+                        }
+                    }
+                }
+            }
+
+            if (earliestMatchIdx === -1) {
+                return escapeHtml(text.length > 60 ? text.slice(0, 60) + '...' : text);
+            }
+
+            let start = Math.max(0, earliestMatchIdx - maxContextChars);
+            let end = Math.min(text.length, earliestMatchIdx + matchLen + maxContextChars);
+
+            if (start > 0) {
+                const spaceIdx = text.indexOf(' ', start);
+                if (spaceIdx !== -1 && spaceIdx < earliestMatchIdx) {
+                    start = spaceIdx + 1;
+                }
+            }
+            if (end < text.length) {
+                const spaceIdx = text.lastIndexOf(' ', end);
+                if (spaceIdx !== -1 && spaceIdx > earliestMatchIdx + matchLen) {
+                    end = spaceIdx;
+                }
+            }
+
+            let snippetPart = text.slice(start, end).trim();
+            const hasLeadingDots = start > 0 ? '...' : '';
+            const hasTrailingDots = end < text.length ? '...' : '';
+
+            const safeSnippet = escapeHtml(snippetPart);
+            const highlighted = highlightInText(safeSnippet, validTokens);
+
+            return `${hasLeadingDots}${highlighted}${hasTrailingDots}`;
+        }
+
         function populateHistoryList() {
             const container = document.getElementById('historyListContainer');
             container.innerHTML = '';
@@ -4115,10 +4222,15 @@
             sortedHistory.forEach(({ tx, originalIndex }) => {
                 const custName = tx.customer || "No Customer";
                 const delDateStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : "Unknown Date";
+                const fullDateStr = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : "";
                 const orderNum = tx.orderNumber || "Tanpa ID";
 
                 // Filter check
                 let matchedCartItems = [];
+                let matchedItemSnippets = [];
+                const searchTokens = searchKeyword ? searchKeyword.split(/\s+/).filter(Boolean) : [];
+                const allHighlightTokens = searchKeyword ? [searchKeyword, ...searchTokens] : [];
+
                 if (isItemSearchMode) {
                     if (selectedHistoryItem) {
                         const sName = (selectedHistoryItem.name || '').trim().toLowerCase();
@@ -4143,8 +4255,50 @@
                         if (matchedCartItems.length === 0) return;
                     }
                 } else if (searchKeyword) {
-                    const matchText = `${orderNum} ${custName} ${delDateStr}`.toLowerCase();
-                    if (!matchText.includes(searchKeyword)) return;
+                    const headerText = `${orderNum} ${custName} ${delDateStr} ${fullDateStr}`.toLowerCase();
+                    const fullPhrase = searchKeyword;
+
+                    const fullPhraseMatches = headerText.includes(fullPhrase) || (tx.cart || []).some(ci => 
+                        (ci.name || '').toLowerCase().includes(fullPhrase) || 
+                        (ci.note || '').toLowerCase().includes(fullPhrase) ||
+                        (ci.variant || '').toLowerCase().includes(fullPhrase) ||
+                        (ci.sku || '').toLowerCase().includes(fullPhrase)
+                    );
+
+                    const allTokensMatch = searchTokens.length > 0 && searchTokens.every(token => 
+                        headerText.includes(token) ||
+                        (tx.cart || []).some(ci => 
+                            (ci.name || '').toLowerCase().includes(token) || 
+                            (ci.note || '').toLowerCase().includes(token) ||
+                            (ci.variant || '').toLowerCase().includes(token) ||
+                            (ci.sku || '').toLowerCase().includes(token)
+                        )
+                    );
+
+                    if (!fullPhraseMatches && !allTokensMatch) return;
+
+                    // Identify which cart items matched for snippets
+                    (tx.cart || []).forEach(cItem => {
+                        const cName = (cItem.name || '').toLowerCase();
+                        const cNote = (cItem.note || '').toLowerCase();
+                        const cVariant = (cItem.variant || '').toLowerCase();
+                        const cSku = (cItem.sku || '').toLowerCase();
+                        const itemCombined = `${cName} ${cVariant} ${cSku}`;
+
+                        const nameMatches = (fullPhrase && itemCombined.includes(fullPhrase)) || 
+                                            searchTokens.some(t => itemCombined.includes(t));
+                        const noteMatches = (fullPhrase && cNote.includes(fullPhrase)) || 
+                                            searchTokens.some(t => cNote.includes(t));
+
+                        if (nameMatches || noteMatches) {
+                            matchedCartItems.push(cItem);
+                            matchedItemSnippets.push({
+                                item: cItem,
+                                isNameMatch: nameMatches,
+                                isNoteMatch: noteMatches
+                            });
+                        }
+                    });
                 }
 
                 renderedCount++;
@@ -4174,6 +4328,39 @@
                             <span>📦 <b>${displayItemName}</b>:</span>
                             <span style="font-size: 0.8rem; color: #b91c1c; font-weight: 700;">${formattedOrderQty}</span>
                             ${itemNotes ? `<span style="font-size: 0.68rem; font-weight: normal; color: #7f1d1d; font-style: italic;">(${itemNotes})</span>` : ''}
+                        </div>
+                    `;
+                }
+
+                // Snippets for default search mode (item names and notes)
+                let defaultSearchSnippetsHtml = '';
+                if (!isItemSearchMode && matchedItemSnippets.length > 0) {
+                    const snippetPills = matchedItemSnippets.slice(0, 3).map(m => {
+                        const itemQtyUom = `${m.item.qty || ''} ${m.item.uom || ''}`.trim();
+                        const fullItemTitle = m.item.variant ? `${m.item.name} (${m.item.variant})` : (m.item.name || '');
+                        
+                        if (m.isNoteMatch && m.item.note) {
+                            const noteSnippet = createTextSnippet(m.item.note, allHighlightTokens, 28);
+                            if (m.isNameMatch) {
+                                const nameSnippet = createTextSnippet(fullItemTitle, allHighlightTokens, 22);
+                                return `<div class="search-match-pill"><span class="match-pill-item-name">📦 ${nameSnippet}</span> <span class="match-pill-qty">(${escapeHtml(itemQtyUom)})</span> <span class="match-pill-sep">&bull;</span> <span class="match-pill-note">📝 "${noteSnippet}"</span></div>`;
+                            } else {
+                                return `<div class="search-match-pill"><span class="match-pill-item-name">${escapeHtml(fullItemTitle)}:</span> <span class="match-pill-note">📝 "${noteSnippet}"</span></div>`;
+                            }
+                        } else if (m.isNameMatch) {
+                            const nameSnippet = createTextSnippet(fullItemTitle, allHighlightTokens, 26);
+                            return `<div class="search-match-pill"><span class="match-pill-item-name">📦 ${nameSnippet}</span> <span class="match-pill-qty">(${escapeHtml(itemQtyUom)})</span></div>`;
+                        }
+                        return '';
+                    }).filter(Boolean);
+
+                    const extraCount = matchedItemSnippets.length - 3;
+                    const moreBadge = extraCount > 0 ? `<span class="search-match-more">+${extraCount} item lainnya</span>` : '';
+
+                    defaultSearchSnippetsHtml = `
+                        <div class="search-match-snippets">
+                            ${snippetPills.join('')}
+                            ${moreBadge}
                         </div>
                     `;
                 }
@@ -4222,13 +4409,31 @@
                     tx.cart.forEach((cItem, i) => {
                         txTotalQty += parseFloat(cItem.qty) || 0;
                         const isThisItemMatched = matchedCartItems.includes(cItem);
+                        let itemNameHtml = escapeHtml(cItem.name || '');
+                        let itemNoteHtml = escapeHtml(cItem.note || '-');
+                        let itemVariantHtml = cItem.variant ? escapeHtml(cItem.variant) : '';
+
+                        if (!isItemSearchMode && searchTokens.length > 0 && isThisItemMatched) {
+                            itemNameHtml = highlightInText(itemNameHtml, allHighlightTokens);
+                            if (cItem.note) {
+                                itemNoteHtml = highlightInText(itemNoteHtml, allHighlightTokens);
+                            }
+                            if (itemVariantHtml) {
+                                itemVariantHtml = highlightInText(itemVariantHtml, allHighlightTokens);
+                            }
+                        }
+
+                        const rowStyle = isThisItemMatched 
+                            ? (isItemSearchMode ? 'background: #fef2f2; font-weight: 600;' : 'background: #fffbeb; font-weight: 600;') 
+                            : '';
+
                         drawerRows += `
-                            <tr style="${isThisItemMatched ? 'background: #fef2f2; font-weight: 600;' : ''}">
+                            <tr style="${rowStyle}">
                                 <td style="text-align: center; color: var(--text-muted);">${i + 1}</td>
-                                <td><b>${cItem.name}</b> ${cItem.variant ? `<span style="font-size: 0.65rem; color: var(--text-muted);">(${cItem.variant})</span>` : ''}</td>
-                                <td style="text-align: center; font-weight: 700;">${cItem.qty}</td>
-                                <td>${cItem.uom}</td>
-                                <td style="font-style: italic; color: var(--text-secondary);">${cItem.note || '-'}</td>
+                                <td><b>${itemNameHtml}</b> ${itemVariantHtml ? `<span style="font-size: 0.65rem; color: var(--text-muted);">(${itemVariantHtml})</span>` : ''}</td>
+                                <td style="text-align: center; font-weight: 700;">${escapeHtml(cItem.qty)}</td>
+                                <td>${escapeHtml(cItem.uom)}</td>
+                                <td style="font-style: italic; color: var(--text-secondary);">${itemNoteHtml}</td>
                             </tr>
                         `;
                     });
@@ -4249,14 +4454,21 @@
                     updateTimeDisplay = `<span style="font-size: 0.7rem; color: var(--text-muted);" title="Waktu update: ${uDate.toLocaleString('id-ID')}">&bull; 🕒 ${hh}:${mm}</span>`;
                 }
 
+                let displayCustName = escapeHtml(custName);
+                let displayDelDateStr = escapeHtml(delDateStr);
+                if (!isItemSearchMode && searchTokens.length > 0) {
+                    displayCustName = highlightInText(displayCustName, allHighlightTokens);
+                    displayDelDateStr = highlightInText(displayDelDateStr, allHighlightTokens);
+                }
+
                 card.innerHTML = `
                     <div class="history-card-header" ${isConsolidationMode ? `onclick="toggleCheckbox(${originalIndex})"` : ''} style="${isConsolidationMode ? 'cursor: pointer;' : ''}">
                         <div class="history-meta-left">
                             ${checkBlock}
-                            <span class="customer-pill">${custName}</span>
+                            <span class="customer-pill">${displayCustName}</span>
                             ${pendingBadge}
                             <span class="delivery-date-pill">
-                                📅 Deliv: ${delDateStr}
+                                📅 Deliv: ${displayDelDateStr}
                             </span>
                             <span style="font-size: 0.7rem; color: var(--text-muted);">&bull; ${tx.cart ? tx.cart.length : 0} item</span>
                             ${updateTimeDisplay}
@@ -4264,6 +4476,7 @@
                         ${actionsBlock}
                     </div>
                     ${matchedItemBadgeHtml}
+                    ${defaultSearchSnippetsHtml}
 
                     <!-- Expandable Item Drawer -->
                     <div id="history-drawer-${originalIndex}" class="history-items-drawer">

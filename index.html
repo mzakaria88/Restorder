@@ -1939,12 +1939,12 @@
                             </svg>
                             Sinkronkan
                         </button>
-                        <button class="btn btn-sm btn-outline" id="toggleConsolidateBtn" style="color: var(--accent); border-color: var(--accent);" onclick="toggleConsolidationMode()" title="Tandai pesanan untuk membuat 1 file CSV Accurate atau PDF Rekap">
+                        <button class="btn btn-sm btn-outline" id="toggleConsolidateBtn" style="color: var(--accent); border-color: var(--accent);" onclick="toggleConsolidationMode()" title="Tandai pesanan untuk membuat PDF Rekapitulasi Gabungan">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="9 11 12 14 22 4"></polyline>
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                             </svg>
-                            Tandai & Gabung (CSV/PDF)
+                            Tandai & Gabung (PDF)
                         </button>
                     </div>
                 </div>
@@ -1969,10 +1969,6 @@
                         </button>
                     </div>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                        <button type="button" class="btn btn-sm btn-primary" id="btnConsolidateCSV" title="Buat dan unduh 1 file CSV Accurate untuk semua pesanan yang ditandai" onclick="generateConsolidatedCSV()">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            Download 1 CSV
-                        </button>
                         <button type="button" class="btn btn-sm btn-success" id="btnConsolidatePDF" title="Buat dan unduh PDF rekapitulasi gabungan" onclick="generateConsolidatedPDF()">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                             Download PDF Rekap
@@ -2006,16 +2002,42 @@
                             <span>🛡️ Panel Admin</span>
                             <span class="lampoh-tag">💡 Harga Terpadu Lampoh</span>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
-                            Tetapkan harga satuan pada pesanan yang sudah dibuat di riwayat. Harga terakhir <i>(Last Prices)</i> otomatis terisi sebagai acuan.
-                        </div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span id="adminPriceDbStatus" style="font-size: 0.72rem; color: var(--text-muted); background: #f1f5f9; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
                             📊 Database: Memuat...
                         </span>
                         <button type="button" class="btn btn-sm btn-outline" style="font-size: 0.72rem; padding: 4px 8px;" onclick="fetchLastPricesDatabase(true)">🔄 Refresh Harga</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="toggleAdminConsolidateBtn" style="font-size: 0.72rem; padding: 4px 8px; color: var(--accent); border-color: var(--accent);" onclick="toggleAdminConsolidationMode()" title="Tandai pesanan untuk membuat 1 file CSV Accurate Gabungan (Berharga)">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                            Tandai & Gabung (CSV)
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline" id="adminLogoutBtn" style="display: none; font-size: 0.72rem; padding: 4px 8px; color: #ef4444; border-color: #fca5a5;" onclick="logoutAdmin()">🚪 Logout</button>
+                    </div>
+                </div>
+
+                <!-- Admin Consolidation / Batch Selection Alert Bar -->
+                <div id="adminConsolidationActions" class="consolidation-alert-bar" style="display: none; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-main);">
+                            Pilih Pesanan:
+                        </span>
+                        <span id="adminConsolidateCountBadge" style="font-size: 0.72rem; font-weight: 700; background: #ffffff; color: var(--accent-hover); border: 1px solid var(--accent-border); padding: 2px 8px; border-radius: 9999px;">
+                            0 dipilih
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline" id="adminToggleSelectAllBtn" style="padding: 2px 8px; font-size: 0.72rem; background: #ffffff;" onclick="toggleSelectAllAdminConsolidation()">
+                            Pilih Semua
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="btn btn-sm btn-primary" id="btnAdminConsolidateCSV" title="Buat dan unduh 1 file CSV Accurate untuk semua pesanan yang ditandai" onclick="generateAdminConsolidatedCSV()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Download 1 CSV
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline" style="background: #ffffff;" onclick="cancelAdminConsolidationMode()">Batal</button>
                     </div>
                 </div>
             </div>
@@ -4080,7 +4102,7 @@
             document.getElementById('toggleConsolidateBtn').style.display = 'none';
             populateHistoryList();
             updateConsolidationCount();
-            showToast("Centang pesanan untuk membuat CSV gabungan atau PDF rekap", "info");
+            showToast("Centang pesanan untuk membuat PDF rekapitulasi gabungan", "info");
         }
 
         function cancelConsolidationMode() {
@@ -5331,12 +5353,23 @@
                 const delivDate = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
                 const totalAmount = tx.totalAmount ? `Rp ${formatRupiahNumber(tx.totalAmount)}` : null;
 
+                let checkBlock = '';
+                if (isAdminConsolidationMode) {
+                    const isChecked = selectedAdminHistoryIndices.has(idx);
+                    checkBlock = `<input type="checkbox" class="consolidate-checkbox" data-index="${idx}" ${isChecked ? 'checked' : ''} style="width: 15px; height: 15px; cursor: pointer; margin-right: 6px;" onchange="onAdminConsolidateCheckboxChange(${idx}, this.checked)" onclick="event.stopPropagation()">`;
+                }
+
+                const clickAction = isAdminConsolidationMode ? `toggleAdminCheckbox(${idx})` : `selectAdminOrder(${idx})`;
+
                 return `
-                    <div class="admin-order-item ${isActive ? 'active' : ''}" onclick="selectAdminOrder(${idx})">
+                    <div class="admin-order-item ${isActive ? 'active' : ''}" onclick="${clickAction}" style="${isAdminConsolidationMode ? 'cursor: pointer;' : ''}">
                         <div class="admin-order-item-header">
-                            <span class="admin-order-item-cust" title="${escapeHtml(custName)}">
-                                ${escapeHtml(custName)}
-                            </span>
+                            <div style="display: flex; align-items: center; min-width: 0;">
+                                ${checkBlock}
+                                <span class="admin-order-item-cust" title="${escapeHtml(custName)}">
+                                    ${escapeHtml(custName)}
+                                </span>
+                            </div>
                             ${isLampoh ? '<span class="lampoh-tag">Lampoh</span>' : ''}
                         </div>
                         <div class="admin-order-item-meta">
@@ -5355,6 +5388,146 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // --- Admin Consolidation / Batch Selection Controller ---
+        let isAdminConsolidationMode = false;
+        let selectedAdminHistoryIndices = new Set();
+
+        function toggleAdminConsolidationMode() {
+            isAdminConsolidationMode = true;
+            selectedAdminHistoryIndices.clear();
+            const bar = document.getElementById('adminConsolidationActions');
+            const btn = document.getElementById('toggleAdminConsolidateBtn');
+            if (bar) bar.style.display = 'flex';
+            if (btn) btn.style.display = 'none';
+            renderAdminOrdersList();
+            updateAdminConsolidationCount();
+            showToast("Centang pesanan untuk membuat 1 file CSV Accurate gabungan", "info");
+        }
+
+        function cancelAdminConsolidationMode() {
+            isAdminConsolidationMode = false;
+            selectedAdminHistoryIndices.clear();
+            const bar = document.getElementById('adminConsolidationActions');
+            const btn = document.getElementById('toggleAdminConsolidateBtn');
+            if (bar) bar.style.display = 'none';
+            if (btn) btn.style.display = 'inline-flex';
+            renderAdminOrdersList();
+        }
+
+        function toggleAdminCheckbox(orderIndex) {
+            if (!isAdminConsolidationMode) return;
+            if (selectedAdminHistoryIndices.has(orderIndex)) {
+                selectedAdminHistoryIndices.delete(orderIndex);
+            } else {
+                selectedAdminHistoryIndices.add(orderIndex);
+            }
+            renderAdminOrdersList();
+            updateAdminConsolidationCount();
+        }
+
+        function onAdminConsolidateCheckboxChange(orderIndex, isChecked) {
+            if (isChecked) {
+                selectedAdminHistoryIndices.add(orderIndex);
+            } else {
+                selectedAdminHistoryIndices.delete(orderIndex);
+            }
+            updateAdminConsolidationCount();
+        }
+
+        function toggleSelectAllAdminConsolidation() {
+            const checkboxes = document.querySelectorAll('.admin-orders-scroll input[type="checkbox"]');
+            const totalOnScreen = checkboxes.length;
+            if (totalOnScreen === 0) return;
+
+            if (selectedAdminHistoryIndices.size === totalOnScreen) {
+                selectedAdminHistoryIndices.clear();
+            } else {
+                checkboxes.forEach(cb => {
+                    const idx = parseInt(cb.getAttribute('data-index'), 10);
+                    if (!isNaN(idx)) selectedAdminHistoryIndices.add(idx);
+                });
+            }
+            renderAdminOrdersList();
+            updateAdminConsolidationCount();
+        }
+
+        function updateAdminConsolidationCount() {
+            const count = selectedAdminHistoryIndices.size;
+            const badge = document.getElementById('adminConsolidateCountBadge');
+            const selectAllBtn = document.getElementById('adminToggleSelectAllBtn');
+            if (badge) badge.innerText = `${count} dipilih`;
+
+            const totalCheckboxes = document.querySelectorAll('.admin-orders-scroll input[type="checkbox"]').length;
+            if (selectAllBtn) {
+                selectAllBtn.innerText = (count > 0 && count === totalCheckboxes) ? 'Batal Pilih Semua' : 'Pilih Semua';
+            }
+        }
+
+        function generateAdminConsolidatedCSV() {
+            let selectedIndices = Array.from(selectedAdminHistoryIndices);
+            if (selectedIndices.length === 0) {
+                const checkboxes = document.querySelectorAll('.admin-orders-scroll input[type="checkbox"]:checked');
+                selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'), 10));
+            }
+
+            if (selectedIndices.length === 0) {
+                showToast("Centang minimal 1 pesanan untuk diekspor ke CSV", "warning");
+                return;
+            }
+
+            const selectedTx = selectedIndices
+                .map(idx => transactionHistory[idx])
+                .filter(tx => tx && tx.cart && tx.cart.length > 0);
+
+            if (selectedTx.length === 0) {
+                showToast("Tidak ada barang dalam pesanan yang dipilih", "warning");
+                return;
+            }
+
+            const allItemRows = [];
+            selectedTx.forEach(tx => {
+                const { itemRows } = buildAccurateCsvRowsForTransaction(tx, true);
+                allItemRows.push(...itemRows);
+            });
+
+            if (allItemRows.length === 0) {
+                showToast("Tidak ada baris barang yang dapat diekspor ke CSV", "warning");
+                return;
+            }
+
+            const rows = [ACCURATE_CSV_TEMPLATE_HEADER, ...allItemRows];
+            const csvString = rows.join('\r\n');
+
+            let deliveryTag = "";
+            const uniqueDeliveryDates = [...new Set(selectedTx.map(t => {
+                if (t.deliveryDate && t.deliveryDate.length === 10 && t.deliveryDate.indexOf('-') === 4) {
+                    const parts = t.deliveryDate.split('-');
+                    return `${parts[2]}${parts[1]}${parts[0]}`;
+                }
+                return "";
+            }).filter(Boolean))];
+            if (uniqueDeliveryDates.length === 1) {
+                deliveryTag = ` for ${uniqueDeliveryDates[0]}`;
+            }
+
+            const now = new Date();
+            const timeStamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const fileName = `Accurate Gabungan (Berharga)${deliveryTag} (${selectedTx.length} Pesanan) - ${timeStamp}.csv`;
+
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast(`1 File CSV Gabungan berhasil diunduh (${selectedTx.length} pesanan, ${allItemRows.length} baris barang)`, "success", 4000);
+            cancelAdminConsolidationMode();
         }
 
         function selectAdminOrder(orderIndex) {
@@ -5426,8 +5599,8 @@
                         <td class="admin-subtotal-cell" id="admin-subtotal-${i}">
                             Rp ${formatRupiahNumber(subtotal)}
                         </td>
-                        <td style="text-align: center; width: 90px;">
-                            <label class="skip-db-label" title="Centang jika harga ini khusus untuk order saat ini saja dan TIDAK ingin disimpan ke database harga terakhir">
+                        <td style="text-align: right; width: 68px; padding-right: 6px;">
+                            <label class="skip-db-label" title="Centang jika harga ini khusus untuk order saat ini saja dan TIDAK ingin disimpan ke database harga terakhir" style="justify-content: flex-end;">
                                 <input type="checkbox" id="admin-skip-db-${i}" class="skip-db-checkbox">
                                 <span>Skip DB</span>
                             </label>
@@ -5452,7 +5625,6 @@
                             </div>
                         </div>
                         <div style="display: flex; gap: 6px;">
-                            <button type="button" class="btn btn-sm btn-outline" title="Salin teks rincian pesanan" onclick="copyHistoryText(${orderIndex})">📋 Salin TXT</button>
                             <button type="button" class="btn btn-sm btn-outline" title="Download CSV Accurate dengan harga" onclick="downloadAdminOrderCSV(${orderIndex})">📊 CSV Accurate</button>
                             <button type="button" class="btn btn-sm btn-primary" title="Simpan perubahan harga" onclick="saveAdminOrderPrices(${orderIndex})">💾 Simpan Harga</button>
                         </div>
@@ -5463,12 +5635,12 @@
                         <table class="admin-table">
                             <thead>
                                 <tr>
-                                    <th style="text-align: center;">No</th>
+                                    <th style="text-align: center; width: 30px;">No</th>
                                     <th>Nama Barang</th>
-                                    <th style="text-align: center;">Qty</th>
-                                    <th style="text-align: right;">Harga Satuan</th>
-                                    <th style="text-align: right;">Subtotal</th>
-                                    <th style="text-align: center;" title="Centang jika tidak ingin memperbarui harga di database">Jangan Simpan DB</th>
+                                    <th style="text-align: center; width: 70px;">Qty</th>
+                                    <th style="text-align: right; width: 130px;">Harga Satuan</th>
+                                    <th style="text-align: right; width: 110px;">Subtotal</th>
+                                    <th style="text-align: right; width: 68px; white-space: nowrap; padding-right: 6px;" title="Centang jika tidak ingin memperbarui harga di database">Skip DB</th>
                                 </tr>
                             </thead>
                             <tbody>

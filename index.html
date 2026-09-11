@@ -2916,10 +2916,26 @@
         }
 
         // --- Custom Note Editor Modal Engine ---
-        function openNoteModal(index) {
+        let activeNoteEditContext = 'cart'; // 'cart' or 'admin'
+        let activeNoteAdminOrderIndex = -1;
+
+        function openNoteModal(index, context = 'cart', adminOrderIdx = -1) {
             activeNoteEditIndex = index;
-            const item = orderCart[index];
+            activeNoteEditContext = context;
+            activeNoteAdminOrderIndex = adminOrderIdx;
+
+            let item = null;
+            if (context === 'admin' && adminOrderIdx >= 0 && transactionHistory[adminOrderIdx]) {
+                if (typeof captureCurrentAdminPrices === 'function') {
+                    captureCurrentAdminPrices(adminOrderIdx);
+                }
+                const tx = transactionHistory[adminOrderIdx];
+                item = tx && tx.cart ? tx.cart[index] : null;
+            } else {
+                item = orderCart[index];
+            }
             if (!item) return;
+
             document.getElementById('noteItemTitle').innerText = `${item.name} (${item.qty} ${item.uom})`;
             document.getElementById('noteTextInput').value = item.note || '';
             document.getElementById('noteModal').style.display = 'flex';
@@ -2929,11 +2945,25 @@
         function closeNoteModal() {
             document.getElementById('noteModal').style.display = 'none';
             activeNoteEditIndex = -1;
+            activeNoteEditContext = 'cart';
+            activeNoteAdminOrderIndex = -1;
         }
 
         function saveCurrentNote() {
-            if (activeNoteEditIndex >= 0 && activeNoteEditIndex < orderCart.length) {
-                const noteVal = document.getElementById('noteTextInput').value.trim();
+            const noteVal = document.getElementById('noteTextInput').value.trim();
+            if (activeNoteEditContext === 'admin' && activeNoteAdminOrderIndex >= 0 && transactionHistory[activeNoteAdminOrderIndex]) {
+                const tx = transactionHistory[activeNoteAdminOrderIndex];
+                if (tx.cart && tx.cart[activeNoteEditIndex]) {
+                    tx.cart[activeNoteEditIndex].note = noteVal;
+                    try {
+                        localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                    } catch (e) {}
+                    if (typeof renderAdminOrderPricingDetail === 'function') {
+                        renderAdminOrderPricingDetail(activeNoteAdminOrderIndex);
+                    }
+                    showToast("Catatan barang diperbarui", "success");
+                }
+            } else if (activeNoteEditIndex >= 0 && activeNoteEditIndex < orderCart.length) {
                 orderCart[activeNoteEditIndex].note = noteVal;
                 renderCart();
                 showToast("Catatan disimpan", "success");
@@ -6038,56 +6068,80 @@
             let tableRows = '';
             let currentGrandTotal = 0;
 
-            (tx.cart || []).forEach((cItem, i) => {
-                const qty = parseFloat(cItem.qty) || 0;
-                let unitPrice = 0;
-                if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '') {
-                    unitPrice = parseFloat(cItem.unitPrice) || 0;
-                } else {
-                    unitPrice = getLastPriceForItem(custName, cItem);
-                }
-
-                const subtotal = qty * unitPrice;
-                currentGrandTotal += subtotal;
-
-                tableRows += `
+            if (!tx.cart || tx.cart.length === 0) {
+                tableRows = `
                     <tr>
-                        <td style="text-align: center; color: var(--text-muted); width: 30px;">${i + 1}</td>
-                        <td>
-                            <b>${escapeHtml(cItem.name)}</b>
-                            ${cItem.variant ? `<span style="font-size: 0.68rem; color: var(--text-muted);">(${escapeHtml(cItem.variant)})</span>` : ''}
-                            ${cItem.note ? `<div style="font-size: 0.68rem; color: var(--text-secondary); font-style: italic;">📝 ${escapeHtml(cItem.note)}</div>` : ''}
-                        </td>
-                        <td style="text-align: center; white-space: nowrap;">
-                            <b>${escapeHtml(cItem.qty)}</b> <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cItem.uom)}</span>
-                        </td>
-                        <td style="text-align: right; width: 140px;">
-                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
-                                <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
-                                <input type="text" 
-                                    inputmode="numeric"
-                                    pattern="[0-9]*"
-                                    id="admin-price-input-${i}" 
-                                    class="admin-price-input" 
-                                    value="${unitPrice > 0 ? unitPrice : ''}" 
-                                    placeholder="0" 
-                                    oninput="this.value = this.value.replace(/[^0-9]/g, ''); onAdminPriceInputChanged(${orderIndex})"
-                                    onkeydown="onAdminPriceInputKeyDown(event, ${i}, ${orderIndex})"
-                                >
+                        <td colspan="7" style="text-align: center; padding: 28px 16px; color: var(--text-muted);">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                <span style="font-weight: 600; font-size: 0.84rem; color: var(--text-secondary);">Tidak ada item dalam pesanan ini</span>
                             </div>
-                        </td>
-                        <td class="admin-subtotal-cell" id="admin-subtotal-${i}">
-                            Rp ${formatRupiahNumber(subtotal)}
-                        </td>
-                        <td style="text-align: right; width: 68px; padding-right: 6px;">
-                            <label class="skip-db-label" title="Centang jika harga ini khusus untuk order saat ini saja dan TIDAK ingin disimpan ke database harga terakhir" style="justify-content: flex-end;">
-                                <input type="checkbox" id="admin-skip-db-${i}" class="skip-db-checkbox">
-                                <span>Skip DB</span>
-                            </label>
                         </td>
                     </tr>
                 `;
-            });
+            } else {
+                tx.cart.forEach((cItem, i) => {
+                    const qty = parseFloat(cItem.qty) || 0;
+                    let unitPrice = 0;
+                    if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '') {
+                        unitPrice = parseFloat(cItem.unitPrice) || 0;
+                    } else {
+                        unitPrice = getLastPriceForItem(custName, cItem);
+                    }
+
+                    const subtotal = qty * unitPrice;
+                    currentGrandTotal += subtotal;
+
+                    const noteContent = cItem.note && cItem.note.trim() ?
+                        `<span class="note-tag" onclick="openNoteModal(${i}, 'admin', ${orderIndex})" title="${escapeHtml(cItem.note)}" style="cursor: pointer;">📝 ${escapeHtml(cItem.note)}</span>` :
+                        `<button type="button" class="empty-note-btn" onclick="openNoteModal(${i}, 'admin', ${orderIndex})">+ Catatan</button>`;
+
+                    tableRows += `
+                        <tr>
+                            <td style="text-align: center; color: var(--text-muted); width: 30px;">${i + 1}</td>
+                            <td style="min-width: 160px;">
+                                <b>${escapeHtml(cItem.name)}</b>
+                                ${cItem.variant ? `<span style="font-size: 0.68rem; color: var(--text-muted);">(${escapeHtml(cItem.variant)})</span>` : ''}
+                                <div style="margin-top: 4px;">
+                                    ${noteContent}
+                                </div>
+                            </td>
+                            <td id="admin-qty-cell-${i}" style="text-align: center; white-space: nowrap;">
+                                <b>${escapeHtml(cItem.qty)}</b> <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(cItem.uom)}</span>
+                            </td>
+                            <td style="text-align: right; width: 140px;">
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                    <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
+                                    <input type="text" 
+                                        inputmode="numeric"
+                                        pattern="[0-9]*"
+                                        id="admin-price-input-${i}" 
+                                        class="admin-price-input" 
+                                        value="${unitPrice > 0 ? unitPrice : ''}" 
+                                        placeholder="0" 
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); onAdminPriceInputChanged(${orderIndex})"
+                                        onkeydown="onAdminPriceInputKeyDown(event, ${i}, ${orderIndex})"
+                                    >
+                                </div>
+                            </td>
+                            <td class="admin-subtotal-cell" id="admin-subtotal-${i}">
+                                Rp ${formatRupiahNumber(subtotal)}
+                            </td>
+                            <td style="text-align: right; width: 68px; padding-right: 6px;">
+                                <label class="skip-db-label" title="Centang jika harga ini khusus untuk order saat ini saja dan TIDAK ingin disimpan ke database harga terakhir" style="justify-content: flex-end;">
+                                    <input type="checkbox" id="admin-skip-db-${i}" class="skip-db-checkbox" ${cItem._skipDb ? 'checked' : ''}>
+                                    <span>Skip DB</span>
+                                </label>
+                            </td>
+                            <td style="text-align: center; width: 76px;">
+                                <div class="td-actions" id="admin-action-cell-${i}" style="justify-content: center;">
+                                    <button type="button" class="btn btn-sm btn-outline" title="Ubah Qty" onclick="startAdminInlineEditQty(${orderIndex}, ${i})" style="padding: 2px 6px;">✏️</button>
+                                    <button type="button" class="btn btn-sm btn-danger" title="Hapus" onclick="deleteAdminOrderItem(${orderIndex}, ${i})" style="padding: 2px 6px;">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
 
             container.innerHTML = `
                 <div class="admin-editor-card">
@@ -6121,6 +6175,7 @@
                                     <th style="text-align: right; width: 130px;">Harga Satuan</th>
                                     <th style="text-align: right; width: 110px;">Subtotal</th>
                                     <th style="text-align: right; width: 68px; white-space: nowrap; padding-right: 6px;" title="Centang jika tidak ingin memperbarui harga di database">Skip DB</th>
+                                    <th style="text-align: center; width: 76px;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -6181,6 +6236,145 @@
             targetInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
 
+        function captureCurrentAdminPrices(orderIndex) {
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart) return;
+
+            tx.cart.forEach((cItem, i) => {
+                const inputEl = document.getElementById(`admin-price-input-${i}`);
+                if (inputEl) {
+                    const val = inputEl.value.trim();
+                    if (val === '') {
+                        cItem.unitPrice = 0;
+                        cItem.itemTotal = 0;
+                    } else {
+                        const price = parseFloat(val);
+                        if (!isNaN(price) && price >= 0) {
+                            cItem.unitPrice = price;
+                            const q = parseFloat(cItem.qty) || 0;
+                            cItem.itemTotal = q * price;
+                        }
+                    }
+                }
+                const skipDbEl = document.getElementById(`admin-skip-db-${i}`);
+                if (skipDbEl) {
+                    cItem._skipDb = skipDbEl.checked;
+                }
+            });
+        }
+
+        function startAdminInlineEditQty(orderIndex, itemIndex) {
+            captureCurrentAdminPrices(orderIndex);
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart || !tx.cart[itemIndex]) return;
+
+            const currentQty = tx.cart[itemIndex].qty;
+            const qtyCell = document.getElementById(`admin-qty-cell-${itemIndex}`);
+            const actionCell = document.getElementById(`admin-action-cell-${itemIndex}`);
+            if (!qtyCell || !actionCell) return;
+
+            qtyCell.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <input type="number" id="admin-inline-qty-${itemIndex}" value="${currentQty}" step="0.1" min="0.1" style="width: 58px; height: 26px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.82rem; border: 1px solid var(--primary); border-radius: 4px; outline: none;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(tx.cart[itemIndex].uom)}</span>
+                </div>
+            `;
+            actionCell.innerHTML = `
+                <button type="button" class="btn btn-sm btn-success" style="padding: 2px 6px; font-size: 0.75rem;" onclick="saveAdminInlineEditQty(${orderIndex}, ${itemIndex})">OK</button>
+                <button type="button" class="btn btn-sm btn-outline" style="padding: 2px 6px; font-size: 0.75rem;" onclick="renderAdminOrderPricingDetail(${orderIndex})">Batal</button>
+            `;
+
+            const editInput = document.getElementById(`admin-inline-qty-${itemIndex}`);
+            if (editInput) {
+                editInput.focus();
+                editInput.select();
+                editInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        saveAdminInlineEditQty(orderIndex, itemIndex);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        renderAdminOrderPricingDetail(orderIndex);
+                    }
+                });
+            }
+        }
+
+        function saveAdminInlineEditQty(orderIndex, itemIndex) {
+            const editInput = document.getElementById(`admin-inline-qty-${itemIndex}`);
+            if (!editInput) return;
+
+            const rawQty = parseFloat(editInput.value);
+            if (isNaN(rawQty) || rawQty <= 0) {
+                showToast("Masukkan kuantitas yang valid", "warning");
+                editInput.focus();
+                return;
+            }
+
+            captureCurrentAdminPrices(orderIndex);
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart || !tx.cart[itemIndex]) return;
+
+            const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
+            tx.cart[itemIndex].qty = formattedQty;
+
+            const price = parseFloat(tx.cart[itemIndex].unitPrice) || 0;
+            tx.cart[itemIndex].itemTotal = parseFloat(formattedQty) * price;
+
+            let newTotal = 0;
+            tx.cart.forEach(it => {
+                newTotal += (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+            });
+            tx.totalAmount = newTotal;
+            tx.updatedAt = Date.now();
+
+            try {
+                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+            } catch (e) {
+                console.warn("Gagal menyimpan ke localStorage:", e);
+            }
+
+            renderAdminOrderPricingDetail(orderIndex);
+            renderAdminOrdersList();
+            showToast("Kuantitas barang diperbarui", "success");
+        }
+
+        function deleteAdminOrderItem(orderIndex, itemIndex) {
+            captureCurrentAdminPrices(orderIndex);
+            const tx = transactionHistory[orderIndex];
+            if (!tx || !tx.cart || !tx.cart[itemIndex]) return;
+
+            const itemName = tx.cart[itemIndex].name;
+            showConfirm(
+                "Hapus Barang?",
+                `Yakin ingin menghapus "${itemName}" dari pesanan ini?`,
+                (confirmed) => {
+                    if (!confirmed) return;
+
+                    tx.cart.splice(itemIndex, 1);
+
+                    let newTotal = 0;
+                    tx.cart.forEach(it => {
+                        newTotal += (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+                    });
+                    tx.totalAmount = newTotal;
+                    tx.updatedAt = Date.now();
+
+                    try {
+                        localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+                    } catch (e) {
+                        console.warn("Gagal menyimpan ke localStorage:", e);
+                    }
+
+                    renderAdminOrderPricingDetail(orderIndex);
+                    renderAdminOrdersList();
+                    showToast(`"${itemName}" dihapus dari pesanan`, "info");
+                },
+                "Hapus",
+                true
+            );
+        }
+
         function onAdminPriceInputChanged(orderIndex) {
             const tx = transactionHistory[orderIndex];
             if (!tx || !tx.cart) return;
@@ -6227,7 +6421,7 @@
                 totalAmount += subtotal;
 
                 // If not skipped, update lastPricesMap and queue for cloud sync!
-                const isSkipped = skipDbEl ? skipDbEl.checked : false;
+                const isSkipped = skipDbEl ? skipDbEl.checked : (cItem._skipDb || false);
                 if (!isSkipped && price > 0) {
                     const sku = (cItem.sku || enrichCartItemSku(cItem) || '').trim();
                     const name = (cItem.name || '').trim();
@@ -6250,6 +6444,8 @@
                     });
                 }
             });
+
+            tx.cart.forEach(c => { delete c._skipDb; });
 
             tx.totalAmount = totalAmount;
             tx.updatedAt = Date.now();

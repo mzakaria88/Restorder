@@ -1435,8 +1435,8 @@
         /* ========================================== */
         .admin-layout {
             display: grid;
-            grid-template-columns: 340px 1fr;
-            gap: 1rem;
+            grid-template-columns: 280px 1fr;
+            gap: 0.5rem;
             align-items: start;
         }
 
@@ -3783,6 +3783,12 @@
         // Global Click listener for closing popovers
         document.addEventListener("click", function (e) {
             if (e.target !== searchInput) autocompleteList.innerHTML = '';
+
+            const adminAddInput = document.getElementById('adminNewItemInput');
+            const adminAddList = document.getElementById('adminNewItemAutocompleteList');
+            if (adminAddList && e.target !== adminAddInput && !adminAddList.contains(e.target)) {
+                adminAddList.style.display = 'none';
+            }
             
             const custPopover = document.getElementById('customerPopover');
             if (custPopover.style.display === 'block' && !custPopover.contains(e.target) && !e.target.closest('.meta-chip-item')) {
@@ -4547,9 +4553,12 @@
         }
 
         // --- Telegram Alerts ---
-        function buildTelegramMessage(customer, deliveryDate, cart, isUpdate, changes, orderNum) {
+        function buildTelegramMessage(customer, deliveryDate, cart, isUpdate, changes, orderNum, isAdminUpdate = false) {
             let message = "";
-            if (isUpdate) {
+            if (isAdminUpdate) {
+                message += `👑 *ORDER DIUBAH OLEH ADMIN!*\n`;
+                message += `_(Perubahan item/kuantitas dilakukan oleh Admin)_\n\n`;
+            } else if (isUpdate) {
                 message += `🔄 *ORDER UPDATED!*\n`;
             } else {
                 message += `🚨 *NEW ORDER SAVED!*\n`;
@@ -4559,12 +4568,12 @@
             message += `📅 *Delivery Date:* ${formatDateDisplay(deliveryDate)}\n`;
             if (orderNum) message += `🧾 *Order ID:* ${orderNum}\n\n`;
             
-            if (isUpdate && changes) {
+            if ((isUpdate || isAdminUpdate) && changes) {
                 let hasChanges = changes.added.length > 0 || changes.removed.length > 0 || changes.modified.length > 0;
                 if (hasChanges) {
-                    message += `📝 *CHANGES MADE:*\n`;
+                    message += isAdminUpdate ? `📝 *PERUBAHAN OLEH ADMIN:*\n` : `📝 *CHANGES MADE:*\n`;
                     if (changes.added.length > 0) {
-                        message += `\n➕ *Added:*\n`;
+                        message += isAdminUpdate ? `\n➕ *Barang Ditambahkan:*\n` : `\n➕ *Added:*\n`;
                         changes.added.forEach(item => {
                             message += `- ${item.name} (${item.qty} ${item.uom})`;
                             if (item.note) message += ` _(Note: "${item.note}")_`;
@@ -4572,7 +4581,7 @@
                         });
                     }
                     if (changes.modified.length > 0) {
-                        message += `\n✏️ *Edited:*\n`;
+                        message += isAdminUpdate ? `\n✏️ *Kuantitas/Catatan Diubah:*\n` : `\n✏️ *Edited:*\n`;
                         changes.modified.forEach(item => {
                             message += `- ${item.name}: `;
                             let edits = [];
@@ -4588,7 +4597,7 @@
                         });
                     }
                     if (changes.removed.length > 0) {
-                        message += `\n❌ *Removed:*\n`;
+                        message += isAdminUpdate ? `\n❌ *Barang Dihapus:*\n` : `\n❌ *Removed:*\n`;
                         changes.removed.forEach(item => {
                             message += `- ${item.name} (${item.qty} ${item.uom})`;
                             if (item.note) message += ` _(Note: "${item.note}")_`;
@@ -5905,8 +5914,6 @@
                             <span>#${escapeHtml(tx.orderNumber || 'ID')}</span>
                             <span>&bull;</span>
                             <span>📅 ${delivDate}</span>
-                            <span>&bull;</span>
-                            <span>${tx.cart ? tx.cart.length : 0} item</span>
                         </div>
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
                             <span class="admin-status-badge ${isPriced ? 'admin-status-priced' : 'admin-status-unpriced'}">
@@ -6080,8 +6087,12 @@
                 return;
             }
 
+            // Initialize baseline cart snapshot for detecting item changes by admin
+            if (!tx._adminInitialCart) {
+                tx._adminInitialCart = JSON.parse(JSON.stringify(tx.cart || []));
+            }
+
             const custName = tx.customer || "No Customer";
-            const isLampoh = custName.toLowerCase().includes('lampoh');
             const delivDate = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : 'Unknown Date';
             const orderNo = tx.orderNumber || 'Tanpa ID';
 
@@ -6170,7 +6181,6 @@
                         <div>
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">${escapeHtml(custName)}</span>
-                                ${isLampoh ? '<span class="lampoh-tag">💡 Outlet Lampoh (Harga Terpadu)</span>' : ''}
                             </div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
                                 <span>No. Order: <b>${escapeHtml(orderNo)}</b></span> &bull; 
@@ -6180,7 +6190,7 @@
                         </div>
                         <div style="display: flex; gap: 6px;">
                             <button type="button" class="btn btn-sm btn-outline" title="Download CSV Accurate dengan harga" onclick="downloadAdminOrderCSV(${orderIndex})">📊 CSV Accurate</button>
-                            <button type="button" class="btn btn-sm btn-primary" title="Simpan perubahan harga" onclick="saveAdminOrderPrices(${orderIndex})">💾 Simpan Harga</button>
+                            <button type="button" class="btn btn-sm btn-primary" title="Simpan perubahan pesanan & harga" onclick="saveAdminOrderPrices(${orderIndex})">💾 Simpan Pesanan</button>
                         </div>
                     </div>
 
@@ -6201,6 +6211,77 @@
                             <tbody>
                                 ${tableRows}
                             </tbody>
+                            <tfoot>
+                                <tr class="admin-add-item-row" style="background: #f8fafc; border-top: 2px dashed #cbd5e1;">
+                                    <td style="text-align: center; color: var(--primary); font-weight: 800; font-size: 0.9rem;">
+                                        ➕
+                                    </td>
+                                    <td style="position: relative; min-width: 180px;">
+                                        <div style="position: relative;">
+                                            <input type="text" 
+                                                id="adminNewItemInput" 
+                                                class="admin-add-item-input" 
+                                                placeholder="+ Cari / ketik barang untuk tambah..." 
+                                                autocomplete="off"
+                                                oninput="onAdminNewItemSearchInput(${orderIndex})"
+                                                onkeydown="onAdminNewItemSearchKeyDown(event, ${orderIndex})"
+                                                style="width: 100%; padding: 4px 8px; font-size: 0.78rem; border: 1px solid var(--border); border-radius: var(--radius-sm); outline: none; background: #ffffff;"
+                                            >
+                                            <input type="hidden" id="adminNewItemSku">
+                                            <input type="hidden" id="adminNewItemUom">
+                                            <input type="hidden" id="adminNewItemVariant">
+                                            <div id="adminNewItemAutocompleteList" class="autocomplete-items" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 100; max-height: 220px; overflow-y: auto; background: #ffffff; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px;"></div>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: center; width: 75px;">
+                                        <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                            <input type="number" 
+                                                id="adminNewItemQty" 
+                                                placeholder="0" 
+                                                step="0.1" 
+                                                min="0.1" 
+                                                oninput="onAdminNewItemQtyOrPriceInput()"
+                                                onkeydown="if(event.key==='Enter') adminSubmitNewItem(${orderIndex})"
+                                                style="width: 50px; height: 26px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; outline: none; background: #ffffff;"
+                                            >
+                                            <span id="adminNewItemUomDisplay" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">-</span>
+                                        </div>
+                                    </td>
+                                    <td style="text-align: right; width: 140px;">
+                                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                                            <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
+                                            <input type="text" 
+                                                inputmode="numeric" 
+                                                id="adminNewItemPrice" 
+                                                class="admin-price-input" 
+                                                placeholder="0" 
+                                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); onAdminNewItemQtyOrPriceInput();"
+                                                onkeydown="if(event.key==='Enter') adminSubmitNewItem(${orderIndex})"
+                                                style="width: 80px; height: 26px; font-size: 0.8rem;"
+                                            >
+                                        </div>
+                                    </td>
+                                    <td style="text-align: right; font-size: 0.8rem; font-weight: 800; color: #059669;" id="adminNewItemSubtotalDisplay">
+                                        Rp 0
+                                    </td>
+                                    <td style="text-align: right; width: 68px; padding-right: 6px;">
+                                        <label class="skip-db-label" title="Skip DB" style="justify-content: flex-end;">
+                                            <input type="checkbox" id="adminNewItemSkipDb" class="skip-db-checkbox">
+                                            <span>Skip DB</span>
+                                        </label>
+                                    </td>
+                                    <td style="text-align: center; width: 76px;">
+                                        <button type="button" 
+                                            class="btn btn-sm btn-primary" 
+                                            onclick="adminSubmitNewItem(${orderIndex})" 
+                                            title="Tambahkan barang ke pesanan ini" 
+                                            style="padding: 3px 8px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"
+                                        >
+                                            ➕ Tambah
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
 
@@ -6419,9 +6500,275 @@
             }
         }
 
+        // --- Admin Inline Item Adder Controllers ---
+        let currentFocusAdminNewItem = -1;
+
+        function onAdminNewItemSearchInput(orderIndex) {
+            const inputEl = document.getElementById('adminNewItemInput');
+            const autoList = document.getElementById('adminNewItemAutocompleteList');
+            const uomDisplay = document.getElementById('adminNewItemUomDisplay');
+            const skuInput = document.getElementById('adminNewItemSku');
+            const uomInput = document.getElementById('adminNewItemUom');
+            const varInput = document.getElementById('adminNewItemVariant');
+            if (!inputEl || !autoList) return;
+
+            const val = inputEl.value.trim();
+            autoList.innerHTML = '';
+            currentFocusAdminNewItem = -1;
+
+            if (skuInput) skuInput.value = '';
+            if (uomInput) uomInput.value = '';
+            if (varInput) varInput.value = '';
+            if (uomDisplay) uomDisplay.innerText = '-';
+
+            if (!val) {
+                autoList.style.display = 'none';
+                return;
+            }
+
+            let scoredMatches = (catalogData || []).map(item => {
+                const searchTarget = `${item.name} ${item.uom} ${item.variant || ''}`.trim();
+                return { item, score: getMatchScore(val, searchTarget) };
+            }).filter(m => m.score > 0);
+            scoredMatches.sort((a, b) => b.score - a.score);
+
+            if (scoredMatches.length === 0) {
+                autoList.style.display = 'block';
+                const emptyDiv = document.createElement("div");
+                emptyDiv.style.padding = '8px 12px';
+                emptyDiv.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Barang tidak ada di katalog. Tekan <b>Enter</b> untuk menambahkan barang kustom.</span>`;
+                autoList.appendChild(emptyDiv);
+                return;
+            }
+
+            autoList.style.display = 'block';
+            scoredMatches.slice(0, 15).forEach((match, index) => {
+                const optionDiv = document.createElement("div");
+                optionDiv.className = 'autocomplete-item';
+                if (index === 0) {
+                    optionDiv.classList.add('active');
+                    currentFocusAdminNewItem = 0;
+                }
+                optionDiv.innerHTML = `
+                    <div class="item-info">
+                        <div class="item-title-row">
+                            <span class="item-name">${escapeHtml(match.item.name)}</span>
+                            <span class="item-uom">${escapeHtml(match.item.uom)}</span>
+                        </div>
+                        ${match.item.variant ? `<span class="item-meta">${escapeHtml(match.item.variant)}</span>` : ''}
+                    </div>
+                `;
+                optionDiv.addEventListener("click", () => adminSelectNewItem(orderIndex, match.item));
+                optionDiv.addEventListener("mouseenter", () => {
+                    const allItems = autoList.querySelectorAll('.autocomplete-item');
+                    allItems.forEach(el => el.classList.remove('active'));
+                    optionDiv.classList.add('active');
+                    currentFocusAdminNewItem = index;
+                });
+                autoList.appendChild(optionDiv);
+            });
+            autoList.scrollTop = 0;
+        }
+
+        function onAdminNewItemSearchKeyDown(e, orderIndex) {
+            const autoList = document.getElementById('adminNewItemAutocompleteList');
+            if (!autoList || autoList.style.display === 'none') {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    adminSubmitNewItem(orderIndex);
+                }
+                return;
+            }
+
+            const items = autoList.querySelectorAll('.autocomplete-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    currentFocusAdminNewItem = (currentFocusAdminNewItem + 1) % items.length;
+                    items.forEach((el, idx) => el.classList.toggle('active', idx === currentFocusAdminNewItem));
+                    if (items[currentFocusAdminNewItem]) {
+                        items[currentFocusAdminNewItem].scrollIntoView({ block: 'nearest' });
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (items.length > 0) {
+                    currentFocusAdminNewItem = (currentFocusAdminNewItem - 1 + items.length) % items.length;
+                    items.forEach((el, idx) => el.classList.toggle('active', idx === currentFocusAdminNewItem));
+                    if (items[currentFocusAdminNewItem]) {
+                        items[currentFocusAdminNewItem].scrollIntoView({ block: 'nearest' });
+                    }
+                }
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (items.length > 0 && currentFocusAdminNewItem >= 0 && items[currentFocusAdminNewItem]) {
+                    e.preventDefault();
+                    items[currentFocusAdminNewItem].click();
+                } else if (items.length > 0) {
+                    e.preventDefault();
+                    items[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                autoList.style.display = 'none';
+            }
+        }
+
+        function adminSelectNewItem(orderIndex, item) {
+            const inputEl = document.getElementById('adminNewItemInput');
+            const autoList = document.getElementById('adminNewItemAutocompleteList');
+            const uomDisplay = document.getElementById('adminNewItemUomDisplay');
+            const skuInput = document.getElementById('adminNewItemSku');
+            const uomInput = document.getElementById('adminNewItemUom');
+            const varInput = document.getElementById('adminNewItemVariant');
+            const priceInput = document.getElementById('adminNewItemPrice');
+            const qtyInput = document.getElementById('adminNewItemQty');
+
+            if (inputEl) inputEl.value = `${item.name}${item.variant ? ` (${item.variant})` : ''}`;
+            if (skuInput) skuInput.value = item.sku || '';
+            if (uomInput) uomInput.value = item.uom || 'PCS';
+            if (varInput) varInput.value = item.variant || '';
+            if (uomDisplay) uomDisplay.innerText = item.uom || 'PCS';
+            if (autoList) {
+                autoList.innerHTML = '';
+                autoList.style.display = 'none';
+            }
+
+            // Lookup last price
+            const tx = transactionHistory[orderIndex];
+            const custName = tx ? (tx.customer || 'No Customer') : 'No Customer';
+            const lastPrice = getLastPriceForItem(custName, item);
+            if (priceInput) {
+                priceInput.value = (lastPrice > 0) ? lastPrice : '';
+            }
+
+            onAdminNewItemQtyOrPriceInput();
+
+            if (qtyInput) {
+                qtyInput.focus();
+                qtyInput.select();
+            }
+        }
+
+        function onAdminNewItemQtyOrPriceInput() {
+            const qtyInput = document.getElementById('adminNewItemQty');
+            const priceInput = document.getElementById('adminNewItemPrice');
+            const subtotalEl = document.getElementById('adminNewItemSubtotalDisplay');
+            if (!subtotalEl) return;
+
+            const qty = parseFloat(qtyInput?.value) || 0;
+            const price = parseFloat(priceInput?.value) || 0;
+            const sub = qty * price;
+            subtotalEl.innerText = `Rp ${formatRupiahNumber(sub)}`;
+        }
+
+        function adminSubmitNewItem(orderIndex) {
+            const inputEl = document.getElementById('adminNewItemInput');
+            const qtyInput = document.getElementById('adminNewItemQty');
+            const priceInput = document.getElementById('adminNewItemPrice');
+            const skipDbEl = document.getElementById('adminNewItemSkipDb');
+            const skuInput = document.getElementById('adminNewItemSku');
+            const uomInput = document.getElementById('adminNewItemUom');
+            const varInput = document.getElementById('adminNewItemVariant');
+
+            if (!inputEl || !inputEl.value.trim()) {
+                showToast("Ketik nama barang terlebih dahulu", "warning");
+                if (inputEl) inputEl.focus();
+                return;
+            }
+
+            const rawQty = parseFloat(qtyInput?.value);
+            if (isNaN(rawQty) || rawQty <= 0) {
+                showToast("Masukkan kuantitas yang valid (> 0)", "warning");
+                if (qtyInput) qtyInput.focus();
+                return;
+            }
+
+            captureCurrentAdminPrices(orderIndex);
+            const tx = transactionHistory[orderIndex];
+            if (!tx) return;
+            if (!Array.isArray(tx.cart)) tx.cart = [];
+
+            // Initialize baseline cart if not yet initialized
+            if (!tx._adminInitialCart) {
+                tx._adminInitialCart = JSON.parse(JSON.stringify(tx.cart));
+            }
+
+            const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
+            const unitPrice = parseFloat(priceInput?.value) || 0;
+            const isSkipDb = skipDbEl ? skipDbEl.checked : false;
+
+            let itemName = inputEl.value.trim();
+            let itemVariant = varInput?.value?.trim() || '';
+            let itemSku = skuInput?.value?.trim() || '';
+            let itemUom = uomInput?.value?.trim() || 'PCS';
+
+            // If not selected from catalog, check if text matches an existing catalog item
+            if (!itemSku && catalogData && catalogData.length > 0) {
+                const matchedProduct = catalogData.find(p => {
+                    const fullName = `${p.name}${p.variant ? ` (${p.variant})` : ''}`.toLowerCase();
+                    return fullName === itemName.toLowerCase() || p.name.toLowerCase() === itemName.toLowerCase();
+                });
+                if (matchedProduct) {
+                    itemName = matchedProduct.name;
+                    itemVariant = matchedProduct.variant || '';
+                    itemSku = matchedProduct.sku || '';
+                    itemUom = matchedProduct.uom || 'PCS';
+                }
+            }
+
+            const subtotal = parseFloat(formattedQty) * unitPrice;
+
+            const newItem = {
+                sku: itemSku || enrichCartItemSku({ name: itemName, variant: itemVariant, uom: itemUom }),
+                name: itemName,
+                variant: itemVariant,
+                qty: formattedQty,
+                uom: itemUom,
+                unitPrice: unitPrice,
+                itemTotal: subtotal,
+                _skipDb: isSkipDb,
+                note: ''
+            };
+
+            tx.cart.push(newItem);
+
+            let newTotal = 0;
+            tx.cart.forEach(it => {
+                newTotal += (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+            });
+            tx.totalAmount = newTotal;
+            tx.updatedAt = Date.now();
+
+            try {
+                localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
+            } catch (e) {
+                console.warn("Gagal menyimpan ke localStorage:", e);
+            }
+
+            renderAdminOrderPricingDetail(orderIndex);
+            renderAdminOrdersList();
+            showToast(`"${newItem.name}" (${formattedQty} ${newItem.uom}) berhasil ditambahkan ke pesanan`, "success");
+
+            // Focus new item input for subsequent adds
+            setTimeout(() => {
+                const nextInput = document.getElementById('adminNewItemInput');
+                if (nextInput) nextInput.focus();
+            }, 50);
+        }
+
         function saveAdminOrderPrices(orderIndex) {
             const tx = transactionHistory[orderIndex];
             if (!tx || !tx.cart) return;
+
+            // Check if cart contents (items, quantities, notes) were modified
+            if (!tx._adminInitialCart) {
+                tx._adminInitialCart = JSON.parse(JSON.stringify(tx.cart || []));
+            }
+            const cartChanges = getCartChanges(tx._adminInitialCart, tx.cart);
+            const hasContentChanges = cartChanges && (
+                (cartChanges.added && cartChanges.added.length > 0) ||
+                (cartChanges.removed && cartChanges.removed.length > 0) ||
+                (cartChanges.modified && cartChanges.modified.length > 0)
+            );
 
             const custName = tx.customer || "No Customer";
             const custKey = normalizeCustomerPricingKey(custName);
@@ -6487,12 +6834,49 @@
                 syncLastPricesToGoogleSheet(custKey, itemsToSyncToDb);
             }
 
+            // 3. Telegram notification: ONLY sent if order content/items/quantities were modified by Admin!
+            if (hasContentChanges) {
+                const telegramMsg = buildTelegramMessage(
+                    tx.customer,
+                    tx.deliveryDate,
+                    tx.cart,
+                    true, // isUpdate
+                    cartChanges,
+                    tx.orderNumber,
+                    true // isAdminUpdate = true
+                );
+                const appBaseUrl = window.location.href.split('?')[0];
+                const telegramPayload = {
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: telegramMsg,
+                    appUrl: appBaseUrl,
+                    orderNumber: tx.orderNumber
+                };
+                if (navigator.onLine) {
+                    sendTelegramPayload(telegramPayload).catch(err => console.warn("Telegram notification error:", err));
+                } else if (typeof addToOfflineQueue === 'function') {
+                    addToOfflineQueue({
+                        orderNumber: tx.orderNumber,
+                        transactionData: tx,
+                        telegramPayload: telegramPayload,
+                        updatedAt: Date.now(),
+                        isUpdate: true
+                    });
+                }
+            }
+
+            // Reset baseline cart after successful save
+            tx._adminInitialCart = JSON.parse(JSON.stringify(tx.cart || []));
+
             const statusEl = document.getElementById('adminPriceDbStatus');
             if (statusEl) statusEl.innerText = `📊 Database: ${lastPricesMap.size} harga`;
 
-            const toastMsg = itemsToSyncToDb.length > 0
-                ? `Harga pesanan disimpan (Total: Rp ${formatRupiahNumber(totalAmount)}) & ${itemsToSyncToDb.length} harga dikirim ke database`
-                : `Harga pesanan disimpan (Total: Rp ${formatRupiahNumber(totalAmount)})`;
+            let toastMsg = `Pesanan disimpan (Total: Rp ${formatRupiahNumber(totalAmount)})`;
+            if (hasContentChanges) {
+                toastMsg += " & notifikasi Telegram terkirim (Admin)";
+            } else if (itemsToSyncToDb.length > 0) {
+                toastMsg += ` & ${itemsToSyncToDb.length} harga dikirim ke database`;
+            }
             showToast(toastMsg, "success");
 
             updateAdminUnpricedBadge();

@@ -1609,6 +1609,14 @@
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
         }
 
+        .admin-price-input.price-suggested {
+            color: #94a3b8 !important;
+        }
+
+        .admin-price-input.price-suggested:focus {
+            color: var(--text-main) !important;
+        }
+
         .admin-subtotal-cell {
             font-weight: 700;
             color: var(--text-main);
@@ -4371,7 +4379,7 @@
                                     sCartItem.sku = enrichCartItemSku(sCartItem);
                                 }
                             }
-                            if ((sCartItem.unitPrice === undefined || sCartItem.unitPrice === null || sCartItem.unitPrice === '') && lMatch && lMatch.unitPrice !== undefined && lMatch.unitPrice !== null && lMatch.unitPrice !== '') {
+                            if ((sCartItem.unitPrice === undefined || sCartItem.unitPrice === null || sCartItem.unitPrice === '') && lMatch && !lMatch._isSuggested && lMatch.unitPrice !== undefined && lMatch.unitPrice !== null && lMatch.unitPrice !== '') {
                                 sCartItem.unitPrice = lMatch.unitPrice;
                                 sCartItem.itemTotal = lMatch.itemTotal;
                             }
@@ -5710,6 +5718,78 @@
             return customerName.trim().toUpperCase();
         }
 
+        function normalizeUom(uomStr) {
+            if (!uomStr) return '';
+            const u = String(uomStr).trim().toUpperCase();
+            if (u === 'KG' || u === 'KGS' || u === 'KILOGRAM' || u === 'KILOGRAMS') return 'KG';
+            if (u === 'GR' || u === 'GRAM' || u === 'GRAMS') return 'GR';
+            if (u === 'L' || u === 'LTR' || u === 'LITER' || u === 'LITRE') return 'L';
+            if (u === 'ML' || u === 'MILLILITER') return 'ML';
+            if (u === 'PCS' || u === 'PC' || u === 'PIECE' || u === 'PIECES') return 'PCS';
+            if (u === 'PAK' || u === 'PACK' || u === 'BKS' || u === 'BUNGKUS') return 'PAK';
+            if (u === 'DUS' || u === 'KARTON' || u === 'CTN' || u === 'BOX') return 'DUS';
+            if (u === 'BTL' || u === 'BOTOL') return 'BTL';
+            if (u === 'IKAT' || u === 'IKT') return 'IKAT';
+            if (u === 'SISIR' || u === 'SSR') return 'SISIR';
+            if (u === 'KERANJANG' || u === 'KRJ') return 'KERANJANG';
+            if (u === 'SAK' || u === 'KARUNG') return 'KARUNG';
+            return u;
+        }
+
+        function setPriceRecord(key, price, date = 0) {
+            if (!key || !price || price <= 0) return;
+            const existing = lastPricesMap.get(key);
+            const numDate = Number(date) || 0;
+            if (!existing || numDate >= (existing.date || 0)) {
+                lastPricesMap.set(key, { price: Number(price), date: numDate });
+            }
+        }
+
+        function getPriceRecord(key) {
+            if (!lastPricesMap.has(key)) return null;
+            const val = lastPricesMap.get(key);
+            if (typeof val === 'object' && val !== null) {
+                return val;
+            }
+            return { price: Number(val) || 0, date: 0 };
+        }
+
+        function enrichLastPricesFromHistory() {
+            if (!Array.isArray(transactionHistory) || transactionHistory.length === 0) return;
+
+            transactionHistory.forEach(tx => {
+                if (!tx || !Array.isArray(tx.cart) || tx.cart.length === 0) return;
+                const custKey = normalizeCustomerPricingKey(tx.customer);
+                const isLampoh = custKey === 'LAMPOH';
+                const txTime = Math.max(getOrderDeliveryTime(tx), getOrderUpdatedTime(tx));
+                if (txTime <= 0) return;
+
+                tx.cart.forEach(cItem => {
+                    const price = parseFloat(cItem.unitPrice) || 0;
+                    const uom = normalizeUom(cItem.uom);
+                    const sku = (cItem.sku || enrichCartItemSku(cItem) || '').trim();
+                    const name = (cItem.name || '').trim().toLowerCase();
+
+                    // HANYA merekam harga jika satuan valid, harga > 0, dan bukan suggestion belum tersimpan
+                    if (price > 0 && uom && !cItem._isSuggested) {
+                        if (isLampoh) {
+                            if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${uom}`, price, txTime);
+                            if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${uom}`, price, txTime);
+                        } else {
+                            if (sku) {
+                                setPriceRecord(`${custKey}___SKU:${sku}___UOM:${uom}`, price, txTime);
+                                setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${uom}`, price, txTime);
+                            }
+                            if (name) {
+                                setPriceRecord(`${custKey}___NAME:${name}___UOM:${uom}`, price, txTime);
+                                setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${uom}`, price, txTime);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
         async function fetchLastPricesDatabase(isManualRefresh = false) {
             // Guard ketat: Jangan pernah mengunduh atau menyimpan harga jika sesi admin tidak aktif
             if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive()) {
@@ -5768,6 +5848,7 @@
             const idxUnit = headers.indexOf('ITEM:UNIT');
             let idxPrice = headers.indexOf('ITEM:UNIT PRICE');
             if (idxPrice === -1) idxPrice = headers.indexOf('LAST PRICE');
+            const idxDate = headers.findIndex(h => h.includes('DATE') || h.includes('TANGGAL') || h.includes('TIME'));
 
             lines.slice(1).forEach(line => {
                 const row = parseCsvRow(line);
@@ -5777,35 +5858,38 @@
                 const isLampoh = custKey === 'LAMPOH';
                 const sku = (row[idxSku] || '').trim();
                 const name = (row[idxName] || '').trim().toLowerCase();
-                const unit = (row[idxUnit] || '').trim().toUpperCase();
+                const unit = normalizeUom(row[idxUnit]);
                 const rawPrice = (idxPrice !== -1 ? row[idxPrice] : '') || '';
                 const priceVal = parseFloat(String(rawPrice).replace(/[^0-9.-]/g, '')) || 0;
 
-                if (priceVal > 0) {
+                let rowDate = 1000;
+                if (idxDate !== -1 && row[idxDate]) {
+                    const parsedD = new Date(row[idxDate]).getTime();
+                    if (!isNaN(parsedD) && parsedD > 0) rowDate = parsedD;
+                }
+
+                // ATURAN KETAT SATUAN: Hanya rekam jika satuan valid dan harga > 0
+                if (priceVal > 0 && unit) {
                     if (isLampoh) {
-                        // STRICT ISOLATION: Lampoh prices are strictly stored under LAMPOH key only.
-                        // Never leak into general fallback or non-lampoh keys.
-                        if (sku) lastPricesMap.set(`LAMPOH___SKU:${sku}___${unit}`, priceVal);
-                        if (name) lastPricesMap.set(`LAMPOH___NAME:${name}___${unit}`, priceVal);
+                        // STRICT ISOLATION: Lampoh hanya disimpan pada key LAMPOH dengan satuan spesifik
+                        if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
+                        if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
                     } else {
-                        // Non-Lampoh customer prices:
+                        // Non-Lampoh
                         if (sku) {
-                            lastPricesMap.set(`${custKey}___SKU:${sku}___${unit}`, priceVal);
-                            // Fallback across non-Lampoh only:
-                            if (!lastPricesMap.has(`NON_LAMPOH___SKU:${sku}___${unit}`)) {
-                                lastPricesMap.set(`NON_LAMPOH___SKU:${sku}___${unit}`, priceVal);
-                            }
+                            setPriceRecord(`${custKey}___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
+                            setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
                         }
                         if (name) {
-                            lastPricesMap.set(`${custKey}___NAME:${name}___${unit}`, priceVal);
-                            // Fallback across non-Lampoh only:
-                            if (!lastPricesMap.has(`NON_LAMPOH___NAME:${name}___${unit}`)) {
-                                lastPricesMap.set(`NON_LAMPOH___NAME:${name}___${unit}`, priceVal);
-                            }
+                            setPriceRecord(`${custKey}___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
+                            setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
                         }
                     }
                 }
             });
+
+            // Sinkronkan juga dari riwayat pesanan yang sudah tersimpan agar tanggal terbaru menang
+            enrichLastPricesFromHistory();
         }
 
         function getLastPriceForItem(customerName, cartItem) {
@@ -5813,42 +5897,75 @@
             const isLampoh = custKey === 'LAMPOH';
             const sku = (cartItem.sku || enrichCartItemSku(cartItem) || '').trim();
             const name = (cartItem.name || '').trim().toLowerCase();
-            const uom = (cartItem.uom || '').trim().toUpperCase();
+            const uom = normalizeUom(cartItem.uom);
 
-            if (isLampoh) {
-                // STRICT ISOLATION: Lampoh NEVER inherits or reads non-Lampoh prices.
-                if (sku && lastPricesMap.has(`LAMPOH___SKU:${sku}___${uom}`)) {
-                    return lastPricesMap.get(`LAMPOH___SKU:${sku}___${uom}`);
-                }
-                if (name && lastPricesMap.has(`LAMPOH___NAME:${name}___${uom}`)) {
-                    return lastPricesMap.get(`LAMPOH___NAME:${name}___${uom}`);
-                }
+            // 1. ATURAN KETAT SATUAN: Jika satuan barang kosong/tidak valid, jangan berikan rekomendasi harga!
+            if (!uom) {
                 return 0;
             }
 
-            // NON-LAMPOH: Strict isolation from Lampoh. Only check specific customer or NON_LAMPOH fallback.
-            // 1. Customer specific SKU + UOM
-            if (sku && lastPricesMap.has(`${custKey}___SKU:${sku}___${uom}`)) {
-                return lastPricesMap.get(`${custKey}___SKU:${sku}___${uom}`);
+            let bestEntry = null;
+            function checkCandidate(entry) {
+                if (!entry || !entry.price || entry.price <= 0) return;
+                if (!bestEntry || (entry.date || 0) > (bestEntry.date || 0)) {
+                    bestEntry = entry;
+                }
             }
-            // 2. Customer specific Name + UOM
-            if (name && lastPricesMap.has(`${custKey}___NAME:${name}___${uom}`)) {
-                return lastPricesMap.get(`${custKey}___NAME:${name}___${uom}`);
+
+            // A. Cari dari riwayat pesanan yang tersimpan di aplikasi (prioritas tanggal aktual)
+            if (Array.isArray(transactionHistory) && transactionHistory.length > 0) {
+                transactionHistory.forEach(tx => {
+                    if (!tx || !Array.isArray(tx.cart)) return;
+                    const txCustKey = normalizeCustomerPricingKey(tx.customer);
+                    const txIsLampoh = txCustKey === 'LAMPOH';
+                    if (isLampoh !== txIsLampoh) return; // STRICT ISOLATION: Jangan silang Lampoh vs Non-Lampoh
+
+                    const txTime = Math.max(getOrderDeliveryTime(tx), getOrderUpdatedTime(tx));
+                    if (txTime <= 0) return;
+
+                    // Cek kesesuaian pelanggan khusus jika Non-Lampoh
+                    const isDirectMatch = isLampoh || (txCustKey === custKey);
+
+                    tx.cart.forEach(it => {
+                        const itUom = normalizeUom(it.uom);
+                        if (itUom !== uom) return; // STRICT UOM: Hanya satuan yang persis sama
+                        const itPrice = parseFloat(it.unitPrice) || 0;
+                        if (itPrice <= 0 || it._isSuggested) return;
+                        const itSku = (it.sku || enrichCartItemSku(it) || '').trim();
+                        const itName = (it.name || '').trim().toLowerCase();
+
+                        if ((sku && itSku === sku) || (name && itName === name)) {
+                            if (isDirectMatch) {
+                                checkCandidate({ price: itPrice, date: txTime });
+                            }
+                        }
+                    });
+                });
             }
-            // 3. Fallback across NON_LAMPOH only (NEVER Lampoh)
-            if (sku && lastPricesMap.has(`NON_LAMPOH___SKU:${sku}___${uom}`)) {
-                return lastPricesMap.get(`NON_LAMPOH___SKU:${sku}___${uom}`);
+
+            // B. Cari dari database lastPricesMap
+            if (isLampoh) {
+                if (sku) checkCandidate(getPriceRecord(`LAMPOH___SKU:${sku}___UOM:${uom}`));
+                if (name) checkCandidate(getPriceRecord(`LAMPOH___NAME:${name}___UOM:${uom}`));
+                return bestEntry ? bestEntry.price : 0;
             }
-            // 4. Fallback across NON_LAMPOH only (NEVER Lampoh)
-            if (name && lastPricesMap.has(`NON_LAMPOH___NAME:${name}___${uom}`)) {
-                return lastPricesMap.get(`NON_LAMPOH___NAME:${name}___${uom}`);
-            }
-            return 0;
+
+            // Non-Lampoh direct customer check
+            if (sku) checkCandidate(getPriceRecord(`${custKey}___SKU:${sku}___UOM:${uom}`));
+            if (name) checkCandidate(getPriceRecord(`${custKey}___NAME:${name}___UOM:${uom}`));
+
+            if (bestEntry) return bestEntry.price;
+
+            // C. Fallback sesama Non-Lampoh (jika pelanggan belum ada riwayat sama sekali)
+            if (sku) checkCandidate(getPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${uom}`));
+            if (name) checkCandidate(getPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${uom}`));
+
+            return bestEntry ? bestEntry.price : 0;
         }
 
         function isOrderFullyPriced(tx) {
             if (!tx || !tx.cart || tx.cart.length === 0) return false;
-            return tx.cart.every(ci => parseFloat(ci.unitPrice) > 0);
+            return tx.cart.every(ci => ci.unitPrice !== undefined && ci.unitPrice !== null && parseFloat(ci.unitPrice) > 0 && !ci._isSuggested);
         }
 
         function updateAdminUnpricedBadge() {
@@ -6218,6 +6335,14 @@
             handleAdminPriceKey(event, onChangeCallback);
         }
 
+        function onAdminPriceInputEdit(inputEl, orderIndex) {
+            if (!inputEl) return;
+            inputEl.classList.remove('price-suggested');
+            inputEl.dataset.suggested = '0';
+            formatAdminPriceInput(inputEl);
+            onAdminPriceInputChanged(orderIndex);
+        }
+
         function renderAdminOrderPricingDetail(orderIndex) {
             const container = document.getElementById('adminOrderPricingContainer');
             if (!container) return;
@@ -6255,10 +6380,13 @@
                     const isCustomOrder = (cItem.name || '').trim().toLowerCase() === 'custom order';
                     const qty = parseFloat(cItem.qty) || 0;
                     let unitPrice = 0;
-                    if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '') {
+                    let isSuggested = false;
+                    if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '' && !cItem._isSuggested) {
                         unitPrice = parseFloat(cItem.unitPrice) || 0;
+                        isSuggested = false;
                     } else {
                         unitPrice = getLastPriceForItem(custName, cItem);
+                        isSuggested = (unitPrice > 0);
                     }
 
                     const subtotal = qty * unitPrice;
@@ -6290,11 +6418,12 @@
                                     <input type="text" 
                                         inputmode="numeric"
                                         id="admin-price-input-${i}" 
-                                        class="admin-price-input" 
+                                        class="admin-price-input ${isSuggested ? 'price-suggested' : ''}" 
+                                        data-suggested="${isSuggested ? '1' : '0'}"
                                         value="${unitPrice > 0 ? formatRupiahNumber(unitPrice) : ''}" 
                                         placeholder="0" 
                                         onfocus="this.select()"
-                                        oninput="formatAdminPriceInput(this); onAdminPriceInputChanged(${orderIndex})"
+                                        oninput="onAdminPriceInputEdit(this, ${orderIndex})"
                                         onkeydown="onAdminPriceInputKeyDown(event, ${i}, ${orderIndex})"
                                     >
                                 </div>
@@ -6401,7 +6530,7 @@
                                                 class="admin-price-input" 
                                                 placeholder="0" 
                                                 onfocus="this.select()"
-                                                oninput="formatAdminPriceInput(this); onAdminNewItemQtyOrPriceInput();"
+                                                oninput="this.classList.remove('price-suggested'); this.dataset.suggested = '0'; formatAdminPriceInput(this); onAdminNewItemQtyOrPriceInput();"
                                                 onkeydown="onAdminNewItemPriceKeyDown(event, ${orderIndex})"
                                                 style="width: 95px; height: 26px; font-size: 0.8rem;"
                                             >
@@ -6456,6 +6585,11 @@
                 event.preventDefault();
                 focusAdminPriceRow(currentIndex - 1);
             } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                const inputEl = event.target;
+                if (inputEl) {
+                    inputEl.classList.remove('price-suggested');
+                    inputEl.dataset.suggested = '0';
+                }
                 handleAdminPriceKey(event, () => onAdminPriceInputChanged(orderIndex));
             }
         }
@@ -6476,10 +6610,15 @@
         }
 
         function onAdminNewItemPriceKeyDown(event, orderIndex) {
+            const priceInput = document.getElementById('adminNewItemPrice');
             if (event.key === 'Enter') {
                 event.preventDefault();
                 adminSubmitNewItem(orderIndex);
             } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                if (priceInput) {
+                    priceInput.classList.remove('price-suggested');
+                    priceInput.dataset.suggested = '0';
+                }
                 handleAdminPriceKey(event, () => onAdminNewItemQtyOrPriceInput());
             }
         }
@@ -6514,12 +6653,20 @@
                 const inputEl = document.getElementById(`admin-price-input-${i}`);
                 if (inputEl) {
                     const val = inputEl.value.trim();
+                    const isSuggested = inputEl.dataset.suggested === '1';
                     if (val === '') {
                         cItem.unitPrice = 0;
+                        cItem.itemTotal = 0;
+                        delete cItem._isSuggested;
+                    } else if (isSuggested) {
+                        // Jangan merekam saran harga secara permanen sebelum 'Simpan Pesanan' ditekan!
+                        cItem._isSuggested = true;
+                        delete cItem.unitPrice;
                         cItem.itemTotal = 0;
                     } else {
                         const price = parseAdminPrice(val);
                         cItem.unitPrice = price;
+                        delete cItem._isSuggested;
                         const q = parseFloat(cItem.qty) || 0;
                         cItem.itemTotal = q * price;
                     }
@@ -6806,7 +6953,15 @@
             const custName = tx ? (tx.customer || 'No Customer') : 'No Customer';
             const lastPrice = getLastPriceForItem(custName, item);
             if (priceInput) {
-                priceInput.value = (lastPrice > 0) ? formatRupiahNumber(lastPrice) : '';
+                if (lastPrice > 0) {
+                    priceInput.value = formatRupiahNumber(lastPrice);
+                    priceInput.classList.add('price-suggested');
+                    priceInput.dataset.suggested = '1';
+                } else {
+                    priceInput.value = '';
+                    priceInput.classList.remove('price-suggested');
+                    priceInput.dataset.suggested = '0';
+                }
             }
 
             onAdminNewItemQtyOrPriceInput();
@@ -6863,6 +7018,7 @@
 
             const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
             const unitPrice = parseAdminPrice(priceInput?.value);
+            const isPriceSuggested = priceInput ? (priceInput.dataset.suggested === '1') : false;
             const isSkipDb = skipDbEl ? skipDbEl.checked : false;
 
             let itemName = inputEl.value.trim();
@@ -6892,8 +7048,9 @@
                 variant: itemVariant,
                 qty: formattedQty,
                 uom: itemUom,
-                unitPrice: unitPrice,
-                itemTotal: subtotal,
+                unitPrice: isPriceSuggested ? undefined : unitPrice,
+                _isSuggested: isPriceSuggested,
+                itemTotal: isPriceSuggested ? 0 : subtotal,
                 _skipDb: isSkipDb,
                 note: ''
             };
@@ -6902,7 +7059,9 @@
 
             let newTotal = 0;
             tx.cart.forEach(it => {
-                newTotal += (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+                if (!it._isSuggested) {
+                    newTotal += (parseFloat(it.qty) || 0) * (parseFloat(it.unitPrice) || 0);
+                }
             });
             tx.totalAmount = newTotal;
             tx.updatedAt = Date.now();
@@ -6954,37 +7113,41 @@
                 const qty = parseFloat(cItem.qty) || 0;
                 const subtotal = qty * price;
 
+                // Harga resmi terekam & dikonfirmasi saat admin menekan 'Simpan Pesanan'
                 cItem.unitPrice = price;
+                delete cItem._isSuggested;
                 cItem.itemTotal = subtotal;
                 totalAmount += subtotal;
 
                 // If not skipped, update lastPricesMap and queue for cloud sync!
                 const isSkipped = skipDbEl ? skipDbEl.checked : (cItem._skipDb || false);
-                if (!isSkipped && price > 0) {
+                const normUom = normalizeUom(cItem.uom);
+                const orderDate = Math.max(getOrderDeliveryTime(tx), getOrderUpdatedTime(tx), Date.now());
+
+                if (!isSkipped && price > 0 && normUom) {
                     const sku = (cItem.sku || enrichCartItemSku(cItem) || '').trim();
-                    const name = (cItem.name || '').trim();
-                    const uom = (cItem.uom || '').trim().toUpperCase();
+                    const name = (cItem.name || '').trim().toLowerCase();
 
                     if (isLampoh) {
-                        // STRICT ISOLATION: Only update LAMPOH keys
-                        if (sku) lastPricesMap.set(`LAMPOH___SKU:${sku}___${uom}`, price);
-                        if (name) lastPricesMap.set(`LAMPOH___NAME:${name.toLowerCase()}___${uom}`, price);
+                        // STRICT ISOLATION: Hanya update key LAMPOH dengan satuan spesifik
+                        if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${normUom}`, price, orderDate);
+                        if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${normUom}`, price, orderDate);
                     } else {
-                        // STRICT ISOLATION: Update specific customer and NON_LAMPOH fallback
+                        // STRICT ISOLATION: Update spesifik customer dan NON_LAMPOH fallback
                         if (sku) {
-                            lastPricesMap.set(`${custKey}___SKU:${sku}___${uom}`, price);
-                            lastPricesMap.set(`NON_LAMPOH___SKU:${sku}___${uom}`, price);
+                            setPriceRecord(`${custKey}___SKU:${sku}___UOM:${normUom}`, price, orderDate);
+                            setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${normUom}`, price, orderDate);
                         }
                         if (name) {
-                            lastPricesMap.set(`${custKey}___NAME:${name.toLowerCase()}___${uom}`, price);
-                            lastPricesMap.set(`NON_LAMPOH___NAME:${name.toLowerCase()}___${uom}`, price);
+                            setPriceRecord(`${custKey}___NAME:${name}___UOM:${normUom}`, price, orderDate);
+                            setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${normUom}`, price, orderDate);
                         }
                     }
 
                     itemsToSyncToDb.push({
                         sku: sku,
-                        name: name,
-                        uom: uom,
+                        name: cItem.name || '',
+                        uom: normUom,
                         price: price
                     });
                 }

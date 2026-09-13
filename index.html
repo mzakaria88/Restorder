@@ -1561,8 +1561,38 @@
             vertical-align: middle;
         }
 
+        .admin-custom-order-row {
+            background-color: #fff1f2 !important;
+        }
+
+        .admin-custom-order-row td {
+            border-top: 2px solid #991b1b !important;
+            border-bottom: 2px solid #991b1b !important;
+        }
+
+        .admin-custom-order-row td:first-child {
+            border-left: 3px solid #991b1b !important;
+        }
+
+        .admin-custom-order-row td:last-child {
+            border-right: 3px solid #991b1b !important;
+        }
+
+        .admin-custom-order-badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: #991b1b;
+            border: 1.5px solid #991b1b;
+            background: #fee2e2;
+            border-radius: 3px;
+            padding: 1px 5px;
+            letter-spacing: 0.02em;
+        }
+
         .admin-price-input {
-            width: 110px;
+            width: 105px;
+            max-width: 100%;
             padding: 5px 8px;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
@@ -1570,6 +1600,7 @@
             font-weight: 700;
             text-align: right;
             outline: none;
+            font-variant-numeric: tabular-nums;
             transition: border-color var(--transition-fast);
         }
 
@@ -5741,7 +5772,9 @@
             lines.slice(1).forEach(line => {
                 const row = parseCsvRow(line);
                 if (!row || row.length === 0) return;
-                const custKey = normalizeCustomerPricingKey(row[idxCust] || '');
+                const rawCust = row[idxCust] || '';
+                const custKey = normalizeCustomerPricingKey(rawCust);
+                const isLampoh = custKey === 'LAMPOH';
                 const sku = (row[idxSku] || '').trim();
                 const name = (row[idxName] || '').trim().toLowerCase();
                 const unit = (row[idxUnit] || '').trim().toUpperCase();
@@ -5749,16 +5782,26 @@
                 const priceVal = parseFloat(String(rawPrice).replace(/[^0-9.-]/g, '')) || 0;
 
                 if (priceVal > 0) {
-                    if (sku) {
-                        lastPricesMap.set(`${custKey}___SKU:${sku}___${unit}`, priceVal);
-                        if (!lastPricesMap.has(`*___SKU:${sku}___${unit}`)) {
-                            lastPricesMap.set(`*___SKU:${sku}___${unit}`, priceVal);
+                    if (isLampoh) {
+                        // STRICT ISOLATION: Lampoh prices are strictly stored under LAMPOH key only.
+                        // Never leak into general fallback or non-lampoh keys.
+                        if (sku) lastPricesMap.set(`LAMPOH___SKU:${sku}___${unit}`, priceVal);
+                        if (name) lastPricesMap.set(`LAMPOH___NAME:${name}___${unit}`, priceVal);
+                    } else {
+                        // Non-Lampoh customer prices:
+                        if (sku) {
+                            lastPricesMap.set(`${custKey}___SKU:${sku}___${unit}`, priceVal);
+                            // Fallback across non-Lampoh only:
+                            if (!lastPricesMap.has(`NON_LAMPOH___SKU:${sku}___${unit}`)) {
+                                lastPricesMap.set(`NON_LAMPOH___SKU:${sku}___${unit}`, priceVal);
+                            }
                         }
-                    }
-                    if (name) {
-                        lastPricesMap.set(`${custKey}___NAME:${name}___${unit}`, priceVal);
-                        if (!lastPricesMap.has(`*___NAME:${name}___${unit}`)) {
-                            lastPricesMap.set(`*___NAME:${name}___${unit}`, priceVal);
+                        if (name) {
+                            lastPricesMap.set(`${custKey}___NAME:${name}___${unit}`, priceVal);
+                            // Fallback across non-Lampoh only:
+                            if (!lastPricesMap.has(`NON_LAMPOH___NAME:${name}___${unit}`)) {
+                                lastPricesMap.set(`NON_LAMPOH___NAME:${name}___${unit}`, priceVal);
+                            }
                         }
                     }
                 }
@@ -5767,25 +5810,38 @@
 
         function getLastPriceForItem(customerName, cartItem) {
             const custKey = normalizeCustomerPricingKey(customerName);
+            const isLampoh = custKey === 'LAMPOH';
             const sku = (cartItem.sku || enrichCartItemSku(cartItem) || '').trim();
             const name = (cartItem.name || '').trim().toLowerCase();
             const uom = (cartItem.uom || '').trim().toUpperCase();
 
-            // 1. Customer + SKU + UOM
+            if (isLampoh) {
+                // STRICT ISOLATION: Lampoh NEVER inherits or reads non-Lampoh prices.
+                if (sku && lastPricesMap.has(`LAMPOH___SKU:${sku}___${uom}`)) {
+                    return lastPricesMap.get(`LAMPOH___SKU:${sku}___${uom}`);
+                }
+                if (name && lastPricesMap.has(`LAMPOH___NAME:${name}___${uom}`)) {
+                    return lastPricesMap.get(`LAMPOH___NAME:${name}___${uom}`);
+                }
+                return 0;
+            }
+
+            // NON-LAMPOH: Strict isolation from Lampoh. Only check specific customer or NON_LAMPOH fallback.
+            // 1. Customer specific SKU + UOM
             if (sku && lastPricesMap.has(`${custKey}___SKU:${sku}___${uom}`)) {
                 return lastPricesMap.get(`${custKey}___SKU:${sku}___${uom}`);
             }
-            // 2. Customer + Name + UOM
+            // 2. Customer specific Name + UOM
             if (name && lastPricesMap.has(`${custKey}___NAME:${name}___${uom}`)) {
                 return lastPricesMap.get(`${custKey}___NAME:${name}___${uom}`);
             }
-            // 3. General + SKU + UOM
-            if (sku && lastPricesMap.has(`*___SKU:${sku}___${uom}`)) {
-                return lastPricesMap.get(`*___SKU:${sku}___${uom}`);
+            // 3. Fallback across NON_LAMPOH only (NEVER Lampoh)
+            if (sku && lastPricesMap.has(`NON_LAMPOH___SKU:${sku}___${uom}`)) {
+                return lastPricesMap.get(`NON_LAMPOH___SKU:${sku}___${uom}`);
             }
-            // 4. General + Name + UOM
-            if (name && lastPricesMap.has(`*___NAME:${name}___${uom}`)) {
-                return lastPricesMap.get(`*___NAME:${name}___${uom}`);
+            // 4. Fallback across NON_LAMPOH only (NEVER Lampoh)
+            if (name && lastPricesMap.has(`NON_LAMPOH___NAME:${name}___${uom}`)) {
+                return lastPricesMap.get(`NON_LAMPOH___NAME:${name}___${uom}`);
             }
             return 0;
         }
@@ -5891,6 +5947,8 @@
                 const delivDate = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
                 const totalAmount = tx.totalAmount ? `Rp ${formatRupiahNumber(tx.totalAmount)}` : null;
 
+                const hasCustomOrder = tx.cart && tx.cart.some(c => (c.name || '').trim().toLowerCase() === 'custom order');
+
                 let checkBlock = '';
                 if (isAdminConsolidationMode) {
                     const isChecked = selectedAdminHistoryIndices.has(idx);
@@ -5914,6 +5972,7 @@
                             <span>#${escapeHtml(tx.orderNumber || 'ID')}</span>
                             <span>&bull;</span>
                             <span>📅 ${delivDate}</span>
+                            ${hasCustomOrder ? '<span>&bull;</span><span style="font-size: 0.65rem; font-weight: 800; color: #991b1b; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 3px; padding: 0 4px;">Custom Order</span>' : ''}
                         </div>
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
                             <span class="admin-status-badge ${isPriced ? 'admin-status-priced' : 'admin-status-unpriced'}">
@@ -6077,6 +6136,88 @@
             return num.toLocaleString('id-ID');
         }
 
+        function parseAdminPrice(val) {
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            const clean = String(val || '').replace(/[^0-9]/g, '');
+            return clean ? (parseInt(clean, 10) || 0) : 0;
+        }
+
+        function formatAdminPriceInput(inputEl) {
+            if (!inputEl) return 0;
+            const rawVal = inputEl.value;
+            const cursorPos = inputEl.selectionStart !== null && inputEl.selectionStart !== undefined ? inputEl.selectionStart : rawVal.length;
+            const digitsBeforeCursor = (rawVal.slice(0, cursorPos).replace(/\D/g, '')).length;
+
+            const cleanDigits = rawVal.replace(/\D/g, '');
+            if (!cleanDigits) {
+                inputEl.value = '';
+                return 0;
+            }
+
+            const num = parseInt(cleanDigits, 10);
+            const formatted = formatRupiahNumber(num);
+            inputEl.value = formatted;
+
+            let newCursorPos = 0;
+            let countedDigits = 0;
+            while (newCursorPos < formatted.length && countedDigits < digitsBeforeCursor) {
+                if (/\d/.test(formatted[newCursorPos])) {
+                    countedDigits++;
+                }
+                newCursorPos++;
+            }
+            try {
+                if (typeof inputEl.setSelectionRange === 'function') {
+                    inputEl.setSelectionRange(newCursorPos, newCursorPos);
+                }
+            } catch (e) {}
+
+            return num;
+        }
+
+        function handleAdminPriceKey(event, onChangeCallback) {
+            const input = event.target;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+
+            if (event.key === 'Backspace') {
+                if (start === end && start > 0 && input.value[start - 1] === '.') {
+                    event.preventDefault();
+                    const val = input.value;
+                    input.value = val.slice(0, start - 2) + val.slice(start);
+                    const targetPos = Math.max(0, start - 2);
+                    try {
+                        if (typeof input.setSelectionRange === 'function') {
+                            input.setSelectionRange(targetPos, targetPos);
+                        }
+                    } catch (e) {}
+                    formatAdminPriceInput(input);
+                    if (typeof onChangeCallback === 'function') {
+                        onChangeCallback();
+                    }
+                }
+            } else if (event.key === 'Delete') {
+                if (start === end && start < input.value.length && input.value[start] === '.') {
+                    event.preventDefault();
+                    const val = input.value;
+                    input.value = val.slice(0, start) + val.slice(start + 2);
+                    try {
+                        if (typeof input.setSelectionRange === 'function') {
+                            input.setSelectionRange(start, start);
+                        }
+                    } catch (e) {}
+                    formatAdminPriceInput(input);
+                    if (typeof onChangeCallback === 'function') {
+                        onChangeCallback();
+                    }
+                }
+            }
+        }
+
+        function handleAdminPriceBackspace(event, onChangeCallback) {
+            handleAdminPriceKey(event, onChangeCallback);
+        }
+
         function renderAdminOrderPricingDetail(orderIndex) {
             const container = document.getElementById('adminOrderPricingContainer');
             if (!container) return;
@@ -6111,6 +6252,7 @@
                 `;
             } else {
                 tx.cart.forEach((cItem, i) => {
+                    const isCustomOrder = (cItem.name || '').trim().toLowerCase() === 'custom order';
                     const qty = parseFloat(cItem.qty) || 0;
                     let unitPrice = 0;
                     if (cItem.unitPrice !== undefined && cItem.unitPrice !== null && cItem.unitPrice !== '') {
@@ -6127,11 +6269,14 @@
                         `<button type="button" class="empty-note-btn" onclick="openNoteModal(${i}, 'admin', ${orderIndex})">+ Catatan</button>`;
 
                     tableRows += `
-                        <tr>
-                            <td style="text-align: center; color: var(--text-muted); width: 30px;">${i + 1}</td>
+                        <tr ${isCustomOrder ? 'class="admin-custom-order-row"' : ''}>
+                            <td style="text-align: center; color: ${isCustomOrder ? '#991b1b; font-weight: 700;' : 'var(--text-muted);'} width: 30px;">${i + 1}</td>
                             <td style="min-width: 160px;">
-                                <b>${escapeHtml(cItem.name)}</b>
-                                ${cItem.variant ? `<span style="font-size: 0.68rem; color: var(--text-muted);">(${escapeHtml(cItem.variant)})</span>` : ''}
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <b style="${isCustomOrder ? 'color: #991b1b;' : ''}">${escapeHtml(cItem.name)}</b>
+                                    ${isCustomOrder ? '<span class="admin-custom-order-badge">CUSTOM ORDER</span>' : ''}
+                                    ${cItem.variant ? `<span style="font-size: 0.68rem; color: var(--text-muted);">(${escapeHtml(cItem.variant)})</span>` : ''}
+                                </div>
                                 <div style="margin-top: 4px;">
                                     ${noteContent}
                                 </div>
@@ -6144,12 +6289,12 @@
                                     <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
                                     <input type="text" 
                                         inputmode="numeric"
-                                        pattern="[0-9]*"
                                         id="admin-price-input-${i}" 
                                         class="admin-price-input" 
-                                        value="${unitPrice > 0 ? unitPrice : ''}" 
+                                        value="${unitPrice > 0 ? formatRupiahNumber(unitPrice) : ''}" 
                                         placeholder="0" 
-                                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); onAdminPriceInputChanged(${orderIndex})"
+                                        onfocus="this.select()"
+                                        oninput="formatAdminPriceInput(this); onAdminPriceInputChanged(${orderIndex})"
                                         onkeydown="onAdminPriceInputKeyDown(event, ${i}, ${orderIndex})"
                                     >
                                 </div>
@@ -6235,13 +6380,13 @@
                                     </td>
                                     <td style="text-align: center; width: 75px;">
                                         <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
-                                            <input type="number" 
+                                             <input type="number" 
                                                 id="adminNewItemQty" 
                                                 placeholder="0" 
                                                 step="0.1" 
                                                 min="0.1" 
                                                 oninput="onAdminNewItemQtyOrPriceInput()"
-                                                onkeydown="if(event.key==='Enter') adminSubmitNewItem(${orderIndex})"
+                                                onkeydown="onAdminNewItemQtyKeyDown(event, ${orderIndex})"
                                                 style="width: 50px; height: 26px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; outline: none; background: #ffffff;"
                                             >
                                             <span id="adminNewItemUomDisplay" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">-</span>
@@ -6255,9 +6400,10 @@
                                                 id="adminNewItemPrice" 
                                                 class="admin-price-input" 
                                                 placeholder="0" 
-                                                oninput="this.value = this.value.replace(/[^0-9]/g, ''); onAdminNewItemQtyOrPriceInput();"
-                                                onkeydown="if(event.key==='Enter') adminSubmitNewItem(${orderIndex})"
-                                                style="width: 80px; height: 26px; font-size: 0.8rem;"
+                                                onfocus="this.select()"
+                                                oninput="formatAdminPriceInput(this); onAdminNewItemQtyOrPriceInput();"
+                                                onkeydown="onAdminNewItemPriceKeyDown(event, ${orderIndex})"
+                                                style="width: 95px; height: 26px; font-size: 0.8rem;"
                                             >
                                         </div>
                                     </td>
@@ -6309,30 +6455,53 @@
             } else if (event.key === 'ArrowUp') {
                 event.preventDefault();
                 focusAdminPriceRow(currentIndex - 1);
+            } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                handleAdminPriceKey(event, () => onAdminPriceInputChanged(orderIndex));
+            }
+        }
+
+        function onAdminNewItemQtyKeyDown(event, orderIndex) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const priceInput = document.getElementById('adminNewItemPrice');
+                if (priceInput && (!priceInput.value || parseAdminPrice(priceInput.value) === 0)) {
+                    priceInput.focus();
+                    try {
+                        if (typeof priceInput.select === 'function') priceInput.select();
+                    } catch (e) {}
+                } else {
+                    adminSubmitNewItem(orderIndex);
+                }
+            }
+        }
+
+        function onAdminNewItemPriceKeyDown(event, orderIndex) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                adminSubmitNewItem(orderIndex);
+            } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                handleAdminPriceKey(event, () => onAdminNewItemQtyOrPriceInput());
             }
         }
 
         function focusAdminPriceRow(targetIndex) {
             if (targetIndex < 0) return;
             const targetInput = document.getElementById(`admin-price-input-${targetIndex}`);
-            if (!targetInput) return;
+            if (!targetInput) {
+                // If reached past last row, seamlessly move focus to inline new item adder
+                const adderInput = document.getElementById('adminNewItemInput');
+                if (adderInput) {
+                    adderInput.focus();
+                }
+                return;
+            }
 
             targetInput.focus();
-            const valLen = targetInput.value ? targetInput.value.length : 0;
             try {
-                if (typeof targetInput.setSelectionRange === 'function') {
-                    targetInput.setSelectionRange(valLen, valLen);
+                if (typeof targetInput.select === 'function') {
+                    targetInput.select();
                 }
             } catch (e) {}
-
-            setTimeout(() => {
-                try {
-                    const len = targetInput.value ? targetInput.value.length : 0;
-                    if (typeof targetInput.setSelectionRange === 'function') {
-                        targetInput.setSelectionRange(len, len);
-                    }
-                } catch (e) {}
-            }, 10);
 
             targetInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
@@ -6349,12 +6518,10 @@
                         cItem.unitPrice = 0;
                         cItem.itemTotal = 0;
                     } else {
-                        const price = parseFloat(val);
-                        if (!isNaN(price) && price >= 0) {
-                            cItem.unitPrice = price;
-                            const q = parseFloat(cItem.qty) || 0;
-                            cItem.itemTotal = q * price;
-                        }
+                        const price = parseAdminPrice(val);
+                        cItem.unitPrice = price;
+                        const q = parseFloat(cItem.qty) || 0;
+                        cItem.itemTotal = q * price;
                     }
                 }
                 const skipDbEl = document.getElementById(`admin-skip-db-${i}`);
@@ -6435,6 +6602,7 @@
                 console.warn("Gagal menyimpan ke localStorage:", e);
             }
 
+            updateAdminUnpricedBadge();
             renderAdminOrderPricingDetail(orderIndex);
             renderAdminOrdersList();
             showToast("Kuantitas barang diperbarui", "success");
@@ -6467,6 +6635,7 @@
                         console.warn("Gagal menyimpan ke localStorage:", e);
                     }
 
+                    updateAdminUnpricedBadge();
                     renderAdminOrderPricingDetail(orderIndex);
                     renderAdminOrdersList();
                     showToast(`"${itemName}" dihapus dari pesanan`, "info");
@@ -6484,7 +6653,7 @@
             tx.cart.forEach((cItem, i) => {
                 const qty = parseFloat(cItem.qty) || 0;
                 const inputEl = document.getElementById(`admin-price-input-${i}`);
-                const price = parseFloat(inputEl?.value) || 0;
+                const price = parseAdminPrice(inputEl?.value);
                 const subtotal = qty * price;
                 grandTotal += subtotal;
 
@@ -6637,7 +6806,7 @@
             const custName = tx ? (tx.customer || 'No Customer') : 'No Customer';
             const lastPrice = getLastPriceForItem(custName, item);
             if (priceInput) {
-                priceInput.value = (lastPrice > 0) ? lastPrice : '';
+                priceInput.value = (lastPrice > 0) ? formatRupiahNumber(lastPrice) : '';
             }
 
             onAdminNewItemQtyOrPriceInput();
@@ -6655,7 +6824,7 @@
             if (!subtotalEl) return;
 
             const qty = parseFloat(qtyInput?.value) || 0;
-            const price = parseFloat(priceInput?.value) || 0;
+            const price = parseAdminPrice(priceInput?.value);
             const sub = qty * price;
             subtotalEl.innerText = `Rp ${formatRupiahNumber(sub)}`;
         }
@@ -6693,7 +6862,7 @@
             }
 
             const formattedQty = Number.isInteger(rawQty) ? rawQty.toString() : rawQty.toFixed(2);
-            const unitPrice = parseFloat(priceInput?.value) || 0;
+            const unitPrice = parseAdminPrice(priceInput?.value);
             const isSkipDb = skipDbEl ? skipDbEl.checked : false;
 
             let itemName = inputEl.value.trim();
@@ -6744,6 +6913,7 @@
                 console.warn("Gagal menyimpan ke localStorage:", e);
             }
 
+            updateAdminUnpricedBadge();
             renderAdminOrderPricingDetail(orderIndex);
             renderAdminOrdersList();
             showToast(`"${newItem.name}" (${formattedQty} ${newItem.uom}) berhasil ditambahkan ke pesanan`, "success");
@@ -6772,6 +6942,7 @@
 
             const custName = tx.customer || "No Customer";
             const custKey = normalizeCustomerPricingKey(custName);
+            const isLampoh = custKey === 'LAMPOH';
 
             let totalAmount = 0;
             const itemsToSyncToDb = [];
@@ -6779,7 +6950,7 @@
             tx.cart.forEach((cItem, i) => {
                 const inputEl = document.getElementById(`admin-price-input-${i}`);
                 const skipDbEl = document.getElementById(`admin-skip-db-${i}`);
-                const price = parseFloat(inputEl?.value) || 0;
+                const price = parseAdminPrice(inputEl?.value);
                 const qty = parseFloat(cItem.qty) || 0;
                 const subtotal = qty * price;
 
@@ -6794,13 +6965,20 @@
                     const name = (cItem.name || '').trim();
                     const uom = (cItem.uom || '').trim().toUpperCase();
 
-                    if (sku) {
-                        lastPricesMap.set(`${custKey}___SKU:${sku}___${uom}`, price);
-                        lastPricesMap.set(`*___SKU:${sku}___${uom}`, price);
-                    }
-                    if (name) {
-                        lastPricesMap.set(`${custKey}___NAME:${name.toLowerCase()}___${uom}`, price);
-                        lastPricesMap.set(`*___NAME:${name.toLowerCase()}___${uom}`, price);
+                    if (isLampoh) {
+                        // STRICT ISOLATION: Only update LAMPOH keys
+                        if (sku) lastPricesMap.set(`LAMPOH___SKU:${sku}___${uom}`, price);
+                        if (name) lastPricesMap.set(`LAMPOH___NAME:${name.toLowerCase()}___${uom}`, price);
+                    } else {
+                        // STRICT ISOLATION: Update specific customer and NON_LAMPOH fallback
+                        if (sku) {
+                            lastPricesMap.set(`${custKey}___SKU:${sku}___${uom}`, price);
+                            lastPricesMap.set(`NON_LAMPOH___SKU:${sku}___${uom}`, price);
+                        }
+                        if (name) {
+                            lastPricesMap.set(`${custKey}___NAME:${name.toLowerCase()}___${uom}`, price);
+                            lastPricesMap.set(`NON_LAMPOH___NAME:${name.toLowerCase()}___${uom}`, price);
+                        }
                     }
 
                     itemsToSyncToDb.push({

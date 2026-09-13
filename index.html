@@ -1955,6 +1955,335 @@
             border: 1px solid var(--border);
         }
 
+        .report-price-uom-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 2px 7px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            line-height: 1.2;
+            user-select: none;
+        }
+
+        .report-price-uom-btn:hover {
+            color: var(--text-main);
+            border-color: #94a3b8;
+            background: #f1f5f9;
+        }
+
+        .report-price-uom-btn.active {
+            background: var(--primary, #2563eb);
+            color: #ffffff;
+            border-color: var(--primary, #2563eb);
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Reports Sub-Navigation Bar */
+        .report-subnav-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            overflow-x: auto;
+        }
+
+        .report-subnav-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .report-subnav-btn:hover {
+            border-color: #94a3b8;
+            color: var(--text-main);
+            background: #f8fafc;
+        }
+
+        .report-subnav-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+            box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+        }
+
+        .reports-subtab-panel {
+            animation: fadeInReport 0.2s ease;
+        }
+
+        @keyframes fadeInReport {
+            from { opacity: 0; transform: translateY(3px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Calendar View Styles */
+        .report-calendar-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .report-calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 1rem;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .report-calendar-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .report-calendar-nav-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .report-calendar-nav-btn:hover {
+            border-color: #94a3b8;
+            background: #f1f5f9;
+        }
+
+        .report-calendar-month-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-main);
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .report-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 5px;
+            user-select: none;
+        }
+
+        .report-calendar-day-head {
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding: 6px 2px;
+            background: #f8fafc;
+            border-radius: var(--radius-sm);
+        }
+
+        .report-calendar-day-head.weekend {
+            color: #ef4444;
+        }
+
+        .report-calendar-cell {
+            min-height: 88px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+
+        .report-calendar-cell:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+            z-index: 2;
+        }
+
+        .report-calendar-cell.other-month {
+            background: #f8fafc;
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .report-calendar-cell.today {
+            border: 2px solid #2563eb;
+        }
+
+        .report-calendar-cell.has-orders {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .report-calendar-cell.highlight-commodity {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+        .report-calendar-day-num {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .report-calendar-cell.other-month .report-calendar-day-num {
+            color: var(--text-muted);
+        }
+
+        .report-calendar-qty-bubble {
+            border-radius: 9999px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: auto;
+            box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3);
+            transition: transform 0.2s ease;
+            text-align: center;
+            padding: 3px 5px;
+            line-height: 1.1;
+        }
+
+        .report-calendar-qty-bubble.normal-order {
+            background: #10b981;
+            box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3);
+        }
+
+        .report-calendar-cell:hover .report-calendar-qty-bubble {
+            transform: scale(1.12);
+        }
+
+        .report-calendar-omset-badge {
+            font-size: 0.66rem;
+            font-weight: 700;
+            color: #059669;
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Reports Table Styles */
+        .report-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .report-data-table th {
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .report-data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .report-data-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .report-data-table tfoot td {
+            background: #f1f5f9;
+            font-weight: 800;
+            border-top: 2px solid #cbd5e1;
+            border-bottom: none;
+            color: var(--text-main);
+        }
+
+        .report-table-model-btn {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .report-table-model-btn.active {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        /* Calendar Day Detail Modal */
+        .report-day-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.45);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(2px);
+        }
+
+        .report-day-modal-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 680px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            animation: modalPop 0.2s ease;
+        }
+
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.97); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+
+
         /* Toast Notifications */
         #toastContainer {
             position: fixed;
@@ -2501,118 +2830,255 @@
                 </div>
             </div>
 
-            <!-- KPI Cards Grid -->
-            <div class="report-kpi-grid">
-                <!-- KPI 1: Total Omset -->
-                <div class="report-kpi-card" style="border-left: 4px solid #10b981;">
-                    <div class="report-kpi-title">
-                        <span>💰 Total Omset</span>
-                    </div>
-                    <div class="report-kpi-value" id="kpiTotalRevenueDisplay" style="color: #059669;">Rp 0</div>
-                    <div class="report-kpi-sub" id="kpiPricedOrdersSub">0 pesanan berharga</div>
-                </div>
-
-                <!-- KPI 2: AOV -->
-                <div class="report-kpi-card" style="border-left: 4px solid #3b82f6;">
-                    <div class="report-kpi-title">
-                        <span>📈 Average Order Value (AOV)</span>
-                    </div>
-                    <div class="report-kpi-value" id="kpiAovDisplay" style="color: #2563eb;">Rp 0</div>
-                    <div class="report-kpi-sub">Rata-rata omset per pesanan</div>
-                </div>
-
-                <!-- KPI 3: Total Pesanan -->
-                <div class="report-kpi-card" style="border-left: 4px solid #8b5cf6;">
-                    <div class="report-kpi-title">
-                        <span>🛍️ Total Pesanan</span>
-                    </div>
-                    <div class="report-kpi-value" id="kpiTotalOrdersDisplay" style="color: #7c3aed;">0</div>
-                    <div class="report-kpi-sub" id="kpiOrdersRateSub">0 transaksi dalam rentang ini</div>
-                </div>
-
-                <!-- KPI 4: Total Volume Qty -->
-                <div class="report-kpi-card" style="border-left: 4px solid #f59e0b;">
-                    <div class="report-kpi-title">
-                        <span>📦 Total Kuantitas Barang</span>
-                    </div>
-                    <div class="report-kpi-value" id="kpiTotalVolumeDisplay" style="color: #d97706;">0</div>
-                    <div class="report-kpi-sub" id="kpiTotalLineItemsSub">0 baris item keranjang</div>
-                </div>
+            <!-- Subnav Switcher -->
+            <div class="report-subnav-bar">
+                <button type="button" class="report-subnav-btn active" id="reportSubnavBtn-dashboard" onclick="switchReportSubTab('dashboard')">
+                    📊 Dashboard (Ringkasan)
+                </button>
+                <button type="button" class="report-subnav-btn" id="reportSubnavBtn-grafik" onclick="switchReportSubTab('grafik')">
+                    📈 Grafik & Kalender
+                </button>
+                <button type="button" class="report-subnav-btn" id="reportSubnavBtn-tabel" onclick="switchReportSubTab('tabel')">
+                    📋 Tabel Laporan
+                </button>
             </div>
 
-            <!-- Row 2: Pola Jam Pemesanan & Distribusi Omset Cabang -->
-            <div class="report-grid-2">
-                <!-- Pola Jam Pemesanan -->
-                <div class="report-card">
-                    <div class="report-card-title">
-                        <span>⏰ Pola Jam Pemesanan (24 Jam WIB)</span>
-                        <span id="reportPeakHourBadge" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 9999px; border: 1px solid #bfdbfe;">
-                            Peak: -
-                        </span>
+            <!-- ========================================== -->
+            <!-- SUBTAB 1: DASHBOARD (RINGKASAN)            -->
+            <!-- ========================================== -->
+            <div id="reportSubTab-dashboard" class="reports-subtab-panel">
+                <!-- KPI Cards Grid -->
+                <div class="report-kpi-grid">
+                    <!-- KPI 1: Total Omset -->
+                    <div class="report-kpi-card" style="border-left: 4px solid #10b981;">
+                        <div class="report-kpi-title">
+                            <span>💰 Total Omset</span>
+                        </div>
+                        <div class="report-kpi-value" id="kpiTotalRevenueDisplay" style="color: #059669;">Rp 0</div>
+                        <div class="report-kpi-sub" id="kpiPricedOrdersSub">0 pesanan berharga</div>
                     </div>
-                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;">
-                        Frekuensi pesanan dikirimkan oleh outlet berdasarkan jam:
+
+                    <!-- KPI 2: AOV -->
+                    <div class="report-kpi-card" style="border-left: 4px solid #3b82f6;">
+                        <div class="report-kpi-title">
+                            <span>📈 Average Order Value (AOV)</span>
+                        </div>
+                        <div class="report-kpi-value" id="kpiAovDisplay" style="color: #2563eb;">Rp 0</div>
+                        <div class="report-kpi-sub">Rata-rata omset per pesanan</div>
                     </div>
-                    <div class="hourly-bars-container" id="reportHourlyBarsContainer">
-                        <!-- 24 hourly bars rendered via JS -->
+
+                    <!-- KPI 3: Total Pesanan -->
+                    <div class="report-kpi-card" style="border-left: 4px solid #8b5cf6;">
+                        <div class="report-kpi-title">
+                            <span>🛍️ Total Pesanan</span>
+                        </div>
+                        <div class="report-kpi-value" id="kpiTotalOrdersDisplay" style="color: #7c3aed;">0</div>
+                        <div class="report-kpi-sub" id="kpiOrdersRateSub">0 transaksi dalam rentang ini</div>
                     </div>
-                    <div class="hourly-badge-segments" id="reportTimeSegmentsSummary">
-                        <!-- Segments: Pagi, Siang, Malam -->
+
+                    <!-- KPI 4: Total Volume Qty -->
+                    <div class="report-kpi-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="report-kpi-title">
+                            <span>📦 Total Kuantitas Barang</span>
+                        </div>
+                        <div class="report-kpi-value" id="kpiTotalVolumeDisplay" style="color: #d97706;">0</div>
+                        <div class="report-kpi-sub" id="kpiTotalLineItemsSub">0 baris item keranjang</div>
                     </div>
                 </div>
 
-                <!-- Distribusi Omset Cabang -->
-                <div class="report-card">
-                    <div class="report-card-title">
-                        <span>🏪 Distribusi Omset per Cabang</span>
-                        <span id="reportOutletCountBadge" style="font-size: 0.68rem; font-weight: 700; background: #f1f5f9; color: var(--text-secondary); padding: 2px 8px; border-radius: 9999px;">
-                            0 Outlet
-                        </span>
+                <!-- Row 2: Pola Jam Pemesanan & Distribusi Omset Cabang -->
+                <div class="report-grid-2">
+                    <!-- Pola Jam Pemesanan -->
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            <span>⏰ Pola Jam Pemesanan (24 Jam WIB)</span>
+                            <span id="reportPeakHourBadge" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 9999px; border: 1px solid #bfdbfe;">
+                                Peak: -
+                            </span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;">
+                            Frekuensi pesanan dikirimkan oleh outlet berdasarkan jam:
+                        </div>
+                        <div class="hourly-bars-container" id="reportHourlyBarsContainer">
+                            <!-- 24 hourly bars rendered via JS -->
+                        </div>
+                        <div class="hourly-badge-segments" id="reportTimeSegmentsSummary">
+                            <!-- Segments: Pagi, Siang, Malam -->
+                        </div>
                     </div>
-                    <div id="reportOutletDistributionContainer" style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+
+                    <!-- Distribusi Omset Cabang -->
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            <span>🏪 Distribusi Omset per Cabang</span>
+                            <span id="reportOutletCountBadge" style="font-size: 0.68rem; font-weight: 700; background: #f1f5f9; color: var(--text-secondary); padding: 2px 8px; border-radius: 9999px;">
+                                0 Outlet
+                            </span>
+                        </div>
+                        <div id="reportOutletDistributionContainer" style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3: Top 10 by Volume & Top 10 by Revenue -->
+                <div class="report-grid-2">
+                    <!-- Top 10 by Volume -->
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            <span>🏆 Top 10 Barang Paling Laris (Volume / Qty)</span>
+                            <span style="font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">Total Kuantitas</span>
+                        </div>
+                        <div class="report-rank-list" id="reportTopVolumeContainer">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Top 10 by Revenue -->
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            <span>💎 Top 10 Kontributor Omset (Nilai Rp)</span>
+                            <span style="font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">Subtotal Rupiah</span>
+                        </div>
+                        <div class="report-rank-list" id="reportTopRevenueContainer">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Tren Fluktuasi Harga Jual -->
+                <div class="card report-card" style="margin-bottom: 1.5rem;">
+                    <div class="report-card-title" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px;">
+                        <span>📉 Tren Fluktuasi Harga Jual Komoditas</span>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Pilih Barang:</span>
+                            <select id="reportPriceItemSelect" onchange="onReportPriceItemSelected()" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #ffffff; max-width: 240px;">
+                                <option value="">-- Pilih Komoditas --</option>
+                            </select>
+                            <div id="reportPriceUomFilterGroup" style="display: none; align-items: center; gap: 4px; flex-wrap: wrap;"></div>
+                        </div>
+                    </div>
+                    <div id="reportPriceTimelineContainer" style="overflow-x: auto;">
                         <!-- Populated via JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- Row 3: Top 10 by Volume & Top 10 by Revenue -->
-            <div class="report-grid-2">
-                <!-- Top 10 by Volume -->
-                <div class="report-card">
-                    <div class="report-card-title">
-                        <span>🏆 Top 10 Barang Paling Laris (Volume / Qty)</span>
-                        <span style="font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">Total Kuantitas</span>
+            <!-- ========================================== -->
+            <!-- SUBTAB 2: GRAFIK & KALENDER                -->
+            <!-- ========================================== -->
+            <div id="reportSubTab-grafik" class="reports-subtab-panel" style="display: none;">
+                <!-- 1. Calendar View Card -->
+                <div class="report-calendar-card">
+                    <div class="report-calendar-header">
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <span style="font-size: 0.92rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                📅 Kalender Aktivitas & Pengiriman Harian
+                            </span>
+                            <div id="reportCalendarCommodityIndicator" style="display: none; font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: #eff6ff; color: #1d4ed8; font-weight: 700; border: 1px solid #bfdbfe;">
+                                <!-- Highlighted commodity text -->
+                            </div>
+                        </div>
+                        <div class="report-calendar-nav">
+                            <button type="button" class="report-calendar-nav-btn" onclick="changeReportCalendarMonth(-1)" title="Bulan Sebelumnya">◀</button>
+                            <span class="report-calendar-month-title" id="reportCalendarMonthLabel">September 2026</span>
+                            <button type="button" class="report-calendar-nav-btn" onclick="changeReportCalendarMonth(1)" title="Bulan Berikutnya">▶</button>
+                            <button type="button" class="report-calendar-nav-btn" onclick="resetReportCalendarMonth()" style="margin-left: 4px;">Bulan Ini</button>
+                        </div>
                     </div>
-                    <div class="report-rank-list" id="reportTopVolumeContainer">
+                    
+                    <div id="reportCalendarLegendBar" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.7rem; color: var(--text-muted);">
+                        <!-- Dynamic legend via JS -->
+                    </div>
+
+                    <div id="reportCalendarGridContainer">
                         <!-- Populated via JS -->
                     </div>
                 </div>
 
-                <!-- Top 10 by Revenue -->
-                <div class="report-card">
-                    <div class="report-card-title">
-                        <span>💎 Top 10 Kontributor Omset (Nilai Rp)</span>
-                        <span style="font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">Subtotal Rupiah</span>
+                <!-- 2. Row: Tren Penjualan Harian & Pola Hari Mingguan -->
+                <div class="report-grid-2">
+                    <!-- Daily Sales Trend Chart -->
+                    <div class="report-card">
+                        <div class="report-card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <span>📈 Tren Penjualan Harian</span>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <button type="button" class="btn btn-sm btn-outline active" id="btnChartModeRevenue" style="font-size: 0.68rem; padding: 2px 7px;" onclick="toggleDailyChartMode('revenue')">Omset (Rp)</button>
+                                <button type="button" class="btn btn-sm btn-outline" id="btnChartModeOrders" style="font-size: 0.68rem; padding: 2px 7px;" onclick="toggleDailyChartMode('orders')">Jumlah Order</button>
+                            </div>
+                        </div>
+                        <div id="reportDailyTrendChartContainer" style="width: 100%; min-height: 220px; display: flex; align-items: center; justify-content: center;">
+                            <!-- Rendered via JS SVG -->
+                        </div>
                     </div>
-                    <div class="report-rank-list" id="reportTopRevenueContainer">
+
+                    <!-- Day of Week Distribution -->
+                    <div class="report-card">
+                        <div class="report-card-title">
+                            <span>🕒 Pola Aktivitas Hari (Senin - Minggu)</span>
+                            <span style="font-size: 0.68rem; font-weight: 600; color: var(--text-muted);">Total Order & Volume</span>
+                        </div>
+                        <div id="reportDayOfWeekChartContainer" style="width: 100%; min-height: 220px; display: flex; align-items: center; justify-content: center;">
+                            <!-- Rendered via JS SVG -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Pangsa Pasar Outlet (Donut Chart) -->
+                <div class="card report-card" style="margin-bottom: 1.5rem;">
+                    <div class="report-card-title">
+                        <span>🍩 Pangsa Pasar Omset per Cabang / Outlet</span>
+                        <span id="reportDonutSummaryBadge" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);"></span>
+                    </div>
+                    <div id="reportOutletDonutContainer" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 20px; padding: 12px 0;">
+                        <!-- Rendered via JS SVG Donut & Legend -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SUBTAB 3: TABEL LAPORAN KONVENSIONAL       -->
+            <!-- ========================================== -->
+            <div id="reportSubTab-tabel" class="reports-subtab-panel" style="display: none;">
+                <div class="card report-card" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                        <!-- Model Selector Buttons -->
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Format Laporan:</span>
+                            <button type="button" class="report-table-model-btn active" id="btnReportModel-outlet" onclick="switchReportTableModel('outlet')">🏢 Rekap Outlet</button>
+                            <button type="button" class="report-table-model-btn" id="btnReportModel-commodity" onclick="switchReportTableModel('commodity')">📦 Rekap Komoditas</button>
+                            <button type="button" class="report-table-model-btn" id="btnReportModel-journal" onclick="switchReportTableModel('journal')">📖 Buku Penjualan Harian</button>
+                            <button type="button" class="report-table-model-btn" id="btnReportModel-unpriced" onclick="switchReportTableModel('unpriced')">⏳ Pesanan Belum Berharga</button>
+                        </div>
+
+                        <!-- Search & Export Actions -->
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <input type="text" id="reportTableSearchInput" placeholder="🔍 Cari data tabel..." oninput="onReportTableSearch(this.value)" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 170px;">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="exportReportTableToCsv()" style="font-size: 0.72rem; padding: 4px 10px; color: #059669; border-color: #a7f3d0; font-weight: 700;">📥 Ekspor CSV</button>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="printReportTable()" style="font-size: 0.72rem; padding: 4px 10px;">🖨️ Cetak</button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Table Content -->
+                    <div id="reportTableDataContainer" style="overflow-x: auto; max-height: 550px;">
                         <!-- Populated via JS -->
                     </div>
                 </div>
             </div>
 
-            <!-- Row 4: Tren Fluktuasi Harga Jual -->
-            <div class="card report-card" style="margin-bottom: 1.5rem;">
-                <div class="report-card-title">
-                    <span>📉 Tren Fluktuasi Harga Jual Komoditas</span>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Pilih Barang:</span>
-                        <select id="reportPriceItemSelect" onchange="onReportPriceItemSelected()" style="padding: 4px 10px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #ffffff; max-width: 260px;">
-                            <option value="">-- Pilih Komoditas --</option>
-                        </select>
+            <!-- Calendar Day Detail Modal -->
+            <div id="reportCalendarDayModal" class="report-day-modal-overlay" style="display: none;" onclick="if(event.target === this) closeReportCalendarDayModal()">
+                <div class="report-day-modal-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                        <div>
+                            <h3 id="reportDayModalDateTitle" style="font-size: 0.95rem; font-weight: 800; margin: 0; color: var(--text-main);">Rincian Pengiriman</h3>
+                            <span id="reportDayModalSummarySubtitle" style="font-size: 0.72rem; color: var(--text-muted);"></span>
+                        </div>
+                        <button type="button" onclick="closeReportCalendarDayModal()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-muted);">&times;</button>
                     </div>
-                </div>
-                <div id="reportPriceTimelineContainer" style="overflow-x: auto;">
-                    <!-- Populated via JS -->
+                    <div id="reportDayModalBody">
+                        <!-- Populated via JS -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -7448,7 +7914,14 @@
             outlet: 'all', // 'all', 'lampoh_all', 'non_lampoh', or specific customer
             pricingStatus: 'all', // 'all', 'priced', 'unpriced'
             commodity: 'all', // 'all' or specific item name
-            selectedPriceItem: ''
+            selectedPriceItem: '',
+            activePriceUoms: [],
+            subTab: 'dashboard', // 'dashboard', 'grafik', 'tabel'
+            calendarYear: new Date().getFullYear(),
+            calendarMonth: new Date().getMonth(),
+            tableModel: 'outlet', // 'outlet', 'commodity', 'journal', 'unpriced'
+            tableSearch: '',
+            dailyChartMetric: 'revenue' // 'revenue' or 'orders'
         };
 
         function setReportDateRange(rangeType) {
@@ -7540,6 +8013,12 @@
             reportFilterState.outlet = 'all';
             reportFilterState.pricingStatus = 'all';
             reportFilterState.commodity = 'all';
+            reportFilterState.activePriceUoms = [];
+            reportFilterState.calendarYear = new Date().getFullYear();
+            reportFilterState.calendarMonth = new Date().getMonth();
+            reportFilterState.tableSearch = '';
+            const searchInput = document.getElementById('reportTableSearchInput');
+            if (searchInput) searchInput.value = '';
 
             const basisSelect = document.getElementById('reportDateBasisSelect');
             if (basisSelect) basisSelect.value = 'delivery';
@@ -7765,35 +8244,14 @@
             const itemVolumeMap = new Map();
             const itemRevenueMap = new Map();
             const outletRevenueMap = new Map();
-            const priceHistoryMap = new Map();
-
-            // Collect price history across transactions for commodity timeline
-            (transactionHistory || []).forEach(tx => {
-                const txDelivTime = getOrderDeliveryTime(tx) || getOrderUpdatedTime(tx);
-                const txDateDisplay = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : (tx.timestamp || 'Unknown');
-                (tx.cart || []).forEach(cItem => {
-                    const uPrice = parseFloat(cItem.unitPrice) || 0;
-                    if (uPrice > 0) {
-                        const name = (cItem.name || '').trim();
-                        const variant = (cItem.variant || '').trim();
-                        const key = variant ? `${name} (${variant})` : name;
-                        if (!priceHistoryMap.has(key)) {
-                            priceHistoryMap.set(key, []);
-                        }
-                        priceHistoryMap.get(key).push({
-                            timestamp: txDelivTime,
-                            dateStr: txDateDisplay,
-                            customer: tx.customer || 'No Customer',
-                            unitPrice: uPrice,
-                            uom: (cItem.uom || '').toUpperCase()
-                        });
-                    }
-                });
-            });
+            const priceHistoryMap = getReportsPriceHistoryMap();
 
             // If a specific commodity is selected, sync it to price timeline
             if (commodityFilter !== 'all' && priceHistoryMap.has(commodityFilter)) {
-                reportFilterState.selectedPriceItem = commodityFilter;
+                if (reportFilterState.selectedPriceItem !== commodityFilter) {
+                    reportFilterState.selectedPriceItem = commodityFilter;
+                    reportFilterState.activePriceUoms = [];
+                }
             }
 
             // Process filtered orders
@@ -7916,6 +8374,21 @@
 
             // 6. Render Price Fluctuation
             renderReportsPriceFluctuation(priceHistoryMap);
+
+            // 7. Cache Filtered State & Render Subtabs (Grafik & Tabel)
+            reportFilterState.lastFilteredOrders = filteredOrders;
+            reportFilterState.lastTotalRevenue = totalRevenue;
+            reportFilterState.lastTotalVolumeQty = totalVolumeQty;
+            reportFilterState.lastPricedOrdersCount = pricedOrdersCount;
+            reportFilterState.lastItemVolumeMap = itemVolumeMap;
+            reportFilterState.lastItemRevenueMap = itemRevenueMap;
+            reportFilterState.lastOutletRevenueMap = outletRevenueMap;
+
+            renderReportsCalendarView();
+            renderReportsDailyTrendChart();
+            renderReportsDayOfWeekChart();
+            renderReportsDonutChart();
+            renderReportsTableView();
         }
 
         function renderReportsHourlyDistribution(hourlyCounts) {
@@ -8102,9 +8575,41 @@
             container.innerHTML = html;
         }
 
+        function getReportsPriceHistoryMap() {
+            const priceHistoryMap = new Map();
+            (transactionHistory || []).forEach(tx => {
+                const txDelivTime = getOrderDeliveryTime(tx) || getOrderUpdatedTime(tx);
+                const txDateDisplay = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : (tx.timestamp || 'Unknown');
+                (tx.cart || []).forEach(cItem => {
+                    const uPrice = parseFloat(cItem.unitPrice) || 0;
+                    if (uPrice > 0) {
+                        const name = (cItem.name || '').trim();
+                        const variant = (cItem.variant || '').trim();
+                        const key = variant ? `${name} (${variant})` : name;
+                        if (!priceHistoryMap.has(key)) {
+                            priceHistoryMap.set(key, []);
+                        }
+                        const uom = (cItem.uom || '').trim().toUpperCase() || '-';
+                        priceHistoryMap.get(key).push({
+                            timestamp: txDelivTime,
+                            dateStr: txDateDisplay,
+                            customer: tx.customer || 'No Customer',
+                            unitPrice: uPrice,
+                            uom: uom
+                        });
+                    }
+                });
+            });
+            return priceHistoryMap;
+        }
+
         function renderReportsPriceFluctuation(priceHistoryMap) {
+            if (!priceHistoryMap) {
+                priceHistoryMap = getReportsPriceHistoryMap();
+            }
             const selectEl = document.getElementById('reportPriceItemSelect');
             const container = document.getElementById('reportPriceTimelineContainer');
+            const uomContainer = document.getElementById('reportPriceUomFilterGroup');
             if (!selectEl || !container) return;
 
             // Populate dropdown of available items with price history
@@ -8124,33 +8629,113 @@
 
             const currentKey = reportFilterState.selectedPriceItem;
             if (!currentKey || !priceHistoryMap.has(currentKey)) {
+                if (uomContainer) {
+                    uomContainer.style.display = 'none';
+                    uomContainer.innerHTML = '';
+                }
                 container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.78rem;">Pilih salah satu komoditas pada dropdown di atas untuk melihat riwayat fluktuasi harga jual.</div>`;
                 return;
             }
 
-            const entries = priceHistoryMap.get(currentKey).slice().sort((a, b) => a.timestamp - b.timestamp);
-            if (entries.length === 0) {
+            // All entries sorted chronologically
+            const allEntries = priceHistoryMap.get(currentKey).slice().sort((a, b) => a.timestamp - b.timestamp);
+            if (allEntries.length === 0) {
+                if (uomContainer) {
+                    uomContainer.style.display = 'none';
+                    uomContainer.innerHTML = '';
+                }
                 container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.78rem;">Belum ada riwayat harga untuk komoditas ini.</div>`;
                 return;
             }
 
-            let tableRows = '';
-            for (let i = 0; i < entries.length; i++) {
-                const curr = entries[i];
-                let changeHtml = '<span class="price-change-tag neutral">⚪ Harga Awal</span>';
+            // Discover available UOMs for this item
+            const availableUoms = [];
+            allEntries.forEach(e => {
+                const u = e.uom || '-';
+                if (!availableUoms.includes(u)) {
+                    availableUoms.push(u);
+                }
+            });
 
-                if (i > 0) {
-                    const prev = entries[i - 1];
-                    const diff = curr.unitPrice - prev.unitPrice;
+            // Reconcile activePriceUoms filter
+            if (!Array.isArray(reportFilterState.activePriceUoms) || reportFilterState.activePriceUoms.length === 0) {
+                reportFilterState.activePriceUoms = [...availableUoms];
+            } else {
+                // Keep only active UOMs that belong to this item
+                const validActive = reportFilterState.activePriceUoms.filter(u => availableUoms.includes(u));
+                if (validActive.length === 0) {
+                    reportFilterState.activePriceUoms = [...availableUoms];
+                } else {
+                    reportFilterState.activePriceUoms = validActive;
+                }
+            }
+
+            // Render UOM Toggle Buttons if more than 1 UOM exists
+            if (uomContainer) {
+                if (availableUoms.length > 1) {
+                    uomContainer.style.display = 'inline-flex';
+                    const allSelected = reportFilterState.activePriceUoms.length === availableUoms.length;
+                    let uomHtml = `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; margin-left: 4px;">Satuan:</span>`;
+                    
+                    uomHtml += `
+                        <button type="button" 
+                            class="report-price-uom-btn ${allSelected ? 'active' : ''}" 
+                            onclick="setReportPriceAllUoms()"
+                            title="Tampilkan semua satuan">
+                            Semua
+                        </button>
+                    `;
+
+                    availableUoms.forEach(uom => {
+                        const isActive = reportFilterState.activePriceUoms.includes(uom);
+                        uomHtml += `
+                            <button type="button" 
+                                class="report-price-uom-btn ${isActive ? 'active' : ''}" 
+                                onclick="toggleReportPriceUom('${escapeHtml(uom)}')"
+                                title="Klik untuk mengaktifkan/menonaktifkan filter satuan ${escapeHtml(uom)}">
+                                ${isActive ? '✓ ' : ''}${escapeHtml(uom)}
+                            </button>
+                        `;
+                    });
+                    uomContainer.innerHTML = uomHtml;
+                } else {
+                    uomContainer.style.display = 'none';
+                    uomContainer.innerHTML = '';
+                }
+            }
+
+            // Filter displayed entries according to activePriceUoms
+            const displayEntries = allEntries.filter(e => reportFilterState.activePriceUoms.includes(e.uom || '-'));
+            if (displayEntries.length === 0) {
+                container.innerHTML = `<div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.78rem;">Tidak ada data harga untuk satuan yang dipilih.</div>`;
+                return;
+            }
+
+            let tableRows = '';
+            for (let i = 0; i < displayEntries.length; i++) {
+                const curr = displayEntries[i];
+                let changeHtml = `<span class="price-change-tag neutral" title="Harga transaksi awal untuk satuan ${escapeHtml(curr.uom)}">⚪ Harga Awal</span>`;
+
+                // STRICT SAME-UOM COMPARISON: Look backward for the most recent transaction with the EXACT SAME UOM
+                let prevSameUom = null;
+                for (let j = i - 1; j >= 0; j--) {
+                    if (displayEntries[j].uom === curr.uom) {
+                        prevSameUom = displayEntries[j];
+                        break;
+                    }
+                }
+
+                if (prevSameUom) {
+                    const diff = curr.unitPrice - prevSameUom.unitPrice;
                     if (diff > 0) {
-                        const pct = prev.unitPrice > 0 ? Math.round((diff / prev.unitPrice) * 100) : 0;
-                        changeHtml = `<span class="price-change-tag up">🔺 Naik Rp ${formatRupiahNumber(diff)} (+${pct}%)</span>`;
+                        const pct = prevSameUom.unitPrice > 0 ? Math.round((diff / prevSameUom.unitPrice) * 100) : 0;
+                        changeHtml = `<span class="price-change-tag up" title="Naik Rp ${formatRupiahNumber(diff)} dari Rp ${formatRupiahNumber(prevSameUom.unitPrice)} (${escapeHtml(curr.uom)})">🔺 Naik Rp ${formatRupiahNumber(diff)} (+${pct}%)</span>`;
                     } else if (diff < 0) {
                         const absDiff = Math.abs(diff);
-                        const pct = prev.unitPrice > 0 ? Math.round((absDiff / prev.unitPrice) * 100) : 0;
-                        changeHtml = `<span class="price-change-tag down">🟢 Turun Rp ${formatRupiahNumber(absDiff)} (-${pct}%)</span>`;
+                        const pct = prevSameUom.unitPrice > 0 ? Math.round((absDiff / prevSameUom.unitPrice) * 100) : 0;
+                        changeHtml = `<span class="price-change-tag down" title="Turun Rp ${formatRupiahNumber(absDiff)} dari Rp ${formatRupiahNumber(prevSameUom.unitPrice)} (${escapeHtml(curr.uom)})">🟢 Turun Rp ${formatRupiahNumber(absDiff)} (-${pct}%)</span>`;
                     } else {
-                        changeHtml = `<span class="price-change-tag neutral">➖ Tetap</span>`;
+                        changeHtml = `<span class="price-change-tag neutral" title="Sama dengan harga transaksi ${escapeHtml(curr.uom)} sebelumnya (Rp ${formatRupiahNumber(prevSameUom.unitPrice)})">➖ Tetap</span>`;
                     }
                 }
 
@@ -8185,35 +8770,1353 @@
             `;
         }
 
+        function toggleReportPriceUom(uom) {
+            const priceHistoryMap = getReportsPriceHistoryMap();
+            const currentKey = reportFilterState.selectedPriceItem;
+            if (!currentKey || !priceHistoryMap.has(currentKey)) return;
+
+            const allEntries = priceHistoryMap.get(currentKey);
+            const availableUoms = [];
+            allEntries.forEach(e => {
+                const u = e.uom || '-';
+                if (!availableUoms.includes(u)) availableUoms.push(u);
+            });
+
+            if (!Array.isArray(reportFilterState.activePriceUoms) || reportFilterState.activePriceUoms.length === 0) {
+                reportFilterState.activePriceUoms = [...availableUoms];
+            }
+
+            const idx = reportFilterState.activePriceUoms.indexOf(uom);
+            if (idx >= 0) {
+                if (reportFilterState.activePriceUoms.length > 1) {
+                    reportFilterState.activePriceUoms.splice(idx, 1);
+                } else {
+                    // Clicking the only active UOM resets to selecting all available UOMs
+                    reportFilterState.activePriceUoms = [...availableUoms];
+                }
+            } else {
+                reportFilterState.activePriceUoms.push(uom);
+            }
+
+            renderReportsPriceFluctuation(priceHistoryMap);
+        }
+
+        function setReportPriceAllUoms() {
+            const priceHistoryMap = getReportsPriceHistoryMap();
+            const currentKey = reportFilterState.selectedPriceItem;
+            if (!currentKey || !priceHistoryMap.has(currentKey)) return;
+
+            const allEntries = priceHistoryMap.get(currentKey);
+            const availableUoms = [];
+            allEntries.forEach(e => {
+                const u = e.uom || '-';
+                if (!availableUoms.includes(u)) availableUoms.push(u);
+            });
+
+            reportFilterState.activePriceUoms = [...availableUoms];
+            renderReportsPriceFluctuation(priceHistoryMap);
+        }
+
         function onReportPriceItemSelected() {
             const selectEl = document.getElementById('reportPriceItemSelect');
             if (selectEl) {
                 reportFilterState.selectedPriceItem = selectEl.value;
-                const priceHistoryMap = new Map();
-                (transactionHistory || []).forEach(tx => {
-                    const txDelivTime = getOrderDeliveryTime(tx) || getOrderUpdatedTime(tx);
-                    const txDateDisplay = tx.deliveryDate ? formatDateFullDisplay(tx.deliveryDate) : (tx.timestamp || 'Unknown');
-                    (tx.cart || []).forEach(cItem => {
-                        const uPrice = parseFloat(cItem.unitPrice) || 0;
-                        if (uPrice > 0) {
-                            const name = (cItem.name || '').trim();
-                            const variant = (cItem.variant || '').trim();
-                            const key = variant ? `${name} (${variant})` : name;
-                            if (!priceHistoryMap.has(key)) {
-                                priceHistoryMap.set(key, []);
-                            }
-                            priceHistoryMap.get(key).push({
-                                timestamp: txDelivTime,
-                                dateStr: txDateDisplay,
-                                customer: tx.customer || 'No Customer',
-                                unitPrice: uPrice,
-                                uom: (cItem.uom || '').toUpperCase()
-                            });
-                        }
-                    });
-                });
+                reportFilterState.activePriceUoms = [];
+                const priceHistoryMap = getReportsPriceHistoryMap();
                 renderReportsPriceFluctuation(priceHistoryMap);
             }
+        }
+
+        // ==========================================
+        // REPORT SUBTABS & ENHANCED VISUALIZATIONS
+        // ==========================================
+
+        const CALENDAR_MONTH_NAMES_ID = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+
+        function switchReportSubTab(subTabName) {
+            if (!['dashboard', 'grafik', 'tabel'].includes(subTabName)) subTabName = 'dashboard';
+            reportFilterState.subTab = subTabName;
+
+            ['dashboard', 'grafik', 'tabel'].forEach(name => {
+                const btn = document.getElementById(`reportSubnavBtn-${name}`);
+                const panel = document.getElementById(`reportSubTab-${name}`);
+                if (btn) {
+                    if (name === subTabName) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+                if (panel) {
+                    panel.style.display = (name === subTabName) ? 'block' : 'none';
+                }
+            });
+
+            if (subTabName === 'grafik') {
+                renderReportsGrafikTab();
+            } else if (subTabName === 'tabel') {
+                renderReportsTableView();
+            }
+        }
+
+        function formatCompactRupiah(num) {
+            const n = Math.abs(num);
+            if (n >= 1000000000) return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (n >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'jt';
+            if (n >= 1000) return (num / 1000).toFixed(0) + 'rb';
+            return String(Math.round(num));
+        }
+
+        function changeReportCalendarMonth(delta) {
+            let m = reportFilterState.calendarMonth + delta;
+            let y = reportFilterState.calendarYear;
+            if (m < 0) {
+                m = 11;
+                y--;
+            } else if (m > 11) {
+                m = 0;
+                y++;
+            }
+            reportFilterState.calendarMonth = m;
+            reportFilterState.calendarYear = y;
+            renderReportsCalendarView();
+        }
+
+        function resetReportCalendarMonth() {
+            const now = new Date();
+            reportFilterState.calendarYear = now.getFullYear();
+            reportFilterState.calendarMonth = now.getMonth();
+            renderReportsCalendarView();
+        }
+
+        function getCalendarFilteredOrders(year, month) {
+            const basis = reportFilterState.dateBasis || 'delivery';
+            const outletFilter = reportFilterState.outlet || 'all';
+            const pricingFilter = reportFilterState.pricingStatus || 'all';
+            const commodityFilter = reportFilterState.commodity || 'all';
+
+            return (transactionHistory || []).filter(tx => {
+                // Check month and year match based on date basis
+                let txDate = null;
+                if (basis === 'delivery') {
+                    if (tx.deliveryDate) {
+                        const parts = tx.deliveryDate.split('-');
+                        if (parts.length === 3) {
+                            const y = parseInt(parts[0], 10);
+                            const m = parseInt(parts[1], 10) - 1;
+                            if (y === year && m === month) {
+                                txDate = new Date(y, m, parseInt(parts[2], 10));
+                            }
+                        } else {
+                            const d = new Date(tx.deliveryDate);
+                            if (!isNaN(d.getTime()) && d.getFullYear() === year && d.getMonth() === month) {
+                                txDate = d;
+                            }
+                        }
+                    }
+                } else {
+                    const time = getOrderUpdatedTime(tx);
+                    if (time > 0) {
+                        const d = new Date(time);
+                        if (d.getFullYear() === year && d.getMonth() === month) {
+                            txDate = d;
+                        }
+                    }
+                }
+
+                if (!txDate) return false;
+
+                // Outlet filter
+                const txCust = (tx.customer || '').trim();
+                if (outletFilter === 'lampoh_all') {
+                    if (!txCust.toLowerCase().includes('lampoh')) return false;
+                } else if (outletFilter === 'non_lampoh') {
+                    if (txCust.toLowerCase().includes('lampoh')) return false;
+                } else if (outletFilter !== 'all') {
+                    if (txCust !== outletFilter) return false;
+                }
+
+                // Pricing status filter
+                const hasAnyPrice = (tx.cart || []).some(item => parseFloat(item.unitPrice) > 0);
+                if (pricingFilter === 'priced' && !hasAnyPrice) return false;
+                if (pricingFilter === 'unpriced' && hasAnyPrice) return false;
+
+                // Commodity filter
+                if (commodityFilter !== 'all') {
+                    const targetComm = commodityFilter.toLowerCase();
+                    const hasItem = (tx.cart || []).some(item => {
+                        const name = (item.name || '').trim();
+                        const variant = (item.variant || '').trim();
+                        const key = variant ? `${name} (${variant})` : name;
+                        return key.toLowerCase() === targetComm;
+                    });
+                    if (!hasItem) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function getTransactionDateKey(tx, basis = 'delivery') {
+            if (basis === 'delivery' && tx.deliveryDate) {
+                const parts = tx.deliveryDate.split('-');
+                if (parts.length === 3) {
+                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+                }
+            }
+            const time = (basis === 'delivery') ? (getOrderDeliveryTime(tx) || getOrderUpdatedTime(tx)) : (getOrderUpdatedTime(tx) || getOrderDeliveryTime(tx));
+            if (time > 0) {
+                const d = new Date(time);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }
+            return '';
+        }
+
+        function renderReportsCalendarView() {
+            const container = document.getElementById('reportCalendarGridContainer');
+            const monthLabel = document.getElementById('reportCalendarMonthLabel');
+            const commodityBadge = document.getElementById('reportCalendarCommodityIndicator');
+            const legendBar = document.getElementById('reportCalendarLegendBar');
+            if (!container) return;
+
+            const year = reportFilterState.calendarYear;
+            const month = reportFilterState.calendarMonth;
+            const commodityFilter = reportFilterState.commodity || 'all';
+            const basis = reportFilterState.dateBasis || 'delivery';
+
+            if (monthLabel) {
+                monthLabel.innerText = `${CALENDAR_MONTH_NAMES_ID[month]} ${year}`;
+            }
+
+            if (commodityBadge) {
+                if (commodityFilter !== 'all') {
+                    commodityBadge.innerText = `🎯 Fokus Komoditas: ${commodityFilter}`;
+                    commodityBadge.style.display = 'inline-flex';
+                } else {
+                    commodityBadge.style.display = 'none';
+                }
+            }
+
+            if (legendBar) {
+                if (commodityFilter !== 'all') {
+                    legendBar.innerHTML = `
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:12px; height:12px; background:#eff6ff; border:1px solid #93c5fd; border-radius:3px;"></span>
+                            Tanggal Permintaan <b>${escapeHtml(commodityFilter)}</b>
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:14px; height:14px; background:#2563eb; border-radius:50%;"></span>
+                            Ukuran Bubble = Proporsi Qty (Makin besar = Qty makin tinggi)
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:12px; height:12px; border:2px solid #2563eb; border-radius:3px;"></span>
+                            Hari Ini
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px; color:#059669; font-weight:700;">
+                            Rp = Total Omset
+                        </span>
+                    `;
+                } else {
+                    legendBar.innerHTML = `
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:12px; height:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:3px;"></span>
+                            Tanggal Ada Transaksi
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:14px; height:14px; background:#10b981; border-radius:50%;"></span>
+                            Bubble = Jumlah Pesanan
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:12px; height:12px; border:2px solid #2563eb; border-radius:3px;"></span>
+                            Hari Ini
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px; color:#059669; font-weight:700;">
+                            Rp = Total Omset
+                        </span>
+                    `;
+                }
+            }
+
+            const ordersThisMonth = getCalendarFilteredOrders(year, month);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = Mon, 6 = Sun
+
+            const today = new Date();
+            const isCurrentMonth = (today.getFullYear() === year && today.getMonth() === month);
+            const todayDate = isCurrentMonth ? today.getDate() : -1;
+
+            // Group by day of month
+            const dayDataMap = new Map();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                dayDataMap.set(dateKey, {
+                    dateKey,
+                    day: d,
+                    orders: [],
+                    commodityQty: 0,
+                    commodityUom: '',
+                    totalRevenue: 0,
+                    totalVolume: 0
+                });
+            }
+
+            ordersThisMonth.forEach(tx => {
+                const dKey = getTransactionDateKey(tx, basis);
+                if (dayDataMap.has(dKey)) {
+                    const dEntry = dayDataMap.get(dKey);
+                    dEntry.orders.push(tx);
+
+                    let orderSubtotal = 0;
+                    (tx.cart || []).forEach(ci => {
+                        const qty = parseFloat(ci.qty) || 0;
+                        const uPrice = parseFloat(ci.unitPrice) || 0;
+                        const sub = qty * uPrice;
+                        orderSubtotal += sub;
+                        dEntry.totalVolume += qty;
+
+                        const name = (ci.name || '').trim();
+                        const variant = (ci.variant || '').trim();
+                        const key = variant ? `${name} (${variant})` : name;
+
+                        if (commodityFilter !== 'all') {
+                            if (key.toLowerCase() === commodityFilter.toLowerCase()) {
+                                dEntry.commodityQty += qty;
+                                if (!dEntry.commodityUom && ci.uom) dEntry.commodityUom = ci.uom.toUpperCase();
+                            }
+                        }
+                    });
+                    dEntry.totalRevenue += orderSubtotal;
+                }
+            });
+
+            // Calculate max for bubble scaling
+            let maxMetric = 0;
+            dayDataMap.forEach(dEntry => {
+                if (commodityFilter !== 'all') {
+                    if (dEntry.commodityQty > maxMetric) maxMetric = dEntry.commodityQty;
+                } else {
+                    if (dEntry.orders.length > maxMetric) maxMetric = dEntry.orders.length;
+                }
+            });
+
+            // Build HTML
+            let gridHtml = '<div class="report-calendar-grid">';
+
+            // Weekday headers (Senin - Minggu)
+            const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+            dayLabels.forEach((label, idx) => {
+                const isWknd = (idx >= 5);
+                gridHtml += `<div class="report-calendar-day-head ${isWknd ? 'weekend' : ''}">${label}</div>`;
+            });
+
+            // Padding cells from previous month
+            for (let i = 0; i < firstDayIndex; i++) {
+                const pDay = prevMonthDays - firstDayIndex + 1 + i;
+                gridHtml += `
+                    <div class="report-calendar-cell other-month">
+                        <div class="report-calendar-day-num">${pDay}</div>
+                    </div>
+                `;
+            }
+
+            // Current month days
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dEntry = dayDataMap.get(dateKey);
+                const isToday = (d === todayDate);
+                const hasOrders = dEntry.orders.length > 0;
+                const hasCommodity = (commodityFilter !== 'all' && dEntry.commodityQty > 0);
+
+                let cellClasses = "report-calendar-cell";
+                if (isToday) cellClasses += " today";
+                if (commodityFilter !== 'all' && hasCommodity) {
+                    cellClasses += " highlight-commodity";
+                } else if (commodityFilter === 'all' && hasOrders) {
+                    cellClasses += " has-orders";
+                }
+
+                let bubbleHtml = '';
+                if (commodityFilter !== 'all') {
+                    if (hasCommodity) {
+                        const ratio = maxMetric > 0 ? (dEntry.commodityQty / maxMetric) : 0.5;
+                        // Proportional bubble size: 24px up to 52px
+                        const bubbleSize = Math.round(24 + (ratio * 28));
+                        const displayQty = Math.round(dEntry.commodityQty * 10) / 10;
+                        const uomText = dEntry.commodityUom || '';
+                        bubbleHtml = `
+                            <div class="report-calendar-qty-bubble" style="width: ${bubbleSize}px; height: ${bubbleSize}px; font-size: ${bubbleSize >= 38 ? '0.75rem' : '0.66rem'};" title="Permintaan ${escapeHtml(commodityFilter)}: ${displayQty} ${uomText} (${dEntry.orders.length} pesanan)">
+                                <span>${displayQty}</span>
+                                ${bubbleSize >= 40 && uomText ? `<span style="font-size: 0.52rem; opacity: 0.9; font-weight: 600;">${escapeHtml(uomText)}</span>` : ''}
+                            </div>
+                        `;
+                    }
+                } else {
+                    if (hasOrders) {
+                        const ratio = maxMetric > 0 ? (dEntry.orders.length / maxMetric) : 0.5;
+                        const bubbleSize = Math.round(22 + (ratio * 22)); // 22px to 44px
+                        bubbleHtml = `
+                            <div class="report-calendar-qty-bubble normal-order" style="width: ${bubbleSize}px; height: ${bubbleSize}px; font-size: ${bubbleSize >= 34 ? '0.72rem' : '0.64rem'};" title="${dEntry.orders.length} Pesanan">
+                                <span>${dEntry.orders.length}</span>
+                                ${bubbleSize >= 34 ? `<span style="font-size: 0.52rem; opacity: 0.9; font-weight: 600;">ord</span>` : ''}
+                            </div>
+                        `;
+                    }
+                }
+
+                let omsetHtml = '';
+                if (dEntry.totalRevenue > 0) {
+                    omsetHtml = `<div class="report-calendar-omset-badge" title="Total Omset: Rp ${formatRupiahNumber(dEntry.totalRevenue)}">Rp ${formatCompactRupiah(dEntry.totalRevenue)}</div>`;
+                }
+
+                const clickAction = (hasOrders || hasCommodity) ? `onclick="openReportCalendarDayDetail('${dateKey}')"` : '';
+                const titleTooltip = hasOrders ? `${dEntry.orders.length} pesanan pada ${dateKey}` : `Tidak ada pesanan`;
+
+                gridHtml += `
+                    <div class="${cellClasses}" ${clickAction} title="${titleTooltip}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <span class="report-calendar-day-num">${d}</span>
+                            ${isToday ? '<span style="font-size: 0.58rem; background: #2563eb; color: #fff; padding: 1px 4px; border-radius: 9999px; font-weight: 700;">HARI INI</span>' : ''}
+                        </div>
+                        ${bubbleHtml}
+                        ${omsetHtml}
+                    </div>
+                `;
+            }
+
+            // Next month padding cells to complete final row
+            const totalCells = firstDayIndex + daysInMonth;
+            const remainingCells = (7 - (totalCells % 7)) % 7;
+            for (let i = 1; i <= remainingCells; i++) {
+                gridHtml += `
+                    <div class="report-calendar-cell other-month">
+                        <div class="report-calendar-day-num">${i}</div>
+                    </div>
+                `;
+            }
+
+            gridHtml += '</div>';
+            container.innerHTML = gridHtml;
+        }
+
+        function openReportCalendarDayDetail(dateKey) {
+            const modal = document.getElementById('reportCalendarDayModal');
+            const titleEl = document.getElementById('reportDayModalDateTitle');
+            const subTitleEl = document.getElementById('reportDayModalSummarySubtitle');
+            const bodyEl = document.getElementById('reportDayModalBody');
+            if (!modal || !bodyEl) return;
+
+            const year = reportFilterState.calendarYear;
+            const month = reportFilterState.calendarMonth;
+            const commodityFilter = reportFilterState.commodity || 'all';
+            const basis = reportFilterState.dateBasis || 'delivery';
+
+            const ordersThisMonth = getCalendarFilteredOrders(year, month);
+            const dayOrders = ordersThisMonth.filter(tx => getTransactionDateKey(tx, basis) === dateKey);
+
+            if (dayOrders.length === 0) {
+                showToast(`Tidak ada pesanan untuk tanggal ${dateKey}`, 'info');
+                return;
+            }
+
+            // Format Indonesian date title
+            const parts = dateKey.split('-');
+            const dObj = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const DAY_NAMES_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+            const dateDisplayStr = `${DAY_NAMES_ID[dObj.getDay()]}, ${dObj.getDate()} ${CALENDAR_MONTH_NAMES_ID[dObj.getMonth()]} ${dObj.getFullYear()}`;
+
+            let totalRev = 0;
+            let totalVolume = 0;
+            let totalFocusCommodityQty = 0;
+            let focusUom = '';
+
+            dayOrders.forEach(tx => {
+                (tx.cart || []).forEach(ci => {
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    totalRev += (q * p);
+                    totalVolume += q;
+
+                    const name = (ci.name || '').trim();
+                    const variant = (ci.variant || '').trim();
+                    const key = variant ? `${name} (${variant})` : name;
+                    if (commodityFilter !== 'all' && key.toLowerCase() === commodityFilter.toLowerCase()) {
+                        totalFocusCommodityQty += q;
+                        if (!focusUom && ci.uom) focusUom = ci.uom.toUpperCase();
+                    }
+                });
+            });
+
+            if (titleEl) titleEl.innerText = `Rincian Pengiriman: ${dateDisplayStr}`;
+            if (subTitleEl) {
+                let subText = `${dayOrders.length} Pesanan &bull; Omset Total: Rp ${formatRupiahNumber(totalRev)} &bull; Total Volume: ${Math.round(totalVolume * 10) / 10} item`;
+                if (commodityFilter !== 'all' && totalFocusCommodityQty > 0) {
+                    subText += ` &bull; <b>${escapeHtml(commodityFilter)}: ${totalFocusCommodityQty} ${focusUom}</b>`;
+                }
+                subTitleEl.innerHTML = subText;
+            }
+
+            let ordersHtml = '';
+            dayOrders.forEach((tx, idx) => {
+                const custName = tx.customer || 'No Customer';
+                const isLampoh = custName.toLowerCase().includes('lampoh');
+                const isPriced = isOrderFullyPriced(tx);
+                let orderRev = 0;
+
+                (tx.cart || []).forEach(ci => {
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    orderRev += (q * p);
+                });
+
+                ordersHtml += `
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0;">
+                            <div>
+                                <span style="font-weight: 800; color: var(--text-main); font-size: 0.85rem;">#${escapeHtml(tx.orderNumber || 'ORD-' + (idx + 1))}</span>
+                                <span style="font-weight: 700; color: var(--text-secondary); margin-left: 6px; font-size: 0.82rem;">${escapeHtml(custName)}</span>
+                                ${isLampoh ? '<span style="font-size: 0.65rem; background: #eff6ff; color: #1d4ed8; padding: 1px 6px; border-radius: 9999px; font-weight: 700; margin-left: 4px;">Lampoh</span>' : ''}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 9999px; font-weight: 700; background: ${isPriced ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #b45309;'}">
+                                    ${isPriced ? '✅ Berharga' : '⚠️ Belum Berharga'}
+                                </span>
+                                <span style="font-size: 0.82rem; font-weight: 800; color: #059669;">
+                                    Rp ${formatRupiahNumber(orderRev)}
+                                </span>
+                                <button type="button" class="btn btn-sm btn-outline" onclick="openOrderInAdmin('${escapeHtml(tx.orderNumber)}')" style="font-size: 0.68rem; padding: 2px 8px; color: var(--primary); border-color: var(--primary); font-weight: 700;">
+                                    ✏️ Buka di Admin
+                                </button>
+                            </div>
+                        </div>
+
+                        <table style="width: 100%; font-size: 0.74rem; border-collapse: collapse;">
+                            <thead>
+                                <tr style="color: var(--text-muted); border-bottom: 1px solid #cbd5e1; text-align: left;">
+                                    <th style="padding: 3px 6px;">Barang</th>
+                                    <th style="padding: 3px 6px; text-align: center;">Qty</th>
+                                    <th style="padding: 3px 6px;">Satuan</th>
+                                    <th style="padding: 3px 6px; text-align: right;">Harga Satuan</th>
+                                    <th style="padding: 3px 6px; text-align: right;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                (tx.cart || []).forEach(ci => {
+                    const name = (ci.name || '').trim();
+                    const variant = (ci.variant || '').trim();
+                    const key = variant ? `${name} (${variant})` : name;
+                    const qty = parseFloat(ci.qty) || 0;
+                    const price = parseFloat(ci.unitPrice) || 0;
+                    const sub = qty * price;
+                    const isFocus = (commodityFilter !== 'all' && key.toLowerCase() === commodityFilter.toLowerCase());
+
+                    ordersHtml += `
+                        <tr style="background: ${isFocus ? '#dbeafe' : 'transparent'}; border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 4px 6px; font-weight: ${isFocus ? '800' : '500'}; color: ${isFocus ? '#1e40af' : 'var(--text-main)'};">
+                                ${escapeHtml(key)}
+                                ${ci.notes ? `<div style="font-size: 0.65rem; color: var(--text-muted);">${escapeHtml(ci.notes)}</div>` : ''}
+                            </td>
+                            <td style="padding: 4px 6px; text-align: center; font-weight: 700;">${qty}</td>
+                            <td style="padding: 4px 6px; color: var(--text-muted);">${escapeHtml(ci.uom || '')}</td>
+                            <td style="padding: 4px 6px; text-align: right;">${price > 0 ? 'Rp ' + formatRupiahNumber(price) : '<span style="color:#ef4444;">-</span>'}</td>
+                            <td style="padding: 4px 6px; text-align: right; font-weight: 700; color: ${price > 0 ? 'var(--text-main)' : '#ef4444'};">${sub > 0 ? 'Rp ' + formatRupiahNumber(sub) : '-'}</td>
+                        </tr>
+                    `;
+                });
+
+                ordersHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            bodyEl.innerHTML = ordersHtml;
+            modal.style.display = 'flex';
+        }
+
+        function closeReportCalendarDayModal() {
+            const modal = document.getElementById('reportCalendarDayModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openOrderInAdmin(orderNumber) {
+            const idx = (transactionHistory || []).findIndex(t => t.orderNumber === orderNumber);
+            if (idx !== -1) {
+                closeReportCalendarDayModal();
+                switchTab('tab-admin');
+                selectAdminOrder(idx);
+                setTimeout(() => {
+                    const pricingContainer = document.getElementById('adminOrderPricingContainer');
+                    if (pricingContainer) {
+                        pricingContainer.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 100);
+            } else {
+                showToast(`Pesanan #${orderNumber} tidak ditemukan di riwayat`, 'warning');
+            }
+        }
+
+        function toggleDailyChartMode(mode) {
+            reportFilterState.dailyChartMetric = mode;
+            const revBtn = document.getElementById('btnChartModeRevenue');
+            const ordBtn = document.getElementById('btnChartModeOrders');
+            if (revBtn && ordBtn) {
+                if (mode === 'revenue') {
+                    revBtn.classList.add('active');
+                    ordBtn.classList.remove('active');
+                } else {
+                    revBtn.classList.remove('active');
+                    ordBtn.classList.add('active');
+                }
+            }
+            renderReportsDailyTrendChart();
+        }
+
+        function renderReportsDailyTrendChart() {
+            const container = document.getElementById('reportDailyTrendChartContainer');
+            if (!container) return;
+
+            const orders = reportFilterState.lastFilteredOrders || [];
+            if (orders.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 40px 10px;">
+                        📉 Tidak ada data transaksi untuk rentang filter aktif saat ini.
+                    </div>
+                `;
+                return;
+            }
+
+            const basis = reportFilterState.dateBasis || 'delivery';
+            const metric = reportFilterState.dailyChartMetric || 'revenue';
+
+            // Group by Date
+            const dailyMap = new Map();
+            orders.forEach(tx => {
+                const dKey = getTransactionDateKey(tx, basis);
+                if (!dKey) return;
+
+                if (!dailyMap.has(dKey)) {
+                    dailyMap.set(dKey, { dateKey: dKey, revenue: 0, ordersCount: 0 });
+                }
+                const entry = dailyMap.get(dKey);
+                entry.ordersCount++;
+
+                (tx.cart || []).forEach(ci => {
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    entry.revenue += (q * p);
+                });
+            });
+
+            // Sort dates ascending
+            const sortedDates = Array.from(dailyMap.keys()).sort();
+            if (sortedDates.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 40px 10px;">Tidak ada tanggal valid dalam filter.</div>`;
+                return;
+            }
+
+            const dataPoints = sortedDates.map(dKey => {
+                const entry = dailyMap.get(dKey);
+                return {
+                    dateKey: dKey,
+                    label: dKey.substring(5), // 'MM-DD'
+                    val: metric === 'revenue' ? entry.revenue : entry.ordersCount,
+                    ordersCount: entry.ordersCount,
+                    revenue: entry.revenue
+                };
+            });
+
+            const maxVal = Math.max(...dataPoints.map(p => p.val), 1);
+            const W = 580;
+            const H = 210;
+            const padL = 50;
+            const padR = 20;
+            const padT = 20;
+            const padB = 35;
+            const chartW = W - padL - padR;
+            const chartH = H - padT - padB;
+
+            const n = dataPoints.length;
+            const coords = dataPoints.map((p, i) => {
+                const x = n === 1 ? padL + (chartW / 2) : padL + (i / (n - 1)) * chartW;
+                const y = padT + chartH - (p.val / maxVal) * chartH;
+                return { x, y, ...p };
+            });
+
+            // Build Area Path & Line Path
+            let lineD = '';
+            coords.forEach((pt, i) => {
+                lineD += (i === 0 ? `M ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}` : ` L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`);
+            });
+
+            const firstX = coords[0].x.toFixed(1);
+            const lastX = coords[coords.length - 1].x.toFixed(1);
+            const bottomY = (padT + chartH).toFixed(1);
+            const areaD = `${lineD} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+
+            // Grid lines (3 horizontal lines)
+            const gridLines = [0, 0.5, 1].map(frac => {
+                const y = padT + chartH - (frac * chartH);
+                const valAtLine = frac * maxVal;
+                const label = metric === 'revenue' ? `Rp ${formatCompactRupiah(valAtLine)}` : Math.round(valAtLine);
+                return `
+                    <line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="3,3" stroke-width="1" />
+                    <text x="${padL - 6}" y="${y + 4}" font-size="9" fill="#94a3b8" text-anchor="end">${label}</text>
+                `;
+            }).join('');
+
+            // X-axis date labels
+            let xLabelsHtml = '';
+            const step = Math.ceil(n / 6);
+            coords.forEach((pt, i) => {
+                if (i === 0 || i === n - 1 || i % step === 0) {
+                    xLabelsHtml += `
+                        <text x="${pt.x}" y="${H - 10}" font-size="9" fill="#64748b" text-anchor="middle">${pt.label}</text>
+                    `;
+                }
+            });
+
+            // Circles & Tooltips
+            let pointsHtml = '';
+            coords.forEach(pt => {
+                const tipText = `${pt.dateKey}: ${metric === 'revenue' ? 'Rp ' + formatRupiahNumber(pt.revenue) : pt.ordersCount + ' pesanan'} (${pt.ordersCount} order, Rp ${formatCompactRupiah(pt.revenue)})`;
+                pointsHtml += `
+                    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="4.5" fill="#2563eb" stroke="#ffffff" stroke-width="2" style="cursor: pointer;">
+                        <title>${tipText}</title>
+                    </circle>
+                `;
+            });
+
+            container.innerHTML = `
+                <svg viewBox="0 0 ${W} ${H}" style="width: 100%; height: 100%; overflow: visible;" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="trendAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+                            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.02"/>
+                        </linearGradient>
+                    </defs>
+                    ${gridLines}
+                    <path d="${areaD}" fill="url(#trendAreaGrad)" />
+                    <path d="${lineD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    ${pointsHtml}
+                    ${xLabelsHtml}
+                </svg>
+            `;
+        }
+
+        function renderReportsDayOfWeekChart() {
+            const container = document.getElementById('reportDayOfWeekChartContainer');
+            if (!container) return;
+
+            const orders = reportFilterState.lastFilteredOrders || [];
+            if (orders.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 40px 10px;">Tidak ada data transaksi.</div>`;
+                return;
+            }
+
+            const basis = reportFilterState.dateBasis || 'delivery';
+            const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+            const dayShort = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+            const counts = [0, 0, 0, 0, 0, 0, 0];
+            const revs = [0, 0, 0, 0, 0, 0, 0];
+
+            orders.forEach(tx => {
+                const time = (basis === 'delivery') ? (getOrderDeliveryTime(tx) || getOrderUpdatedTime(tx)) : (getOrderUpdatedTime(tx) || getOrderDeliveryTime(tx));
+                if (time > 0) {
+                    const d = new Date(time);
+                    const dayIdx = (d.getDay() + 6) % 7; // 0 = Mon, 6 = Sun
+                    counts[dayIdx]++;
+
+                    (tx.cart || []).forEach(ci => {
+                        const q = parseFloat(ci.qty) || 0;
+                        const p = parseFloat(ci.unitPrice) || 0;
+                        revs[dayIdx] += (q * p);
+                    });
+                }
+            });
+
+            const maxCount = Math.max(...counts, 1);
+            const W = 480;
+            const H = 210;
+            const padL = 30;
+            const padR = 20;
+            const padT = 25;
+            const padB = 35;
+            const chartH = H - padT - padB;
+            const barW = 34;
+            const colW = (W - padL - padR) / 7;
+
+            let barsHtml = '';
+            dayNames.forEach((name, i) => {
+                const count = counts[i];
+                const rev = revs[i];
+                const barH = Math.max((count / maxCount) * chartH, count > 0 ? 4 : 1);
+                const x = padL + (i * colW) + ((colW - barW) / 2);
+                const y = padT + chartH - barH;
+                const isWeekend = (i >= 5);
+                const barColor = isWeekend ? '#f59e0b' : '#3b82f6';
+
+                barsHtml += `
+                    <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${barColor}" style="cursor: pointer; opacity: ${count > 0 ? '0.9' : '0.2'};">
+                        <title>${name}: ${count} pesanan, Omset Rp ${formatRupiahNumber(rev)}</title>
+                    </rect>
+                    ${count > 0 ? `<text x="${x + barW / 2}" y="${y - 6}" font-size="9" font-weight="700" fill="#1e293b" text-anchor="middle">${count}</text>` : ''}
+                    <text x="${x + barW / 2}" y="${H - 12}" font-size="10" font-weight="${isWeekend ? '700' : '600'}" fill="${isWeekend ? '#ef4444' : '#64748b'}" text-anchor="middle">${dayShort[i]}</text>
+                `;
+            });
+
+            container.innerHTML = `
+                <svg viewBox="0 0 ${W} ${H}" style="width: 100%; height: 100%;" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="${padL}" y1="${padT + chartH}" x2="${W - padR}" y2="${padT + chartH}" stroke="#cbd5e1" stroke-width="1.5" />
+                    ${barsHtml}
+                </svg>
+            `;
+        }
+
+        function renderReportsDonutChart() {
+            const container = document.getElementById('reportOutletDonutContainer');
+            const summaryBadge = document.getElementById('reportDonutSummaryBadge');
+            if (!container) return;
+
+            const outletMap = reportFilterState.lastOutletRevenueMap || new Map();
+            const totalRev = reportFilterState.lastTotalRevenue || 0;
+
+            if (outletMap.size === 0 || totalRev <= 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.78rem; padding: 30px 10px;">Belum ada omset outlet tercatat dalam filter aktif.</div>`;
+                if (summaryBadge) summaryBadge.innerText = '';
+                return;
+            }
+
+            if (summaryBadge) {
+                summaryBadge.innerText = `${outletMap.size} Outlet &bull; Rp ${formatRupiahNumber(totalRev)}`;
+            }
+
+            // Sort descending by revenue
+            const sortedOutlets = Array.from(outletMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+            // Top 6 + Lainnya
+            const segments = [];
+            let currentOtherRev = 0;
+            let currentOtherOrd = 0;
+
+            sortedOutlets.forEach((item, idx) => {
+                if (idx < 6) {
+                    segments.push(item);
+                } else {
+                    currentOtherRev += item.totalRevenue;
+                    currentOtherOrd += item.orderCount;
+                }
+            });
+            if (currentOtherRev > 0) {
+                segments.push({
+                    customer: `Lainnya (${sortedOutlets.length - 6} Outlet)`,
+                    totalRevenue: currentOtherRev,
+                    orderCount: currentOtherOrd
+                });
+            }
+
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+            const R = 68;
+            const strokeW = 26;
+            const C = 2 * Math.PI * R; // ~427.26
+
+            let currentOffset = 0;
+            let svgSlices = '';
+            let legendItemsHtml = '';
+
+            segments.forEach((seg, i) => {
+                const color = colors[i % colors.length];
+                const pct = (seg.totalRevenue / totalRev) * 100;
+                const dashLen = (pct / 100) * C;
+                const tip = `${seg.customer}: Rp ${formatRupiahNumber(seg.totalRevenue)} (${pct.toFixed(1)}%)`;
+
+                svgSlices += `
+                    <circle r="${R}" cx="100" cy="100" fill="transparent" stroke="${color}" stroke-width="${strokeW}"
+                            stroke-dasharray="${dashLen.toFixed(2)} ${(C - dashLen).toFixed(2)}"
+                            stroke-dashoffset="${(-currentOffset).toFixed(2)}"
+                            transform="rotate(-90 100 100)"
+                            style="transition: stroke-width 0.15s ease; cursor: pointer;">
+                        <title>${tip}</title>
+                    </circle>
+                `;
+                currentOffset += dashLen;
+
+                legendItemsHtml += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.75rem; margin-bottom: 5px;">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;">
+                            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${color}; flex-shrink: 0;"></span>
+                            <span style="font-weight: 600; color: var(--text-main); overflow: hidden; text-overflow: ellipsis;">${escapeHtml(seg.customer)}</span>
+                        </div>
+                        <div style="text-align: right; flex-shrink: 0;">
+                            <span style="font-weight: 700; color: #059669;">Rp ${formatCompactRupiah(seg.totalRevenue)}</span>
+                            <span style="font-size: 0.68rem; color: var(--text-muted); margin-left: 4px;">(${pct.toFixed(1)}%)</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; flex: 1; min-width: 220px; max-width: 240px;">
+                    <svg viewBox="0 0 200 200" style="width: 100%; height: 100%; max-height: 200px;" xmlns="http://www.w3.org/2000/svg">
+                        ${svgSlices}
+                        <text x="100" y="96" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b">Total Omset</text>
+                        <text x="100" y="114" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">Rp ${formatCompactRupiah(totalRev)}</text>
+                    </svg>
+                </div>
+                <div style="flex: 1.4; min-width: 260px; max-height: 220px; overflow-y: auto; padding-left: 10px;">
+                    ${legendItemsHtml}
+                </div>
+            `;
+        }
+
+        function renderReportsGrafikTab() {
+            renderReportsCalendarView();
+            renderReportsDailyTrendChart();
+            renderReportsDayOfWeekChart();
+            renderReportsDonutChart();
+        }
+
+        function switchReportTableModel(modelName) {
+            if (!['outlet', 'commodity', 'journal', 'unpriced'].includes(modelName)) modelName = 'outlet';
+            reportFilterState.tableModel = modelName;
+
+            ['outlet', 'commodity', 'journal', 'unpriced'].forEach(m => {
+                const btn = document.getElementById(`btnReportModel-${m}`);
+                if (btn) {
+                    if (m === modelName) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+
+            renderReportsTableView();
+        }
+
+        function onReportTableSearch(query) {
+            reportFilterState.tableSearch = (query || '').trim().toLowerCase();
+            renderReportsTableView();
+        }
+
+        function renderReportsTableView() {
+            const container = document.getElementById('reportTableDataContainer');
+            if (!container) return;
+
+            const model = reportFilterState.tableModel || 'outlet';
+            const search = reportFilterState.tableSearch || '';
+            const orders = reportFilterState.lastFilteredOrders || [];
+
+            if (model === 'outlet') {
+                renderReportTableOutlet(container, orders, search);
+            } else if (model === 'commodity') {
+                renderReportTableCommodity(container, orders, search);
+            } else if (model === 'journal') {
+                renderReportTableJournal(container, orders, search);
+            } else if (model === 'unpriced') {
+                renderReportTableUnpriced(container, orders, search);
+            }
+        }
+
+        function renderReportTableOutlet(container, orders, search) {
+            const outletMap = new Map();
+            orders.forEach(tx => {
+                const cust = (tx.customer || 'No Customer').trim();
+                if (!outletMap.has(cust)) {
+                    outletMap.set(cust, {
+                        customer: cust,
+                        isLampoh: cust.toLowerCase().includes('lampoh'),
+                        orderCount: 0,
+                        totalQty: 0,
+                        totalRevenue: 0
+                    });
+                }
+                const entry = outletMap.get(cust);
+                entry.orderCount++;
+
+                (tx.cart || []).forEach(ci => {
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    entry.totalQty += q;
+                    entry.totalRevenue += (q * p);
+                });
+            });
+
+            let list = Array.from(outletMap.values());
+            if (search) {
+                list = list.filter(item => item.customer.toLowerCase().includes(search));
+            }
+            list.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+            if (list.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.78rem;">Tidak ada data outlet yang cocok.</div>`;
+                return;
+            }
+
+            let sumOrders = 0;
+            let sumQty = 0;
+            let sumRevenue = 0;
+
+            let tbodyHtml = '';
+            list.forEach((item, idx) => {
+                sumOrders += item.orderCount;
+                sumQty += item.totalQty;
+                sumRevenue += item.totalRevenue;
+                const aov = item.orderCount > 0 ? Math.round(item.totalRevenue / item.orderCount) : 0;
+
+                tbodyHtml += `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                        <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(item.customer)}</td>
+                        <td>
+                            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 9999px; font-weight: 700; background: ${item.isLampoh ? '#eff6ff; color: #1d4ed8;' : '#f1f5f9; color: #475569;'}">
+                                ${item.isLampoh ? '⭐ Lampoh' : '🏢 Non-Lampoh'}
+                            </span>
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">${item.orderCount}</td>
+                        <td style="text-align: right; font-weight: 600;">${formatRupiahNumber(Math.round(item.totalQty * 10) / 10)}</td>
+                        <td style="text-align: right; font-weight: 700; color: #059669;">Rp ${formatRupiahNumber(item.totalRevenue)}</td>
+                        <td style="text-align: right; color: var(--text-secondary);">Rp ${formatRupiahNumber(aov)}</td>
+                    </tr>
+                `;
+            });
+
+            const overallAov = sumOrders > 0 ? Math.round(sumRevenue / sumOrders) : 0;
+
+            container.innerHTML = `
+                <table class="report-data-table" id="reportActiveDataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">No.</th>
+                            <th>Nama Outlet / Cabang</th>
+                            <th style="width: 110px;">Tipe</th>
+                            <th style="width: 100px; text-align: center;">Jml Pesanan</th>
+                            <th style="width: 110px; text-align: right;">Total Qty</th>
+                            <th style="width: 130px; text-align: right;">Total Omset (Rp)</th>
+                            <th style="width: 130px; text-align: right;">AOV (Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="text-align: right;">GRAND TOTAL (${list.length} Outlet):</td>
+                            <td style="text-align: center;">${sumOrders}</td>
+                            <td style="text-align: right;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
+                            <td style="text-align: right; color: #059669;">Rp ${formatRupiahNumber(sumRevenue)}</td>
+                            <td style="text-align: right;">Rp ${formatRupiahNumber(overallAov)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+
+        function renderReportTableCommodity(container, orders, search) {
+            const commMap = new Map();
+            orders.forEach(tx => {
+                (tx.cart || []).forEach(ci => {
+                    const name = (ci.name || '').trim();
+                    const variant = (ci.variant || '').trim();
+                    const key = variant ? `${name} (${variant})` : name;
+                    const uom = (ci.uom || '-').toUpperCase();
+                    const mapKey = `${key}___${uom}`;
+
+                    if (!commMap.has(mapKey)) {
+                        commMap.set(mapKey, {
+                            name: key,
+                            uom,
+                            totalQty: 0,
+                            orderCount: 0,
+                            totalRevenue: 0
+                        });
+                    }
+                    const entry = commMap.get(mapKey);
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    entry.totalQty += q;
+                    entry.orderCount++;
+                    entry.totalRevenue += (q * p);
+                });
+            });
+
+            let list = Array.from(commMap.values());
+            if (search) {
+                list = list.filter(item => item.name.toLowerCase().includes(search) || item.uom.toLowerCase().includes(search));
+            }
+            list.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+            if (list.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.78rem;">Tidak ada komoditas yang cocok.</div>`;
+                return;
+            }
+
+            let sumQty = 0;
+            let sumRevenue = 0;
+
+            let tbodyHtml = '';
+            list.forEach((item, idx) => {
+                sumQty += item.totalQty;
+                sumRevenue += item.totalRevenue;
+                const avgPrice = item.totalQty > 0 ? Math.round(item.totalRevenue / item.totalQty) : 0;
+
+                tbodyHtml += `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                        <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(item.name)}</td>
+                        <td style="color: var(--text-muted); font-weight: 600;">${escapeHtml(item.uom)}</td>
+                        <td style="text-align: right; font-weight: 700;">${formatRupiahNumber(Math.round(item.totalQty * 10) / 10)}</td>
+                        <td style="text-align: center; color: var(--text-secondary);">${item.orderCount}x</td>
+                        <td style="text-align: right; font-weight: 700; color: #059669;">Rp ${formatRupiahNumber(item.totalRevenue)}</td>
+                        <td style="text-align: right; color: var(--text-secondary);">${avgPrice > 0 ? 'Rp ' + formatRupiahNumber(avgPrice) : '-'}</td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <table class="report-data-table" id="reportActiveDataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">No.</th>
+                            <th>Nama Komoditas</th>
+                            <th style="width: 80px;">Satuan</th>
+                            <th style="width: 120px; text-align: right;">Total Qty Terjual</th>
+                            <th style="width: 100px; text-align: center;">Frekuensi</th>
+                            <th style="width: 140px; text-align: right;">Total Omset (Rp)</th>
+                            <th style="width: 130px; text-align: right;">Rata-rata Harga</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="text-align: right;">GRAND TOTAL (${list.length} Item):</td>
+                            <td style="text-align: right;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
+                            <td></td>
+                            <td style="text-align: right; color: #059669;">Rp ${formatRupiahNumber(sumRevenue)}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+
+        function renderReportTableJournal(container, orders, search) {
+            let list = [...orders];
+            const basis = reportFilterState.dateBasis || 'delivery';
+
+            list.sort((a, b) => {
+                const timeA = (basis === 'delivery') ? (getOrderDeliveryTime(a) || getOrderUpdatedTime(a)) : (getOrderUpdatedTime(a) || getOrderDeliveryTime(a));
+                const timeB = (basis === 'delivery') ? (getOrderDeliveryTime(b) || getOrderUpdatedTime(b)) : (getOrderUpdatedTime(b) || getOrderDeliveryTime(b));
+                return timeB - timeA;
+            });
+
+            if (search) {
+                list = list.filter(tx => {
+                    const oNum = (tx.orderNumber || '').toLowerCase();
+                    const cust = (tx.customer || '').toLowerCase();
+                    const dDate = (tx.deliveryDate || '').toLowerCase();
+                    return oNum.includes(search) || cust.includes(search) || dDate.includes(search);
+                });
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.78rem;">Tidak ada transaksi buku penjualan yang cocok.</div>`;
+                return;
+            }
+
+            let sumRows = 0;
+            let sumQty = 0;
+            let sumRevenue = 0;
+
+            let tbodyHtml = '';
+            list.forEach(tx => {
+                const isPriced = isOrderFullyPriced(tx);
+                let orderRev = 0;
+                let orderQty = 0;
+                const rowsCount = (tx.cart || []).length;
+
+                (tx.cart || []).forEach(ci => {
+                    const q = parseFloat(ci.qty) || 0;
+                    const p = parseFloat(ci.unitPrice) || 0;
+                    orderQty += q;
+                    orderRev += (q * p);
+                });
+
+                sumRows += rowsCount;
+                sumQty += orderQty;
+                sumRevenue += orderRev;
+
+                const delivStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
+
+                tbodyHtml += `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--text-main); white-space: nowrap;">${escapeHtml(delivStr)}</td>
+                        <td style="font-weight: 700; color: var(--primary);">#${escapeHtml(tx.orderNumber || '-')}</td>
+                        <td style="font-weight: 600;">${escapeHtml(tx.customer || 'No Customer')}</td>
+                        <td>
+                            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 9999px; font-weight: 700; background: ${isPriced ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #b45309;'}">
+                                ${isPriced ? '✅ Berharga' : '⚠️ Belum Berharga'}
+                            </span>
+                        </td>
+                        <td style="text-align: center;">${rowsCount} item</td>
+                        <td style="text-align: right; font-weight: 600;">${formatRupiahNumber(Math.round(orderQty * 10) / 10)}</td>
+                        <td style="text-align: right; font-weight: 700; color: #059669;">Rp ${formatRupiahNumber(orderRev)}</td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="openOrderInAdmin('${escapeHtml(tx.orderNumber)}')" style="font-size: 0.68rem; padding: 2px 8px; color: var(--primary); border-color: var(--primary);">
+                                ✏️ Buka
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <table class="report-data-table" id="reportActiveDataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;">Tgl Pengiriman</th>
+                            <th style="width: 110px;">No. Order</th>
+                            <th>Nama Outlet</th>
+                            <th style="width: 120px;">Status Harga</th>
+                            <th style="width: 90px; text-align: center;">Jml Item</th>
+                            <th style="width: 100px; text-align: right;">Total Qty</th>
+                            <th style="width: 130px; text-align: right;">Total Omset (Rp)</th>
+                            <th style="width: 80px; text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" style="text-align: right;">GRAND TOTAL (${list.length} Pesanan):</td>
+                            <td style="text-align: center;">${sumRows} baris</td>
+                            <td style="text-align: right;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
+                            <td style="text-align: right; color: #059669;">Rp ${formatRupiahNumber(sumRevenue)}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+
+        function renderReportTableUnpriced(container, orders, search) {
+            let list = orders.filter(tx => !isOrderFullyPriced(tx));
+
+            if (search) {
+                list = list.filter(tx => {
+                    const oNum = (tx.orderNumber || '').toLowerCase();
+                    const cust = (tx.customer || '').toLowerCase();
+                    return oNum.includes(search) || cust.includes(search);
+                });
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 10px; color: #16a34a;">
+                        <div style="font-size: 1.5rem; margin-bottom: 6px;">🎉</div>
+                        <div style="font-weight: 700; font-size: 0.9rem;">Semua pesanan dalam filter ini sudah memiliki harga!</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Tidak ada pesanan tertunda yang belum berharga.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let tbodyHtml = '';
+            list.forEach((tx, idx) => {
+                const unpricedItems = (tx.cart || []).filter(ci => !ci.unitPrice || parseFloat(ci.unitPrice) <= 0 || ci._isSuggested);
+                const itemsSummary = unpricedItems.map(ci => {
+                    const n = ci.name || '';
+                    const v = ci.variant ? ` (${ci.variant})` : '';
+                    return `<b>${escapeHtml(n + v)}</b>: ${ci.qty} ${escapeHtml(ci.uom || '')}`;
+                }).join(', ');
+
+                const delivStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
+
+                tbodyHtml += `
+                    <tr>
+                        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                        <td style="font-weight: 700; color: var(--primary);">#${escapeHtml(tx.orderNumber || '-')}</td>
+                        <td style="font-weight: 600;">${escapeHtml(tx.customer || 'No Customer')}</td>
+                        <td style="white-space: nowrap;">${escapeHtml(delivStr)}</td>
+                        <td style="font-size: 0.72rem; color: #b45309;">${itemsSummary || '-'}</td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="openOrderInAdmin('${escapeHtml(tx.orderNumber)}')" style="font-size: 0.68rem; padding: 3px 9px;">
+                                ✏️ Beri Harga
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <table class="report-data-table" id="reportActiveDataTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">No.</th>
+                            <th style="width: 110px;">No. Order</th>
+                            <th style="width: 150px;">Nama Outlet</th>
+                            <th style="width: 120px;">Tgl Pengiriman</th>
+                            <th>Barang Belum Berharga</th>
+                            <th style="width: 110px; text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>${tbodyHtml}</tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" style="color: #b45309;">Total ${list.length} pesanan memerlukan penetapan harga.</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+        }
+
+        function exportReportTableToCsv() {
+            const table = document.getElementById('reportActiveDataTable');
+            if (!table) {
+                showToast("Tabel laporan belum memiliki data untuk diekspor", "warning");
+                return;
+            }
+
+            const model = reportFilterState.tableModel || 'rekap';
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = [];
+                cols.forEach(col => {
+                    if (col.querySelector('button')) {
+                        return;
+                    }
+                    let text = col.innerText.replace(/"/g, '""').trim();
+                    rowData.push(`"${text}"`);
+                });
+                if (rowData.length > 0) {
+                    csv.push(rowData.join(','));
+                }
+            });
+
+            const csvString = "\uFEFF" + csv.join("\r\n");
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+            const fileName = `Laporan_${model.toUpperCase()}_${dateStr}.csv`;
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast(`File CSV ${fileName} berhasil diunduh`, "success");
+        }
+
+        function printReportTable() {
+            const table = document.getElementById('reportActiveDataTable');
+            if (!table) {
+                showToast("Tabel laporan belum memiliki data untuk dicetak", "warning");
+                return;
+            }
+            window.print();
         }
 
         // --- Accurate CSV Export Engine ---

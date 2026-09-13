@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #0f172a;
@@ -3047,14 +3048,14 @@
                             <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Format Laporan:</span>
                             <button type="button" class="report-table-model-btn active" id="btnReportModel-outlet" onclick="switchReportTableModel('outlet')">🏢 Rekap Outlet</button>
                             <button type="button" class="report-table-model-btn" id="btnReportModel-commodity" onclick="switchReportTableModel('commodity')">📦 Rekap Komoditas</button>
-                            <button type="button" class="report-table-model-btn" id="btnReportModel-journal" onclick="switchReportTableModel('journal')">📖 Buku Penjualan Harian</button>
-                            <button type="button" class="report-table-model-btn" id="btnReportModel-unpriced" onclick="switchReportTableModel('unpriced')">⏳ Pesanan Belum Berharga</button>
+                            <button type="button" class="report-table-model-btn" id="btnReportModel-detail" onclick="switchReportTableModel('detail')">📑 Rincian Penjualan Barang</button>
                         </div>
 
                         <!-- Search & Export Actions -->
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <input type="text" id="reportTableSearchInput" placeholder="🔍 Cari data tabel..." oninput="onReportTableSearch(this.value)" style="padding: 4px 8px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius-sm); width: 170px;">
-                            <button type="button" class="btn btn-sm btn-outline" onclick="exportReportTableToCsv()" style="font-size: 0.72rem; padding: 4px 10px; color: #059669; border-color: #a7f3d0; font-weight: 700;">📥 Ekspor CSV</button>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="exportReportTableToExcel()" style="font-size: 0.72rem; padding: 4px 10px; color: #059669; border-color: #a7f3d0; font-weight: 700;">📥 Unduh Excel (.xlsx)</button>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="exportReportTableToPdf()" style="font-size: 0.72rem; padding: 4px 10px; color: #dc2626; border-color: #fecaca; font-weight: 700;">📄 Unduh PDF (.pdf)</button>
                             <button type="button" class="btn btn-sm btn-outline" onclick="printReportTable()" style="font-size: 0.72rem; padding: 4px 10px;">🖨️ Cetak</button>
                         </div>
                     </div>
@@ -7919,7 +7920,7 @@
             subTab: 'dashboard', // 'dashboard', 'grafik', 'tabel'
             calendarYear: new Date().getFullYear(),
             calendarMonth: new Date().getMonth(),
-            tableModel: 'outlet', // 'outlet', 'commodity', 'journal', 'unpriced'
+            tableModel: 'outlet', // 'outlet', 'commodity', 'detail'
             tableSearch: '',
             dailyChartMetric: 'revenue' // 'revenue' or 'orders'
         };
@@ -9006,14 +9007,18 @@
                         </span>
                         <span style="display:inline-flex; align-items:center; gap:5px;">
                             <span style="width:14px; height:14px; background:#2563eb; border-radius:50%;"></span>
-                            Ukuran Bubble = Proporsi Qty (Makin besar = Qty makin tinggi)
+                            Lingkaran = Qty Proporsional
+                        </span>
+                        <span style="display:inline-flex; align-items:center; gap:5px;">
+                            <span style="width:16px; height:12px; background:repeating-linear-gradient(45deg, #1e3a8a, #1e3a8a 2px, #93c5fd 2px, #93c5fd 4px); border-radius:2px; border:1px solid #94a3b8;"></span>
+                            Arsir = Overlap 2 Satuan
                         </span>
                         <span style="display:inline-flex; align-items:center; gap:5px;">
                             <span style="width:12px; height:12px; border:2px solid #2563eb; border-radius:3px;"></span>
                             Hari Ini
                         </span>
                         <span style="display:inline-flex; align-items:center; gap:5px; color:#059669; font-weight:700;">
-                            Rp = Total Omset
+                            Rp = Omset Khusus ${escapeHtml(commodityFilter)}
                         </span>
                     `;
                 } else {
@@ -9055,7 +9060,8 @@
                     day: d,
                     orders: [],
                     commodityQty: 0,
-                    commodityUom: '',
+                    commodityRevenue: 0,
+                    commodityUomMap: new Map(),
                     totalRevenue: 0,
                     totalVolume: 0
                 });
@@ -9081,8 +9087,15 @@
 
                         if (commodityFilter !== 'all') {
                             if (key.toLowerCase() === commodityFilter.toLowerCase()) {
+                                const uom = (ci.uom || 'PCS').toUpperCase();
                                 dEntry.commodityQty += qty;
-                                if (!dEntry.commodityUom && ci.uom) dEntry.commodityUom = ci.uom.toUpperCase();
+                                dEntry.commodityRevenue += sub;
+                                if (!dEntry.commodityUomMap.has(uom)) {
+                                    dEntry.commodityUomMap.set(uom, { uom, qty: 0, revenue: 0 });
+                                }
+                                const uEntry = dEntry.commodityUomMap.get(uom);
+                                uEntry.qty += qty;
+                                uEntry.revenue += sub;
                             }
                         }
                     });
@@ -9139,17 +9152,63 @@
                 let bubbleHtml = '';
                 if (commodityFilter !== 'all') {
                     if (hasCommodity) {
-                        const ratio = maxMetric > 0 ? (dEntry.commodityQty / maxMetric) : 0.5;
-                        // Proportional bubble size: 24px up to 52px
-                        const bubbleSize = Math.round(24 + (ratio * 28));
-                        const displayQty = Math.round(dEntry.commodityQty * 10) / 10;
-                        const uomText = dEntry.commodityUom || '';
-                        bubbleHtml = `
-                            <div class="report-calendar-qty-bubble" style="width: ${bubbleSize}px; height: ${bubbleSize}px; font-size: ${bubbleSize >= 38 ? '0.75rem' : '0.66rem'};" title="Permintaan ${escapeHtml(commodityFilter)}: ${displayQty} ${uomText} (${dEntry.orders.length} pesanan)">
-                                <span>${displayQty}</span>
-                                ${bubbleSize >= 40 && uomText ? `<span style="font-size: 0.52rem; opacity: 0.9; font-weight: 600;">${escapeHtml(uomText)}</span>` : ''}
-                            </div>
-                        `;
+                        const uomEntries = Array.from(dEntry.commodityUomMap.values()).sort((a, b) => b.qty - a.qty);
+                        if (uomEntries.length >= 2) {
+                            // 2 Satuan: Lingkaran bertumpuk (overlap) dengan irisan arsir
+                            const u1 = uomEntries[0];
+                            const u2 = uomEntries[1];
+                            const rRatio1 = maxMetric > 0 ? (u1.qty / maxMetric) : 0.5;
+                            const rRatio2 = maxMetric > 0 ? (u2.qty / maxMetric) : 0.5;
+                            const R1 = Math.round(13 + rRatio1 * 8); // 13px - 21px
+                            const R2 = Math.round(13 + rRatio2 * 8); // 13px - 21px
+                            const cY = 23;
+                            const cX1 = 26;
+                            const cX2 = 48; // Berjarak 22px sehingga beririsan pasti
+                            const patternId = `hatch_${d}_${month}`;
+                            const clipId = `clip_${d}_${month}`;
+                            const displayQty1 = Math.round(u1.qty * 10) / 10;
+                            const displayQty2 = Math.round(u2.qty * 10) / 10;
+
+                            bubbleHtml = `
+                                <div style="display:flex; justify-content:center; align-items:center; margin:auto;" title="Permintaan ${escapeHtml(commodityFilter)}: ${displayQty1} ${u1.uom} & ${displayQty2} ${u2.uom}">
+                                    <svg viewBox="0 0 74 46" style="width: 74px; height: 46px; overflow: visible; display: block;">
+                                        <defs>
+                                            <pattern id="${patternId}" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                                                <line x1="0" y1="0" x2="0" y2="4" stroke="#1e3a8a" stroke-width="1.3" />
+                                            </pattern>
+                                            <clipPath id="${clipId}">
+                                                <circle cx="${cX1}" cy="${cY}" r="${R1}" />
+                                            </clipPath>
+                                        </defs>
+                                        <!-- Lingkaran Satuan 1 -->
+                                        <circle cx="${cX1}" cy="${cY}" r="${R1}" fill="#2563eb" fill-opacity="0.88" />
+                                        <!-- Lingkaran Satuan 2 -->
+                                        <circle cx="${cX2}" cy="${cY}" r="${R2}" fill="#38bdf8" fill-opacity="0.8" />
+                                        <!-- Irisan Overlap Berpola Arsir -->
+                                        <circle cx="${cX2}" cy="${cY}" r="${R2}" clip-path="url(#${clipId})" fill="url(#${patternId})" />
+                                        <!-- Label Satuan 1 -->
+                                        <text x="${cX1 - 3}" y="${cY - 1}" font-size="7.5" font-weight="800" fill="#ffffff" text-anchor="middle">${displayQty1}</text>
+                                        <text x="${cX1 - 3}" y="${cY + 7}" font-size="5.5" font-weight="700" fill="#ffffff" opacity="0.9" text-anchor="middle">${escapeHtml(u1.uom)}</text>
+                                        <!-- Label Satuan 2 -->
+                                        <text x="${cX2 + 3}" y="${cY - 1}" font-size="7.5" font-weight="800" fill="#0f172a" text-anchor="middle">${displayQty2}</text>
+                                        <text x="${cX2 + 3}" y="${cY + 7}" font-size="5.5" font-weight="700" fill="#0f172a" opacity="0.9" text-anchor="middle">${escapeHtml(u2.uom)}</text>
+                                    </svg>
+                                </div>
+                            `;
+                        } else {
+                            // 1 Satuan
+                            const uEntry = uomEntries[0];
+                            const ratio = maxMetric > 0 ? (dEntry.commodityQty / maxMetric) : 0.5;
+                            const bubbleSize = Math.round(24 + (ratio * 28));
+                            const displayQty = Math.round(dEntry.commodityQty * 10) / 10;
+                            const uomText = uEntry ? uEntry.uom : '';
+                            bubbleHtml = `
+                                <div class="report-calendar-qty-bubble" style="width: ${bubbleSize}px; height: ${bubbleSize}px; font-size: ${bubbleSize >= 38 ? '0.75rem' : '0.66rem'};" title="Permintaan ${escapeHtml(commodityFilter)}: ${displayQty} ${uomText} (${dEntry.orders.length} pesanan)">
+                                    <span>${displayQty}</span>
+                                    ${bubbleSize >= 40 && uomText ? `<span style="font-size: 0.52rem; opacity: 0.9; font-weight: 600;">${escapeHtml(uomText)}</span>` : ''}
+                                </div>
+                            `;
+                        }
                     }
                 } else {
                     if (hasOrders) {
@@ -9164,9 +9223,18 @@
                     }
                 }
 
+                // Angka rupiah di pojok tanggal:
+                // Jika komoditas difilter: HANYA omset penjualan dari komoditas tersebut!
+                // Jika semua komoditas: total seluruh omset transaksi hari itu.
                 let omsetHtml = '';
-                if (dEntry.totalRevenue > 0) {
-                    omsetHtml = `<div class="report-calendar-omset-badge" title="Total Omset: Rp ${formatRupiahNumber(dEntry.totalRevenue)}">Rp ${formatCompactRupiah(dEntry.totalRevenue)}</div>`;
+                if (commodityFilter !== 'all') {
+                    if (dEntry.commodityRevenue > 0) {
+                        omsetHtml = `<div class="report-calendar-omset-badge" title="Omset ${escapeHtml(commodityFilter)}: Rp ${formatRupiahNumber(dEntry.commodityRevenue)}">Rp ${formatCompactRupiah(dEntry.commodityRevenue)}</div>`;
+                    }
+                } else {
+                    if (dEntry.totalRevenue > 0) {
+                        omsetHtml = `<div class="report-calendar-omset-badge" title="Total Omset: Rp ${formatRupiahNumber(dEntry.totalRevenue)}">Rp ${formatCompactRupiah(dEntry.totalRevenue)}</div>`;
+                    }
                 }
 
                 const clickAction = (hasOrders || hasCommodity) ? `onclick="openReportCalendarDayDetail('${dateKey}')"` : '';
@@ -9680,10 +9748,10 @@
         }
 
         function switchReportTableModel(modelName) {
-            if (!['outlet', 'commodity', 'journal', 'unpriced'].includes(modelName)) modelName = 'outlet';
+            if (!['outlet', 'commodity', 'detail'].includes(modelName)) modelName = 'outlet';
             reportFilterState.tableModel = modelName;
 
-            ['outlet', 'commodity', 'journal', 'unpriced'].forEach(m => {
+            ['outlet', 'commodity', 'detail'].forEach(m => {
                 const btn = document.getElementById(`btnReportModel-${m}`);
                 if (btn) {
                     if (m === modelName) btn.classList.add('active');
@@ -9711,10 +9779,8 @@
                 renderReportTableOutlet(container, orders, search);
             } else if (model === 'commodity') {
                 renderReportTableCommodity(container, orders, search);
-            } else if (model === 'journal') {
-                renderReportTableJournal(container, orders, search);
-            } else if (model === 'unpriced') {
-                renderReportTableUnpriced(container, orders, search);
+            } else if (model === 'detail') {
+                renderReportTableDetail(container, orders, search);
             }
         }
 
@@ -9898,9 +9964,9 @@
             `;
         }
 
-        function renderReportTableJournal(container, orders, search) {
-            let list = [...orders];
+        function renderReportTableDetail(container, orders, search) {
             const basis = reportFilterState.dateBasis || 'delivery';
+            let list = [...orders];
 
             list.sort((a, b) => {
                 const timeA = (basis === 'delivery') ? (getOrderDeliveryTime(a) || getOrderUpdatedTime(a)) : (getOrderUpdatedTime(a) || getOrderDeliveryTime(a));
@@ -9908,59 +9974,106 @@
                 return timeB - timeA;
             });
 
+            const rows = [];
+            list.forEach(tx => {
+                const oNum = tx.orderNumber || '-';
+                const cust = tx.customer || 'No Customer';
+                const isLampoh = cust.toLowerCase().includes('lampoh');
+                const delivStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
+
+                let orderTimeStr = '-';
+                const createdTime = getOrderUpdatedTime(tx);
+                if (createdTime) {
+                    const d = new Date(createdTime);
+                    if (!isNaN(d.getTime())) {
+                        orderTimeStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                    }
+                }
+
+                (tx.cart || []).forEach(ci => {
+                    const sku = ci.sku || enrichCartItemSku(ci) || '-';
+                    const name = ci.name || '';
+                    const variant = ci.variant || '-';
+                    const qty = parseFloat(ci.qty) || 0;
+                    const uom = ci.uom || '-';
+                    const price = parseFloat(ci.unitPrice) || 0;
+                    const subtotal = qty * price;
+                    const notes = ci.notes || '-';
+                    const itemIsPriced = Boolean(ci.unitPrice && parseFloat(ci.unitPrice) > 0 && !ci._isSuggested);
+
+                    rows.push({
+                        orderNumber: oNum,
+                        customer: cust,
+                        isLampoh,
+                        deliveryDate: delivStr,
+                        orderTime: orderTimeStr,
+                        sku,
+                        name,
+                        variant,
+                        qty,
+                        uom,
+                        unitPrice: price,
+                        subtotal,
+                        notes,
+                        itemIsPriced,
+                        rawTx: tx
+                    });
+                });
+            });
+
+            let filteredRows = rows;
             if (search) {
-                list = list.filter(tx => {
-                    const oNum = (tx.orderNumber || '').toLowerCase();
-                    const cust = (tx.customer || '').toLowerCase();
-                    const dDate = (tx.deliveryDate || '').toLowerCase();
-                    return oNum.includes(search) || cust.includes(search) || dDate.includes(search);
+                filteredRows = rows.filter(r => {
+                    return r.orderNumber.toLowerCase().includes(search) ||
+                           r.customer.toLowerCase().includes(search) ||
+                           r.name.toLowerCase().includes(search) ||
+                           r.sku.toLowerCase().includes(search) ||
+                           r.variant.toLowerCase().includes(search) ||
+                           r.notes.toLowerCase().includes(search) ||
+                           r.deliveryDate.toLowerCase().includes(search);
                 });
             }
 
-            if (list.length === 0) {
-                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.78rem;">Tidak ada transaksi buku penjualan yang cocok.</div>`;
+            if (filteredRows.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 30px; font-size: 0.78rem;">Tidak ada rincian penjualan barang yang cocok.</div>`;
                 return;
             }
 
-            let sumRows = 0;
             let sumQty = 0;
             let sumRevenue = 0;
-
             let tbodyHtml = '';
-            list.forEach(tx => {
-                const isPriced = isOrderFullyPriced(tx);
-                let orderRev = 0;
-                let orderQty = 0;
-                const rowsCount = (tx.cart || []).length;
 
-                (tx.cart || []).forEach(ci => {
-                    const q = parseFloat(ci.qty) || 0;
-                    const p = parseFloat(ci.unitPrice) || 0;
-                    orderQty += q;
-                    orderRev += (q * p);
-                });
-
-                sumRows += rowsCount;
-                sumQty += orderQty;
-                sumRevenue += orderRev;
-
-                const delivStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
+            filteredRows.forEach((r, idx) => {
+                sumQty += r.qty;
+                sumRevenue += r.subtotal;
 
                 tbodyHtml += `
                     <tr>
-                        <td style="font-weight: 600; color: var(--text-main); white-space: nowrap;">${escapeHtml(delivStr)}</td>
-                        <td style="font-weight: 700; color: var(--primary);">#${escapeHtml(tx.orderNumber || '-')}</td>
-                        <td style="font-weight: 600;">${escapeHtml(tx.customer || 'No Customer')}</td>
+                        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+                        <td style="font-weight: 600; white-space: nowrap;">${escapeHtml(r.deliveryDate)}</td>
+                        <td style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">${escapeHtml(r.orderTime)}</td>
+                        <td style="font-weight: 700; color: var(--primary); white-space: nowrap;">#${escapeHtml(r.orderNumber)}</td>
+                        <td style="font-weight: 600;">${escapeHtml(r.customer)}</td>
                         <td>
-                            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 9999px; font-weight: 700; background: ${isPriced ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #b45309;'}">
-                                ${isPriced ? '✅ Berharga' : '⚠️ Belum Berharga'}
+                            <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 9999px; font-weight: 700; background: ${r.isLampoh ? '#eff6ff; color: #1d4ed8;' : '#f1f5f9; color: #475569;'}">
+                                ${r.isLampoh ? 'Lampoh' : 'Non-Lampoh'}
                             </span>
                         </td>
-                        <td style="text-align: center;">${rowsCount} item</td>
-                        <td style="text-align: right; font-weight: 600;">${formatRupiahNumber(Math.round(orderQty * 10) / 10)}</td>
-                        <td style="text-align: right; font-weight: 700; color: #059669;">Rp ${formatRupiahNumber(orderRev)}</td>
-                        <td style="text-align: center;">
-                            <button type="button" class="btn btn-sm btn-outline" onclick="openOrderInAdmin('${escapeHtml(tx.orderNumber)}')" style="font-size: 0.68rem; padding: 2px 8px; color: var(--primary); border-color: var(--primary);">
+                        <td style="font-family: monospace; font-size: 0.7rem; color: var(--text-secondary);">${escapeHtml(r.sku)}</td>
+                        <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(r.name)}</td>
+                        <td style="color: var(--text-muted);">${escapeHtml(r.variant)}</td>
+                        <td style="text-align: right; font-weight: 700;">${formatRupiahNumber(Math.round(r.qty * 10) / 10)}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.72rem;">${escapeHtml(r.uom)}</td>
+                        <td style="text-align: right; font-weight: 600;">${r.unitPrice > 0 ? 'Rp ' + formatRupiahNumber(r.unitPrice) : '<span style="color: #b45309;">-</span>'}</td>
+                        <td style="text-align: right; font-weight: 700; color: #059669;">${r.subtotal > 0 ? 'Rp ' + formatRupiahNumber(r.subtotal) : '<span style="color: #b45309;">-</span>'}</td>
+                        <td style="font-size: 0.7rem; color: var(--text-muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.notes)}">${escapeHtml(r.notes)}</td>
+                        <td>
+                            <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 9999px; font-weight: 700; background: ${r.itemIsPriced ? '#dcfce7; color: #15803d;' : '#fef3c7; color: #b45309;'}">
+                                ${r.itemIsPriced ? '✅ Berharga' : '⚠️ Belum'}
+                            </span>
+                        </td>
+                        <td style="text-align: center; white-space: nowrap;">
+                            <button type="button" class="btn btn-sm btn-outline" onclick="openOrderInAdmin('${escapeHtml(r.orderNumber)}')" style="font-size: 0.65rem; padding: 2px 7px; color: var(--primary); border-color: var(--primary);" title="Buka di Panel Admin">
                                 ✏️ Buka
                             </button>
                         </td>
@@ -9972,142 +10085,237 @@
                 <table class="report-data-table" id="reportActiveDataTable">
                     <thead>
                         <tr>
-                            <th style="width: 120px;">Tgl Pengiriman</th>
-                            <th style="width: 110px;">No. Order</th>
+                            <th style="width: 35px; text-align: center;">No.</th>
+                            <th style="width: 95px;">Tgl Kirim</th>
+                            <th style="width: 85px;">Waktu Pesan</th>
+                            <th style="width: 95px;">No. Order</th>
                             <th>Nama Outlet</th>
-                            <th style="width: 120px;">Status Harga</th>
-                            <th style="width: 90px; text-align: center;">Jml Item</th>
-                            <th style="width: 100px; text-align: right;">Total Qty</th>
-                            <th style="width: 130px; text-align: right;">Total Omset (Rp)</th>
-                            <th style="width: 80px; text-align: center;">Aksi</th>
+                            <th style="width: 85px;">Tipe</th>
+                            <th style="width: 80px;">SKU</th>
+                            <th>Nama Barang</th>
+                            <th style="width: 75px;">Varian</th>
+                            <th style="width: 70px; text-align: right;">Qty</th>
+                            <th style="width: 55px;">Satuan</th>
+                            <th style="width: 100px; text-align: right;">Harga Satuan</th>
+                            <th style="width: 110px; text-align: right;">Subtotal</th>
+                            <th style="width: 120px;">Catatan</th>
+                            <th style="width: 80px;">Status</th>
+                            <th style="width: 60px; text-align: center;">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>${tbodyHtml}</tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="4" style="text-align: right;">GRAND TOTAL (${list.length} Pesanan):</td>
-                            <td style="text-align: center;">${sumRows} baris</td>
-                            <td style="text-align: right;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
-                            <td style="text-align: right; color: #059669;">Rp ${formatRupiahNumber(sumRevenue)}</td>
+                            <td colspan="9" style="text-align: right; font-weight: 700;">GRAND TOTAL (${filteredRows.length} Baris):</td>
+                            <td style="text-align: right; font-weight: 700;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
                             <td></td>
+                            <td></td>
+                            <td style="text-align: right; font-weight: 800; color: #059669;">Rp ${formatRupiahNumber(sumRevenue)}</td>
+                            <td colspan="3"></td>
                         </tr>
                     </tfoot>
                 </table>
             `;
         }
 
-        function renderReportTableUnpriced(container, orders, search) {
-            let list = orders.filter(tx => !isOrderFullyPriced(tx));
-
-            if (search) {
-                list = list.filter(tx => {
-                    const oNum = (tx.orderNumber || '').toLowerCase();
-                    const cust = (tx.customer || '').toLowerCase();
-                    return oNum.includes(search) || cust.includes(search);
-                });
-            }
-
-            if (list.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 40px 10px; color: #16a34a;">
-                        <div style="font-size: 1.5rem; margin-bottom: 6px;">🎉</div>
-                        <div style="font-weight: 700; font-size: 0.9rem;">Semua pesanan dalam filter ini sudah memiliki harga!</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Tidak ada pesanan tertunda yang belum berharga.</div>
-                    </div>
-                `;
-                return;
-            }
-
-            let tbodyHtml = '';
-            list.forEach((tx, idx) => {
-                const unpricedItems = (tx.cart || []).filter(ci => !ci.unitPrice || parseFloat(ci.unitPrice) <= 0 || ci._isSuggested);
-                const itemsSummary = unpricedItems.map(ci => {
-                    const n = ci.name || '';
-                    const v = ci.variant ? ` (${ci.variant})` : '';
-                    return `<b>${escapeHtml(n + v)}</b>: ${ci.qty} ${escapeHtml(ci.uom || '')}`;
-                }).join(', ');
-
-                const delivStr = tx.deliveryDate ? formatDateDisplay(tx.deliveryDate) : '-';
-
-                tbodyHtml += `
-                    <tr>
-                        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
-                        <td style="font-weight: 700; color: var(--primary);">#${escapeHtml(tx.orderNumber || '-')}</td>
-                        <td style="font-weight: 600;">${escapeHtml(tx.customer || 'No Customer')}</td>
-                        <td style="white-space: nowrap;">${escapeHtml(delivStr)}</td>
-                        <td style="font-size: 0.72rem; color: #b45309;">${itemsSummary || '-'}</td>
-                        <td style="text-align: center; white-space: nowrap;">
-                            <button type="button" class="btn btn-sm btn-primary" onclick="openOrderInAdmin('${escapeHtml(tx.orderNumber)}')" style="font-size: 0.68rem; padding: 3px 9px;">
-                                ✏️ Beri Harga
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            container.innerHTML = `
-                <table class="report-data-table" id="reportActiveDataTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px; text-align: center;">No.</th>
-                            <th style="width: 110px;">No. Order</th>
-                            <th style="width: 150px;">Nama Outlet</th>
-                            <th style="width: 120px;">Tgl Pengiriman</th>
-                            <th>Barang Belum Berharga</th>
-                            <th style="width: 110px; text-align: center;">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>${tbodyHtml}</tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="6" style="color: #b45309;">Total ${list.length} pesanan memerlukan penetapan harga.</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            `;
-        }
-
-        function exportReportTableToCsv() {
+        function exportReportTableToExcel() {
             const table = document.getElementById('reportActiveDataTable');
             if (!table) {
                 showToast("Tabel laporan belum memiliki data untuk diekspor", "warning");
                 return;
             }
+            if (typeof XLSX === 'undefined') {
+                showToast("Library Excel (SheetJS) belum siap. Periksa koneksi internet.", "error");
+                return;
+            }
 
-            const model = reportFilterState.tableModel || 'rekap';
-            let csv = [];
+            const model = reportFilterState.tableModel || 'detail';
             const rows = table.querySelectorAll('tr');
+            const aoa = [];
 
-            rows.forEach(row => {
-                const cols = row.querySelectorAll('th, td');
-                const rowData = [];
-                cols.forEach(col => {
-                    if (col.querySelector('button')) {
-                        return;
-                    }
-                    let text = col.innerText.replace(/"/g, '""').trim();
-                    rowData.push(`"${text}"`);
-                });
-                if (rowData.length > 0) {
-                    csv.push(rowData.join(','));
+            // Find "Aksi" column index if present
+            let aksiColIdx = -1;
+            const headerThs = table.querySelectorAll('thead th');
+            headerThs.forEach((th, idx) => {
+                if ((th.innerText || '').trim().toLowerCase() === 'aksi') {
+                    aksiColIdx = idx;
                 }
             });
 
-            const csvString = "\uFEFF" + csv.join("\r\n");
-            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
+            rows.forEach(row => {
+                const rowData = [];
+                const cells = row.querySelectorAll('th, td');
+
+                cells.forEach((cell, idx) => {
+                    if (idx === aksiColIdx || cell.querySelector('button')) {
+                        return;
+                    }
+
+                    // Extract text
+                    let text = (cell.innerText || '').trim();
+
+                    // Convert numeric & currency strings to true numbers for Excel calculations
+                    if (/^Rp\s*[\d\.,]+/i.test(text)) {
+                        const numStr = text.replace(/[^\d]/g, '');
+                        const numVal = parseFloat(numStr);
+                        rowData.push(isNaN(numVal) ? text : numVal);
+                    } else if (/^[0-9]+([.,][0-9]+)?(\s*(x|item|baris))?$/i.test(text)) {
+                        const cleaned = text.replace(/(x|item|baris)/gi, '').trim().replace(',', '.');
+                        const numVal = parseFloat(cleaned);
+                        rowData.push(isNaN(numVal) ? text : numVal);
+                    } else {
+                        rowData.push(text);
+                    }
+                });
+
+                if (rowData.length > 0) {
+                    aoa.push(rowData);
+                }
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+            // Calculate responsive column widths
+            const colWidths = [];
+            aoa.forEach(row => {
+                row.forEach((val, cIdx) => {
+                    const len = String(val || '').length;
+                    colWidths[cIdx] = Math.max(colWidths[cIdx] || 10, Math.min(len + 3, 40));
+                });
+            });
+            ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+            const sheetNameMap = {
+                detail: 'Rincian Penjualan',
+                commodity: 'Rekap Komoditas',
+                outlet: 'Rekap Outlet'
+            };
+            const sheetTitle = sheetNameMap[model] || 'Laporan Penjualan';
+            XLSX.utils.book_append_sheet(wb, ws, sheetTitle.substring(0, 31));
+
             const now = new Date();
             const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-            const fileName = `Laporan_${model.toUpperCase()}_${dateStr}.csv`;
+            const fileName = `Laporan_${model.toUpperCase()}_${dateStr}.xlsx`;
 
-            link.setAttribute("href", url);
-            link.setAttribute("download", fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-            showToast(`File CSV ${fileName} berhasil diunduh`, "success");
+            XLSX.writeFile(wb, fileName);
+            showToast(`✅ File Excel ${fileName} berhasil diunduh!`, "success");
+        }
+
+        function exportReportTableToPdf() {
+            const table = document.getElementById('reportActiveDataTable');
+            if (!table) {
+                showToast("Tabel laporan belum memiliki data untuk diekspor", "warning");
+                return;
+            }
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToast("Library PDF belum siap. Periksa koneksi internet.", "error");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const model = reportFilterState.tableModel || 'detail';
+            const isDetail = (model === 'detail');
+
+            // Landscape for wide detail table, Portrait for Rekap Outlet/Komoditas
+            const doc = new jsPDF(isDetail ? 'landscape' : 'portrait', 'pt', 'a4');
+
+            const titleMap = {
+                outlet: 'Laporan Rekap Penjualan per Outlet',
+                commodity: 'Laporan Rekap Penjualan per Komoditas',
+                detail: 'Rincian Penjualan Barang (Spreadsheet)'
+            };
+            const title = titleMap[model] || 'Laporan Penjualan';
+
+            // Document Header
+            doc.setFontSize(13);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, 30, 36);
+
+            doc.setFontSize(8.5);
+            doc.setFont('helvetica', 'normal');
+            const periodText = document.getElementById('reportActivePeriodLabel')?.innerText || '';
+            doc.text(`Periode: ${periodText} | Dicetak: ${new Date().toLocaleString('id-ID')}`, 30, 50);
+
+            // Find "Aksi" column index
+            const headers = [];
+            const headerRow = table.querySelector('thead tr');
+            let aksiColIdx = -1;
+            if (headerRow) {
+                const ths = headerRow.querySelectorAll('th');
+                ths.forEach((th, idx) => {
+                    const txt = (th.innerText || '').trim();
+                    if (txt.toLowerCase() === 'aksi') {
+                        aksiColIdx = idx;
+                    } else {
+                        headers.push(txt);
+                    }
+                });
+            }
+
+            const body = [];
+            const bodyRows = table.querySelectorAll('tbody tr');
+            bodyRows.forEach(row => {
+                const rowData = [];
+                const tds = row.querySelectorAll('td');
+                tds.forEach((td, idx) => {
+                    if (idx === aksiColIdx || td.querySelector('button')) return;
+                    rowData.push((td.innerText || '').trim());
+                });
+                if (rowData.length > 0) body.push(rowData);
+            });
+
+            const foot = [];
+            const footRows = table.querySelectorAll('tfoot tr');
+            footRows.forEach(row => {
+                const rowData = [];
+                const tds = row.querySelectorAll('td');
+                tds.forEach((td, idx) => {
+                    if (idx === aksiColIdx || td.querySelector('button')) return;
+                    const colSpan = parseInt(td.getAttribute('colspan') || '1', 10);
+                    const txt = (td.innerText || '').trim();
+                    if (colSpan > 1) {
+                        rowData.push({ content: txt, colSpan });
+                    } else {
+                        rowData.push(txt);
+                    }
+                });
+                if (rowData.length > 0) foot.push(rowData);
+            });
+
+            doc.autoTable({
+                head: [headers],
+                body: body,
+                foot: foot.length > 0 ? foot : undefined,
+                startY: 60,
+                theme: 'striped',
+                styles: {
+                    fontSize: isDetail ? 6.8 : 8,
+                    cellPadding: 3,
+                    overflow: 'linebreak'
+                },
+                headStyles: {
+                    fillColor: [15, 23, 42],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                footStyles: {
+                    fillColor: [241, 245, 249],
+                    textColor: [15, 23, 42],
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [248, 250, 252]
+                },
+                margin: { left: 24, right: 24 }
+            });
+
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+            const fileName = `Laporan_${model.toUpperCase()}_${dateStr}.pdf`;
+
+            doc.save(fileName);
+            showToast(`✅ File PDF ${fileName} berhasil diunduh!`, "success");
         }
 
         function printReportTable() {

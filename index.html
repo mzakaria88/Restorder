@@ -150,6 +150,12 @@
             .brand-subtext { display: inline; }
         }
 
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .system-status {
             display: flex;
             align-items: center;
@@ -169,6 +175,104 @@
             border-radius: 50%;
             background-color: var(--accent);
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-navbar-settings {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 27px;
+            height: 25px;
+            padding: 0;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            flex-shrink: 0;
+        }
+
+        .btn-navbar-settings:hover {
+            background: var(--primary-light);
+            border-color: #93c5fd;
+            color: var(--primary);
+            transform: rotate(30deg);
+        }
+
+        .btn-navbar-settings:active {
+            transform: scale(0.92) rotate(45deg);
+        }
+
+        /* Database Settings Modal Styles */
+        .db-modal-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            transition: all 0.15s ease;
+        }
+
+        .db-modal-card:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .db-modal-card-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .db-modal-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            flex-shrink: 0;
+            background: #f1f5f9;
+        }
+
+        .db-modal-texts {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .db-modal-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .db-modal-subtitle {
+            font-size: 0.69rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .spin-anim {
+            animation: spinAnim 0.75s linear infinite !important;
+        }
+
+        @keyframes spinAnim {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* Compact Top Navigation Tabs */
@@ -2365,9 +2469,17 @@
                 </div>
             </div>
 
-            <div class="system-status" id="systemStatusPill" title="Status koneksi katalog database">
-                <span class="status-dot" id="systemStatusDot"></span>
-                <span id="systemStatusText">Memuat data...</span>
+            <div class="navbar-actions">
+                <div class="system-status" id="systemStatusPill" title="Status koneksi katalog database">
+                    <span class="status-dot" id="systemStatusDot"></span>
+                    <span id="systemStatusText">Memuat data...</span>
+                </div>
+                <button type="button" class="btn-navbar-settings" id="btnNavbarSettings" onclick="openDatabaseSettingsModal()" title="Pengaturan & Sinkronisasi Database" aria-label="Pengaturan Database">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -3293,6 +3405,132 @@
         </div>
     </div>
 
+    <!-- Database Settings & Synchronization Modal -->
+    <div id="databaseSettingsModal" class="modal-backdrop" onclick="if(event.target===this) closeDatabaseSettingsModal()">
+        <div class="modal-box" style="max-width: 480px; width: 92%;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(37,99,235,0.1); color: #2563eb; display: flex; align-items: center; justify-content: center;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 0.92rem; font-weight: 700;">Pengaturan &amp; Sinkronisasi Database</h3>
+                    </div>
+                </div>
+                <button class="btn-sm btn-outline" style="padding: 0 6px; height: 22px;" onclick="closeDatabaseSettingsModal()">&times;</button>
+            </div>
+
+            <div class="modal-body" style="gap: 12px; padding: 14px 16px;">
+                <!-- Master Quick-Refresh Hero Box -->
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.84rem; color: #1e40af; display: flex; align-items: center; gap: 6px;">
+                                <span>⚡ Segarkan Semua Database</span>
+                            </div>
+                            <div style="font-size: 0.72rem; color: #3b82f6; margin-top: 2px; line-height: 1.35;">
+                                Memperbarui seluruh katalog, outlet, transaksi &amp; database harga langsung dari cloud ke memori aplikasi tanpa perlu reload (F5) halaman.
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btnRefreshAllDatabases" onclick="refreshAllDatabases()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 9px 14px; font-size: 0.82rem; box-shadow: 0 2px 4px rgba(37,99,235,0.25);">
+                        <svg class="refresh-spinner-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                        </svg>
+                        <span id="btnRefreshAllText">Refresh Semua Database</span>
+                    </button>
+                </div>
+
+                <!-- Database Cards List -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- 1. Katalog Produk -->
+                    <div class="db-modal-card">
+                        <div class="db-modal-card-info">
+                            <div class="db-modal-icon" style="background: #e0f2fe; color: #0284c7;">📦</div>
+                            <div class="db-modal-texts">
+                                <div class="db-modal-title">Katalog Produk &amp; Satuan</div>
+                                <div class="db-modal-subtitle" id="dbModalCatalogCount">Memuat...</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-outline btn-db-single-refresh" id="btnRefreshCatalogOnly" onclick="refreshCatalogDbOnly()" title="Segarkan Katalog Produk" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- 2. Data Pelanggan / Outlet -->
+                    <div class="db-modal-card">
+                        <div class="db-modal-card-info">
+                            <div class="db-modal-icon" style="background: #fef3c7; color: #d97706;">🏢</div>
+                            <div class="db-modal-texts">
+                                <div class="db-modal-title">Database Pelanggan / Outlet</div>
+                                <div class="db-modal-subtitle" id="dbModalCustomerCount">Memuat...</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-outline btn-db-single-refresh" id="btnRefreshCustomerOnly" onclick="refreshCustomerDbOnly()" title="Segarkan Data Pelanggan" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- 3. Riwayat Pesanan & Outbox -->
+                    <div class="db-modal-card">
+                        <div class="db-modal-card-info">
+                            <div class="db-modal-icon" style="background: #dcfce7; color: #16a34a;">📑</div>
+                            <div class="db-modal-texts">
+                                <div class="db-modal-title">Riwayat Transaksi &amp; Outbox</div>
+                                <div class="db-modal-subtitle" id="dbModalHistoryCount">Memuat...</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-outline btn-db-single-refresh" id="btnRefreshHistoryOnly" onclick="refreshHistoryDbOnly()" title="Segarkan Riwayat Transaksi" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+
+                    <!-- 4. Database Riwayat Harga (Admin) -->
+                    <div class="db-modal-card">
+                        <div class="db-modal-card-info">
+                            <div class="db-modal-icon" style="background: #fae8ff; color: #a855f7;">💰</div>
+                            <div class="db-modal-texts">
+                                <div class="db-modal-title">Database Harga Terakhir (Admin)</div>
+                                <div class="db-modal-subtitle" id="dbModalPricesCount">Memuat...</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-sm btn-outline btn-db-single-refresh" id="btnRefreshPricesOnly" onclick="refreshPricesDbOnly()" title="Segarkan Database Harga" style="padding: 4px 8px; font-size: 0.72rem; display: flex; align-items: center; gap: 4px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                            </svg>
+                            <span>Refresh</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Status Bar -->
+                <div style="font-size: 0.68rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #f8fafc; border-radius: 6px; border: 1px dashed var(--border);">
+                    <span id="dbModalLastSyncTime">Terakhir diperbarui: -</span>
+                    <span id="dbModalNetBadge" style="display: flex; align-items: center; gap: 5px; font-weight: 600; color: #16a34a;">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);"></span> Online
+                    </span>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <span style="font-size: 0.68rem; color: var(--text-muted); margin-right: auto; align-self: center;">💡 Sinkronisasi memori aktif tanpa me-reload browser</span>
+                <button type="button" class="btn btn-sm btn-outline" onclick="closeDatabaseSettingsModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications Container -->
     <div id="toastContainer"></div>
 
@@ -3319,7 +3557,7 @@
         let currentFocusCustomer = -1;
         
         // --- Version Control & Silent Auto Cache Reset ---
-        const CURRENT_APP_DATA_VERSION = "2026-09-25";
+        const CURRENT_APP_DATA_VERSION = "2026-09-06";
         try {
             if (localStorage.getItem('npn_data_version') !== CURRENT_APP_DATA_VERSION) {
                 localStorage.removeItem('npn_cached_catalog');
@@ -3448,6 +3686,231 @@
             if (confirmCallback) {
                 confirmCallback(result);
                 confirmCallback = null;
+            }
+        }
+
+        // --- Database Settings & In-Memory Synchronization Engine ---
+        let lastDatabaseSyncTimestamp = null;
+
+        function updateDatabaseModalInfo() {
+            const catalogEl = document.getElementById('dbModalCatalogCount');
+            const customerEl = document.getElementById('dbModalCustomerCount');
+            const historyEl = document.getElementById('dbModalHistoryCount');
+            const pricesEl = document.getElementById('dbModalPricesCount');
+            const lastSyncEl = document.getElementById('dbModalLastSyncTime');
+            const netBadgeEl = document.getElementById('dbModalNetBadge');
+
+            if (catalogEl) {
+                if (Array.isArray(catalogData) && catalogData.length > 0) {
+                    const uomSet = new Set(catalogData.map(c => c.uom).filter(Boolean));
+                    catalogEl.innerText = `${catalogData.length} item aktif (${uomSet.size} variasi satuan)`;
+                } else {
+                    catalogEl.innerText = "Belum termuat / 0 item";
+                }
+            }
+
+            if (customerEl) {
+                if (Array.isArray(customerDataList) && customerDataList.length > 0) {
+                    customerEl.innerText = `${customerDataList.length} outlet / customer terdaftar`;
+                } else {
+                    customerEl.innerText = "Belum termuat / 0 customer";
+                }
+            }
+
+            if (historyEl) {
+                const qCount = typeof getOfflineQueue === 'function' ? getOfflineQueue().length : 0;
+                let text = `${Array.isArray(transactionHistory) ? transactionHistory.length : 0} pesanan tersinkron`;
+                if (qCount > 0) {
+                    text += ` (${qCount} antrean offline)`;
+                }
+                historyEl.innerText = text;
+            }
+
+            if (pricesEl) {
+                if (typeof isAdminSessionActive === 'function' && isAdminSessionActive()) {
+                    const count = (typeof lastPricesMap !== 'undefined' && lastPricesMap instanceof Map) ? lastPricesMap.size : 0;
+                    pricesEl.innerText = `${count} riwayat harga termuat`;
+                } else {
+                    pricesEl.innerText = "Terkunci (Hanya untuk Admin)";
+                }
+            }
+
+            if (lastSyncEl) {
+                if (lastDatabaseSyncTimestamp) {
+                    const timeStr = lastDatabaseSyncTimestamp.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    lastSyncEl.innerText = `Terakhir diperbarui: ${timeStr} WIB`;
+                } else {
+                    lastSyncEl.innerText = "Terakhir diperbarui: Saat aplikasi dibuka";
+                }
+            }
+
+            if (netBadgeEl) {
+                const online = (typeof isNetworkOnline !== 'undefined') ? isNetworkOnline : navigator.onLine;
+                if (online) {
+                    netBadgeEl.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background-color: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);"></span> Online';
+                    netBadgeEl.style.color = '#16a34a';
+                } else {
+                    netBadgeEl.innerHTML = '<span style="width: 7px; height: 7px; border-radius: 50%; background-color: #ef4444; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);"></span> Offline';
+                    netBadgeEl.style.color = '#dc2626';
+                }
+            }
+        }
+
+        function openDatabaseSettingsModal() {
+            updateDatabaseModalInfo();
+            const modal = document.getElementById('databaseSettingsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeDatabaseSettingsModal() {
+            const modal = document.getElementById('databaseSettingsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function refreshAllDatabases() {
+            const btn = document.getElementById('btnRefreshAllDatabases');
+            const btnText = document.getElementById('btnRefreshAllText');
+            const icon = btn ? btn.querySelector('.refresh-spinner-icon') : null;
+            const singleBtns = document.querySelectorAll('.btn-db-single-refresh');
+
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Menyinkronkan semua database...";
+            if (icon) icon.classList.add('spin-anim');
+            singleBtns.forEach(b => b.disabled = true);
+
+            try {
+                // If there are pending offline orders and we are online, flush them first
+                const online = (typeof isNetworkOnline !== 'undefined') ? isNetworkOnline : navigator.onLine;
+                if (online && typeof getOfflineQueue === 'function' && getOfflineQueue().length > 0 && typeof flushOfflineQueue === 'function') {
+                    try { await flushOfflineQueue(); } catch (e) {}
+                }
+
+                const tasks = [
+                    loadCatalogData(),
+                    loadCustomerData(),
+                    fetchLatestHistory(true)
+                ];
+
+                if (typeof isAdminSessionActive === 'function' && isAdminSessionActive() && typeof fetchLastPricesDatabase === 'function') {
+                    tasks.push(fetchLastPricesDatabase(true, true));
+                }
+
+                await Promise.allSettled(tasks);
+
+                // Update UI state in-place without reloading browser
+                if (typeof applyCatalogState === 'function') applyCatalogState();
+                if (typeof populateHistoryList === 'function') populateHistoryList();
+                if (typeof updateHistoryCountBadge === 'function') updateHistoryCountBadge();
+                if (typeof updateOfflineQueueBanner === 'function') updateOfflineQueueBanner();
+                if (typeof updateDeliveryDisplay === 'function') updateDeliveryDisplay();
+
+                if (typeof updateAdminUnpricedBadge === 'function') updateAdminUnpricedBadge();
+                if (typeof renderAdminOrdersList === 'function') renderAdminOrdersList();
+
+                const reportsPanel = document.getElementById('tab-reports');
+                if (reportsPanel && reportsPanel.classList.contains('active') && typeof renderReportsTab === 'function') {
+                    renderReportsTab();
+                }
+
+                lastDatabaseSyncTimestamp = new Date();
+                updateDatabaseModalInfo();
+                showToast("Semua database berhasil disinkronkan tanpa reload halaman!", "success");
+            } catch (err) {
+                console.error("Gagal refresh semua database:", err);
+                showToast("Terjadi kendala saat menyinkronkan database", "warning");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = "Refresh Semua Database";
+                if (icon) icon.classList.remove('spin-anim');
+                singleBtns.forEach(b => b.disabled = false);
+                updateDatabaseModalInfo();
+            }
+        }
+
+        async function refreshCatalogDbOnly() {
+            const btn = document.getElementById('btnRefreshCatalogOnly');
+            const icon = btn ? btn.querySelector('svg') : null;
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin-anim');
+
+            try {
+                await loadCatalogData();
+                if (typeof applyCatalogState === 'function') applyCatalogState();
+                lastDatabaseSyncTimestamp = new Date();
+                updateDatabaseModalInfo();
+                showToast(`Katalog diperbarui: ${catalogData.length} item`, "success");
+            } catch (err) {
+                showToast("Gagal memperbarui katalog", "danger");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('spin-anim');
+            }
+        }
+
+        async function refreshCustomerDbOnly() {
+            const btn = document.getElementById('btnRefreshCustomerOnly');
+            const icon = btn ? btn.querySelector('svg') : null;
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin-anim');
+
+            try {
+                await loadCustomerData();
+                lastDatabaseSyncTimestamp = new Date();
+                updateDatabaseModalInfo();
+                showToast(`Data pelanggan diperbarui: ${customerDataList.length} outlet`, "success");
+            } catch (err) {
+                showToast("Gagal memperbarui data pelanggan", "danger");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('spin-anim');
+            }
+        }
+
+        async function refreshHistoryDbOnly() {
+            const btn = document.getElementById('btnRefreshHistoryOnly');
+            const icon = btn ? btn.querySelector('svg') : null;
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin-anim');
+
+            try {
+                await fetchLatestHistory(false);
+                const reportsPanel = document.getElementById('tab-reports');
+                if (reportsPanel && reportsPanel.classList.contains('active') && typeof renderReportsTab === 'function') {
+                    renderReportsTab();
+                }
+                lastDatabaseSyncTimestamp = new Date();
+                updateDatabaseModalInfo();
+            } catch (err) {
+                showToast("Gagal menyinkronkan riwayat pesanan", "danger");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('spin-anim');
+            }
+        }
+
+        async function refreshPricesDbOnly() {
+            if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive()) {
+                openAdminAuthModal();
+                showToast("Silakan login admin untuk memuat database harga", "info");
+                return;
+            }
+
+            const btn = document.getElementById('btnRefreshPricesOnly');
+            const icon = btn ? btn.querySelector('svg') : null;
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('spin-anim');
+
+            try {
+                if (typeof fetchLastPricesDatabase === 'function') {
+                    await fetchLastPricesDatabase(true, false);
+                }
+                lastDatabaseSyncTimestamp = new Date();
+                updateDatabaseModalInfo();
+            } catch (err) {
+                showToast("Gagal memperbarui database harga", "danger");
+            } finally {
+                if (btn) btn.disabled = false;
+                if (icon) icon.classList.remove('spin-anim');
             }
         }
 
@@ -4078,6 +4541,10 @@
                 if (wasOnline) {
                     showToast("Akses internet terputus! Pesanan tetap aman disimpan lokal.", "warning", 4000);
                 }
+            }
+
+            if (typeof updateDatabaseModalInfo === 'function') {
+                updateDatabaseModalInfo();
             }
         }
 
@@ -5008,7 +5475,7 @@
             }, 12000);
         }
 
-        async function fetchLatestHistory() {
+        async function fetchLatestHistory(isSilent = false) {
             if (!GAS_SHEET_SYNC_URL || GAS_SHEET_SYNC_URL.includes('PASTE_NEW_SCRIPT')) return;
             const refreshBtn = document.getElementById('refreshHistoryBtn');
             if (refreshBtn) {
@@ -5039,11 +5506,11 @@
                     transactionHistory = smartMergeHistory(serverData, transactionHistory);
                     localStorage.setItem('npn_order_history', JSON.stringify(transactionHistory));
                     populateHistoryList();
-                    showToast("Riwayat disinkronkan", "success");
+                    if (!isSilent) showToast("Riwayat disinkronkan", "success");
                 }
             } catch (error) {
                 console.error("Failed to refresh history", error);
-                showToast("Sinkronisasi offline", "warning");
+                if (!isSilent) showToast("Sinkronisasi offline", "warning");
             } finally {
                 if (refreshBtn) {
                     refreshBtn.innerText = "Sinkronkan";
@@ -6261,7 +6728,7 @@
             });
         }
 
-        async function fetchLastPricesDatabase(isManualRefresh = false) {
+        async function fetchLastPricesDatabase(isManualRefresh = false, isSilent = false) {
             // Guard ketat: Jangan pernah mengunduh atau menyimpan harga jika sesi admin tidak aktif
             if (typeof isAdminSessionActive === 'function' && !isAdminSessionActive()) {
                 return;
@@ -6287,7 +6754,7 @@
                     saveCachedLastPrices(csvText);
 
                     if (statusEl) statusEl.innerText = `📊 Database: ${lastPricesMap.size} harga termuat`;
-                    if (isManualRefresh) showToast(`Database harga diperbarui (${lastPricesMap.size} harga)`, "success");
+                    if (isManualRefresh && !isSilent) showToast(`Database harga diperbarui (${lastPricesMap.size} harga)`, "success");
                     updateAdminUnpricedBadge();
                     renderAdminOrdersList();
                     if (activeAdminOrderIndex >= 0) renderAdminOrderPricingDetail(activeAdminOrderIndex);
@@ -10808,6 +11275,7 @@
                 closeDatePopover();
                 closeNoteModal();
                 closeConfirmModal(false);
+                closeDatabaseSettingsModal();
                 autocompleteList.innerHTML = '';
             }
 
@@ -10947,9 +11415,11 @@
             Promise.allSettled([
                 loadCatalogData(),
                 loadCustomerData(),
-                fetchLatestHistory(),
+                fetchLatestHistory(true),
                 shouldFetchPrices ? fetchLastPricesDatabase() : Promise.resolve()
             ]).then(() => {
+                lastDatabaseSyncTimestamp = new Date();
+                if (typeof updateDatabaseModalInfo === 'function') updateDatabaseModalInfo();
                 checkAutoPrintQuery();
             });
         }

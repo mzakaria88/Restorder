@@ -2494,6 +2494,9 @@
         .cart-uom-badge-mobile {
             display: none;
         }
+        .cart-item-num {
+            display: none;
+        }
         .cart-stepper-wrap {
             display: inline-flex;
             align-items: center;
@@ -2817,10 +2820,25 @@
                 justify-content: space-between;
                 gap: 8px;
             }
+            .cart-item-title-left {
+                display: flex;
+                align-items: baseline;
+                gap: 5px;
+                min-width: 0;
+                flex: 1;
+            }
+            .cart-item-num {
+                display: inline-block;
+                font-size: 0.92rem;
+                font-weight: 800;
+                color: var(--text-secondary);
+                flex-shrink: 0;
+            }
             .cart-item-name {
                 font-weight: 700;
                 font-size: 0.92rem;
                 color: var(--text-main);
+                word-break: break-word;
             }
             .cart-uom-badge-mobile {
                 display: inline-block;
@@ -5423,7 +5441,10 @@
                     <td class="cart-td-no" style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
                     <td class="cart-td-name">
                         <div class="cart-item-title-row">
-                            <span class="cart-item-name">${escapeHtml(item.name)}</span>
+                            <div class="cart-item-title-left">
+                                <span class="cart-item-num">${index + 1}.</span>
+                                <span class="cart-item-name">${escapeHtml(item.name)}</span>
+                            </div>
                             <span class="cart-uom-badge-mobile">${escapeHtml(item.uom)}</span>
                         </div>
                         ${item.variant ? `<div class="cart-item-variant">${escapeHtml(item.variant)}</div>` : ''}

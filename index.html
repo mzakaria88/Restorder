@@ -2,7 +2,13 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RestOrder NPN">
+    <link rel="manifest" href="manifest.json">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -2432,14 +2438,314 @@
         @keyframes slideInToast { to { transform: translateX(0); } }
         @keyframes fadeOutToast { to { opacity: 0; transform: translateY(-6px); } }
 
-        /* Mobile Responsiveness */
+        /* ========================================== */
+        /* MOBILE UI/UX ENHANCEMENTS                 */
+        /* ========================================== */
+        
+        /* Backdrop for Bottom Sheet Modals */
+        .sheet-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(2px);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .sheet-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Bottom Sheet Handle & Title (Mobile Only) */
+        .sheet-drag-handle {
+            width: 36px;
+            height: 4px;
+            border-radius: 9999px;
+            background: #cbd5e1;
+            margin: 0 auto 10px auto;
+            display: none;
+        }
+        .sheet-header-title {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sheet-title-text {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+        .sheet-close-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 6px;
+            line-height: 1;
+        }
+
+        /* Cart Stepper and Mobile Card Classes */
+        .cart-uom-badge-mobile {
+            display: none;
+        }
+        .cart-stepper-wrap {
+            display: inline-flex;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        .btn-stepper {
+            width: 30px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            border: none;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.1s ease;
+            user-select: none;
+        }
+        .btn-stepper:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+        .btn-stepper:active {
+            background: #e2e8f0;
+        }
+        .stepper-qty-val {
+            min-width: 38px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary);
+            padding: 0 4px;
+            cursor: pointer;
+        }
+        .stepper-qty-val:hover {
+            text-decoration: underline;
+        }
+        .cart-uom-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: var(--primary-light);
+            border: 1px solid var(--border);
+            padding: 1px 5px;
+            border-radius: 3px;
+            color: var(--text-secondary);
+        }
+
+        /* Mobile Bottom Navigation Bar */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        /* Admin Master-Detail Header Button */
+        .admin-detail-mobile-header {
+            display: none;
+        }
+
+        /* Sticky Column for Spreadsheet */
+        .sticky-col-header {
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            background: #0f172a !important;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.12);
+        }
+        .sticky-col-cell {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: #ffffff !important;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.06);
+        }
+        .sticky-col-footer {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: #f8fafc !important;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Mobile Responsive Breakpoints */
+        @media (max-width: 900px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            .admin-detail-mobile-header {
+                display: flex;
+                margin-bottom: 10px;
+            }
+            .admin-mobile-back-btn {
+                width: 100%;
+                padding: 9px 14px;
+                font-size: 0.82rem;
+                font-weight: 700;
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-sm);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                color: var(--primary);
+                cursor: pointer;
+            }
+            .admin-mobile-back-btn:hover {
+                background: var(--primary-light);
+            }
+            .admin-mobile-hide {
+                display: none !important;
+            }
+            #adminOrderPricingContainer {
+                display: none;
+            }
+            #adminOrderPricingContainer.admin-mobile-show {
+                display: block !important;
+            }
+        }
+
         @media (max-width: 768px) {
             body { font-size: 0.82rem; }
-            .navbar-container { height: 44px; }
+            .navbar-container { height: 46px; }
+            
+            /* Hide top desktop tabs, show bottom nav */
+            .tabs-wrapper {
+                display: none !important;
+            }
+            .app-main {
+                padding-bottom: 76px !important;
+            }
+            .mobile-bottom-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 58px;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid var(--border);
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+                z-index: 850;
+                align-items: center;
+                justify-content: space-around;
+                padding-bottom: max(4px, env(safe-area-inset-bottom));
+            }
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 2px;
+                flex: 1;
+                height: 100%;
+                color: var(--text-muted);
+                text-decoration: none;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                position: relative;
+                font-family: inherit;
+                transition: color 0.15s ease;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .mobile-nav-item.active {
+                color: var(--primary);
+            }
+            .mobile-nav-icon {
+                font-size: 1.15rem;
+                line-height: 1;
+                position: relative;
+            }
+            .mobile-nav-label {
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: -0.01em;
+            }
+            .mobile-nav-badge {
+                position: absolute;
+                top: -5px;
+                right: -10px;
+                background: #ef4444;
+                color: #ffffff;
+                font-size: 0.58rem;
+                font-weight: 800;
+                padding: 1px 4px;
+                border-radius: 9999px;
+                min-width: 15px;
+                text-align: center;
+                line-height: 1.2;
+            }
+
+            /* Bottom Sheet Drawer for Outlet & Date */
+            .sheet-drag-handle {
+                display: block;
+            }
+            .sheet-header-title {
+                display: flex;
+            }
+            .customer-popover, .date-popover {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                top: auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 18px 18px 0 0 !important;
+                background: #ffffff !important;
+                box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.2) !important;
+                z-index: 1000 !important;
+                padding: 14px 16px max(16px, env(safe-area-inset-bottom)) 16px !important;
+                animation: slideUpDrawer 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            }
+            @keyframes slideUpDrawer {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+            .customer-popover input {
+                height: 42px !important;
+                font-size: 0.9rem !important;
+                padding: 0 12px !important;
+                border-radius: 8px !important;
+            }
+            .customer-list-box {
+                max-height: 52vh !important;
+                margin-top: 8px !important;
+            }
+            .customer-list-item {
+                padding: 12px 14px !important;
+                font-size: 0.88rem !important;
+                min-height: 46px !important;
+                border-radius: 8px !important;
+                margin-bottom: 2px;
+            }
+            .preset-chip {
+                padding: 10px 0 !important;
+                font-size: 0.82rem !important;
+                border-radius: 6px !important;
+            }
+            #deliveryDateInput {
+                height: 42px !important;
+                font-size: 0.9rem !important;
+            }
+
             .order-meta-compact { flex-direction: column; align-items: stretch; }
             .meta-chip-item { width: 100%; justify-content: space-between; }
             .meta-chip-val { max-width: none; }
-            .customer-popover { width: 100%; }
             .input-row { grid-template-columns: 1fr; gap: 8px; }
             .order-summary-card { flex-direction: column; align-items: stretch; }
             .summary-stats { justify-content: space-around; width: 100%; }
@@ -2447,6 +2753,133 @@
             .summary-actions button { width: 100%; }
             .history-card-header { flex-direction: column; align-items: flex-start; }
             .history-card-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+        }
+
+        @media (max-width: 640px) {
+            /* Header cleanup & touch target >= 36-40px */
+            .btn-navbar-settings {
+                width: 38px;
+                height: 38px;
+                min-width: 38px;
+                min-height: 38px;
+                font-size: 1.1rem;
+                border-radius: 8px;
+            }
+            .system-status {
+                padding: 4px 8px;
+                font-size: 0.68rem;
+                max-width: 145px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Cart Table -> Card List / Compact Stepper on Mobile */
+            .table-responsive {
+                overflow-x: visible;
+                border: none;
+            }
+            #cartTable {
+                display: block;
+                width: 100%;
+                border: none;
+            }
+            #cartTable thead {
+                display: none;
+            }
+            #cartTable tbody {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .cart-item-row {
+                display: grid !important;
+                grid-template-columns: 1fr auto !important;
+                gap: 8px 12px !important;
+                align-items: center !important;
+                background: #ffffff !important;
+                border: 1px solid var(--border) !important;
+                border-radius: var(--radius-md) !important;
+                padding: 12px 14px !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+            }
+            .cart-td-no, .cart-td-uom, .btn-edit-qty-desktop {
+                display: none !important;
+            }
+            .cart-td-name {
+                grid-column: 1 / -1 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+            .cart-item-title-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .cart-item-name {
+                font-weight: 700;
+                font-size: 0.92rem;
+                color: var(--text-main);
+            }
+            .cart-uom-badge-mobile {
+                display: inline-block;
+                font-size: 0.68rem;
+                font-weight: 700;
+                background: var(--primary-light);
+                border: 1px solid var(--border);
+                padding: 2px 7px;
+                border-radius: 4px;
+                color: var(--text-secondary);
+                white-space: nowrap;
+            }
+            .cart-item-variant {
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+            .cart-td-qty {
+                grid-column: 1 / 2 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+            .cart-stepper-wrap {
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+            }
+            .btn-stepper {
+                width: 38px;
+                height: 36px;
+                font-size: 1.15rem;
+            }
+            .stepper-qty-val {
+                min-width: 44px;
+                font-size: 0.92rem;
+            }
+            .cart-td-notes {
+                grid-column: 1 / 2 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
+            .cart-td-actions {
+                grid-column: 2 / 3 !important;
+                grid-row: 2 / 4 !important;
+                padding: 0 !important;
+                border: none !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+            }
+            .btn-delete-cart-item {
+                width: 38px;
+                height: 38px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -2549,6 +2982,11 @@
                     <span style="font-size: 0.7rem; opacity: 0.5;">✏️</span>
 
                     <div id="customerPopover" class="customer-popover" onclick="event.stopPropagation()">
+                        <div class="sheet-drag-handle"></div>
+                        <div class="sheet-header-title">
+                            <span class="sheet-title-text">🏢 Pilih Outlet / Pelanggan</span>
+                            <button type="button" class="sheet-close-btn" onclick="closeCustomerPopover()" aria-label="Tutup">✕</button>
+                        </div>
                         <input type="text" id="customerSearchInput" placeholder="Cari nama outlet / toko..." autocomplete="off">
                         <div id="customerDropdownList" class="customer-list-box"></div>
                     </div>
@@ -2561,6 +2999,11 @@
                     <span style="font-size: 0.7rem; opacity: 0.5;">📅</span>
 
                     <div id="datePopover" class="date-popover" onclick="event.stopPropagation()">
+                        <div class="sheet-drag-handle"></div>
+                        <div class="sheet-header-title">
+                            <span class="sheet-title-text">📅 Pilih Tanggal Kirim</span>
+                            <button type="button" class="sheet-close-btn" onclick="closeDatePopover()" aria-label="Tutup">✕</button>
+                        </div>
                         <div class="date-presets">
                             <button type="button" class="preset-chip" onclick="setPresetDate('tomorrow')">Besok</button>
                             <button type="button" class="preset-chip" onclick="setPresetDate('today')">Hari Ini</button>
@@ -3320,6 +3763,35 @@
 
     </main>
 
+    <!-- Bottom Sheet Backdrop Overlay for Mobile -->
+    <div id="sheetBackdrop" class="sheet-backdrop" onclick="closeAllBottomSheets()"></div>
+
+    <!-- Mobile Bottom Navigation Bar (Screens <= 768px) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Navigasi Menu Mobile">
+        <button type="button" class="mobile-nav-item active" id="mobile-nav-order" onclick="switchTab('tab-order')">
+            <div class="mobile-nav-icon">
+                🛒
+                <span class="mobile-nav-badge" id="mobileNavCartBadge" style="display: none;">0</span>
+            </div>
+            <span class="mobile-nav-label">Pesan</span>
+        </button>
+        <button type="button" class="mobile-nav-item" id="mobile-nav-history" onclick="switchTab('tab-history')">
+            <div class="mobile-nav-icon">
+                📑
+                <span class="mobile-nav-badge" id="mobileNavHistoryBadge" style="display: none;"></span>
+            </div>
+            <span class="mobile-nav-label">Riwayat</span>
+        </button>
+        <button type="button" class="mobile-nav-item" id="mobile-nav-reports" onclick="switchTab('tab-reports')">
+            <div class="mobile-nav-icon">📊</div>
+            <span class="mobile-nav-label">Laporan</span>
+        </button>
+        <button type="button" class="mobile-nav-item" id="mobile-nav-admin" onclick="switchTab('tab-admin')">
+            <div class="mobile-nav-icon">🔒</div>
+            <span class="mobile-nav-label">Admin</span>
+        </button>
+    </nav>
+
     <!-- ========================================== -->
     <!-- MODALS & DIALOGS                           -->
     <!-- ========================================== -->
@@ -3426,14 +3898,9 @@
             <div class="modal-body" style="gap: 12px; padding: 14px 16px;">
                 <!-- Master Quick-Refresh Hero Box -->
                 <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px;">
-                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.84rem; color: #1e40af; display: flex; align-items: center; gap: 6px;">
-                                <span>⚡ Segarkan Semua Database</span>
-                            </div>
-                            <div style="font-size: 0.72rem; color: #3b82f6; margin-top: 2px; line-height: 1.35;">
-                                Memperbarui seluruh katalog, outlet, transaksi &amp; database harga langsung dari cloud ke memori aplikasi tanpa perlu reload (F5) halaman.
-                            </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                        <div style="font-weight: 800; font-size: 0.84rem; color: #1e40af; display: flex; align-items: center; gap: 6px;">
+                            <span>⚡ Segarkan Semua Database</span>
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary" id="btnRefreshAllDatabases" onclick="refreshAllDatabases()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 9px 14px; font-size: 0.82rem; box-shadow: 0 2px 4px rgba(37,99,235,0.25);">
@@ -3525,7 +3992,6 @@
             </div>
 
             <div class="modal-footer">
-                <span style="font-size: 0.68rem; color: var(--text-muted); margin-right: auto; align-self: center;">💡 Sinkronisasi memori aktif tanpa me-reload browser</span>
                 <button type="button" class="btn btn-sm btn-outline" onclick="closeDatabaseSettingsModal()">Tutup</button>
             </div>
         </div>
@@ -3618,24 +4084,42 @@
             }
             document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.mobile-nav-item').forEach(b => b.classList.remove('active'));
 
             const targetPanel = document.getElementById(tabId);
             if (targetPanel) targetPanel.classList.add('active');
 
-            if (tabId === 'tab-order') document.getElementById('btn-tab-order').classList.add('active');
+            if (tabId === 'tab-order') {
+                const btn = document.getElementById('btn-tab-order');
+                if (btn) btn.classList.add('active');
+                const mBtn = document.getElementById('mobile-nav-order');
+                if (mBtn) mBtn.classList.add('active');
+            }
             if (tabId === 'tab-history') {
-                document.getElementById('btn-tab-history').classList.add('active');
+                const btn = document.getElementById('btn-tab-history');
+                if (btn) btn.classList.add('active');
+                const mBtn = document.getElementById('mobile-nav-history');
+                if (mBtn) mBtn.classList.add('active');
                 populateHistoryList();
             }
             if (tabId === 'tab-admin') {
-                document.getElementById('btn-tab-admin').classList.add('active');
+                const btn = document.getElementById('btn-tab-admin');
+                if (btn) btn.classList.add('active');
+                const mBtn = document.getElementById('mobile-nav-admin');
+                if (mBtn) mBtn.classList.add('active');
                 renderAdminTab();
             }
             if (tabId === 'tab-reports') {
-                document.getElementById('btn-tab-reports').classList.add('active');
+                const btn = document.getElementById('btn-tab-reports');
+                if (btn) btn.classList.add('active');
+                const mBtn = document.getElementById('mobile-nav-reports');
+                if (mBtn) mBtn.classList.add('active');
                 renderReportsTab();
             }
-            if (tabId === 'tab-guide') document.getElementById('btn-tab-guide').classList.add('active');
+            if (tabId === 'tab-guide') {
+                const btn = document.getElementById('btn-tab-guide');
+                if (btn) btn.classList.add('active');
+            }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -3995,6 +4479,14 @@
         });
 
         // --- Date Handling ---
+        function getTodayDateString() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         function getTomorrowDateString() {
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -4110,10 +4602,14 @@
             if (willOpen) {
                 popover.style.display = 'block';
                 closeCustomerPopover();
+                const backdrop = document.getElementById('sheetBackdrop');
+                if (backdrop && window.innerWidth <= 768) {
+                    backdrop.classList.add('active');
+                }
                 const dateInput = document.getElementById('deliveryDateInput');
                 if (dateInput) {
                     dateInput.value = currentDeliveryDate;
-                    setTimeout(() => dateInput.focus(), 50);
+                    setTimeout(() => dateInput.focus(), 60);
                 }
             } else {
                 confirmDateSelection();
@@ -4121,7 +4617,14 @@
         }
 
         function closeDatePopover() {
-            document.getElementById('datePopover').style.display = 'none';
+            const popover = document.getElementById('datePopover');
+            if (popover) popover.style.display = 'none';
+            const custPopover = document.getElementById('customerPopover');
+            const isCustOpen = custPopover && custPopover.style.display === 'block';
+            if (!isCustOpen) {
+                const backdrop = document.getElementById('sheetBackdrop');
+                if (backdrop) backdrop.classList.remove('active');
+            }
         }
 
         function setPresetDate(preset) {
@@ -4174,15 +4677,33 @@
             } else {
                 popover.style.display = 'block';
                 closeDatePopover();
+                const backdrop = document.getElementById('sheetBackdrop');
+                if (backdrop && window.innerWidth <= 768) {
+                    backdrop.classList.add('active');
+                }
                 const search = document.getElementById('customerSearchInput');
                 search.value = '';
                 populateCustomerDropdown('');
-                setTimeout(() => search.focus(), 50);
+                setTimeout(() => search.focus(), 80);
             }
         }
 
         function closeCustomerPopover() {
-            document.getElementById('customerPopover').style.display = 'none';
+            const popover = document.getElementById('customerPopover');
+            if (popover) popover.style.display = 'none';
+            const datePopover = document.getElementById('datePopover');
+            const isDateOpen = datePopover && datePopover.style.display === 'block';
+            if (!isDateOpen) {
+                const backdrop = document.getElementById('sheetBackdrop');
+                if (backdrop) backdrop.classList.remove('active');
+            }
+        }
+
+        function closeAllBottomSheets() {
+            closeCustomerPopover();
+            confirmDateSelection();
+            const backdrop = document.getElementById('sheetBackdrop');
+            if (backdrop) backdrop.classList.remove('active');
         }
 
         function selectCustomer(name) {
@@ -4863,6 +5384,13 @@
             document.getElementById('cartCountBadge').innerText = orderCart.length;
             document.getElementById('tableItemCount').innerText = `${orderCart.length} item`;
 
+            // Synchronize mobile bottom nav cart badge
+            const mobileBadge = document.getElementById('mobileNavCartBadge');
+            if (mobileBadge) {
+                mobileBadge.innerText = orderCart.length;
+                mobileBadge.style.display = orderCart.length > 0 ? 'inline-flex' : 'none';
+            }
+
             if (orderCart.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -4884,24 +5412,35 @@
 
             orderCart.forEach((item, index) => {
                 const row = document.createElement('tr');
+                row.className = 'cart-item-row';
+                row.id = `cart-item-row-${index}`;
                 
                 const noteContent = item.note && item.note.trim() ? 
-                    `<span class="note-tag" onclick="openNoteModal(${index})" title="${item.note}">📝 ${item.note}</span>` :
-                    `<button class="empty-note-btn" onclick="openNoteModal(${index})">+ Catatan</button>`;
+                    `<span class="note-tag" onclick="openNoteModal(${index})" title="${escapeHtml(item.note)}">📝 ${escapeHtml(item.note)}</span>` :
+                    `<button type="button" class="empty-note-btn" onclick="openNoteModal(${index})">+ Catatan</button>`;
 
                 row.innerHTML = `
-                    <td style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
-                    <td>
-                        <div style="font-weight: 600; color: var(--text-main);">${item.name}</div>
-                        ${item.variant ? `<div style="font-size: 0.68rem; color: var(--text-muted);">${item.variant}</div>` : ''}
+                    <td class="cart-td-no" style="text-align: center; font-weight: 600; color: var(--text-muted);">${index + 1}</td>
+                    <td class="cart-td-name">
+                        <div class="cart-item-title-row">
+                            <span class="cart-item-name">${escapeHtml(item.name)}</span>
+                            <span class="cart-uom-badge-mobile">${escapeHtml(item.uom)}</span>
+                        </div>
+                        ${item.variant ? `<div class="cart-item-variant">${escapeHtml(item.variant)}</div>` : ''}
                     </td>
-                    <td id="qty-cell-${index}" style="text-align: center; font-weight: 700; font-size: 0.88rem;">${item.qty}</td>
-                    <td><span style="font-size: 0.68rem; font-weight: 700; background: var(--primary-light); border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; color: var(--text-secondary);">${item.uom}</span></td>
-                    <td>${noteContent}</td>
-                    <td style="text-align: center;">
+                    <td class="cart-td-qty" id="qty-cell-${index}">
+                        <div class="cart-stepper-wrap">
+                            <button type="button" class="btn-stepper btn-stepper-minus" onclick="stepCartQty(${index}, -1)" title="Kurangi 1" aria-label="Kurangi kuantitas">−</button>
+                            <span class="stepper-qty-val" onclick="startInlineEditQty(${index})" title="Klik untuk ubah kuantitas manual">${escapeHtml(item.qty)}</span>
+                            <button type="button" class="btn-stepper btn-stepper-plus" onclick="stepCartQty(${index}, 1)" title="Tambah 1" aria-label="Tambah kuantitas">+</button>
+                        </div>
+                    </td>
+                    <td class="cart-td-uom"><span class="cart-uom-badge">${escapeHtml(item.uom)}</span></td>
+                    <td class="cart-td-notes">${noteContent}</td>
+                    <td class="cart-td-actions" style="text-align: center;">
                         <div class="td-actions" id="action-cell-${index}" style="justify-content: center;">
-                            <button class="btn btn-sm btn-outline" title="Ubah Qty" onclick="startInlineEditQty(${index})">✏️</button>
-                            <button class="btn btn-sm btn-danger" title="Hapus" onclick="deleteCartItem(${index})">🗑️</button>
+                            <button type="button" class="btn btn-sm btn-outline btn-edit-qty-desktop" title="Ubah Qty" onclick="startInlineEditQty(${index})">✏️</button>
+                            <button type="button" class="btn btn-sm btn-danger btn-delete-cart-item" title="Hapus" onclick="deleteCartItem(${index})">🗑️</button>
                         </div>
                     </td>
                 `;
@@ -4909,25 +5448,59 @@
             });
         }
 
+        function stepCartQty(index, delta) {
+            if (!orderCart[index]) return;
+            let current = parseFloat(orderCart[index].qty) || 0;
+            let next = current + delta;
+            if (next <= 0) {
+                showConfirm(
+                    "Hapus Barang?",
+                    `Hapus "${orderCart[index].name}" dari keranjang belanja?`,
+                    (confirmed) => {
+                        if (confirmed) {
+                            deleteCartItem(index);
+                        }
+                    },
+                    "Hapus",
+                    true
+                );
+                return;
+            }
+            orderCart[index].qty = Number.isInteger(next) ? next.toString() : (Math.round(next * 100) / 100).toString();
+            renderCart();
+        }
+
         function startInlineEditQty(index) {
             const qtyCell = document.getElementById(`qty-cell-${index}`);
             const actionCell = document.getElementById(`action-cell-${index}`);
-            qtyCell.innerHTML = `<input type="number" id="inline-qty-${index}" value="${orderCart[index].qty}" step="0.1" min="0.1" style="width: 64px; height: 26px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.82rem;">`;
-            actionCell.innerHTML = `
-                <button class="btn btn-sm btn-success" style="padding: 0 6px; height: 24px;" onclick="saveInlineEditQty(${index})">OK</button>
-                <button class="btn btn-sm btn-outline" style="padding: 0 6px; height: 24px;" onclick="renderCart()">Batal</button>
+            if (!qtyCell) return;
+            qtyCell.innerHTML = `
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <input type="number" id="inline-qty-${index}" value="${orderCart[index].qty}" step="0.1" min="0.1" inputmode="decimal" style="width: 66px; height: 28px; text-align: center; font-weight: 700; padding: 0 4px; font-size: 0.85rem; border: 1px solid var(--primary); border-radius: 4px; outline: none;">
+                    <button type="button" class="btn btn-sm btn-success" style="padding: 0 8px; height: 28px; font-weight: 700;" onclick="saveInlineEditQty(${index})">OK</button>
+                    <button type="button" class="btn btn-sm btn-outline" style="padding: 0 6px; height: 28px;" onclick="renderCart()">✕</button>
+                </div>
             `;
+            if (actionCell) {
+                actionCell.innerHTML = `
+                    <button class="btn btn-sm btn-success" style="padding: 0 6px; height: 24px;" onclick="saveInlineEditQty(${index})">OK</button>
+                    <button class="btn btn-sm btn-outline" style="padding: 0 6px; height: 24px;" onclick="renderCart()">Batal</button>
+                `;
+            }
             const editInput = document.getElementById(`inline-qty-${index}`);
-            editInput.focus();
-            editInput.select();
-            editInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') saveInlineEditQty(index);
-                if (e.key === 'Escape') renderCart();
-            });
+            if (editInput) {
+                editInput.focus();
+                editInput.select();
+                editInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') saveInlineEditQty(index);
+                    if (e.key === 'Escape') renderCart();
+                });
+            }
         }
 
         function saveInlineEditQty(index) {
             const editInput = document.getElementById(`inline-qty-${index}`);
+            if (!editInput) return;
             const rawQty = parseFloat(editInput.value);
             if (isNaN(rawQty) || rawQty <= 0) {
                 showToast("Masukkan kuantitas yang valid", "warning");
@@ -5524,6 +6097,19 @@
         function updateHistoryCountBadge() {
             const badge = document.getElementById('historyCountBadge');
             if (badge) badge.innerText = transactionHistory.length;
+
+            const mobileHistBadge = document.getElementById('mobileNavHistoryBadge');
+            if (mobileHistBadge) {
+                const todayStr = getTodayDateString();
+                const countToday = transactionHistory.filter(t => t.orderDate === todayStr || (t.createdAt && t.createdAt.startsWith(todayStr))).length;
+                if (countToday > 0) {
+                    mobileHistBadge.innerText = countToday;
+                    mobileHistBadge.style.display = 'inline-flex';
+                } else {
+                    mobileHistBadge.style.display = 'none';
+                }
+            }
+
             if (typeof updateAdminUnpricedBadge === 'function') {
                 updateAdminUnpricedBadge();
             }
@@ -6714,13 +7300,12 @@
                             if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${uom}`, price, txTime);
                             if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${uom}`, price, txTime);
                         } else {
+                            // Non-Lampoh: HANYA rekam untuk outlet yang sama persis (tanpa fallback NON_LAMPOH)
                             if (sku) {
                                 setPriceRecord(`${custKey}___SKU:${sku}___UOM:${uom}`, price, txTime);
-                                setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${uom}`, price, txTime);
                             }
                             if (name) {
                                 setPriceRecord(`${custKey}___NAME:${name}___UOM:${uom}`, price, txTime);
-                                setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${uom}`, price, txTime);
                             }
                         }
                     }
@@ -6813,14 +7398,12 @@
                         if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
                         if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
                     } else {
-                        // Non-Lampoh
+                        // Non-Lampoh: HANYA simpan untuk outlet yang sama persis (tanpa fallback NON_LAMPOH)
                         if (sku) {
                             setPriceRecord(`${custKey}___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
-                            setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${unit}`, priceVal, rowDate);
                         }
                         if (name) {
                             setPriceRecord(`${custKey}___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
-                            setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${unit}`, priceVal, rowDate);
                         }
                     }
                 }
@@ -6861,8 +7444,9 @@
                     const txTime = Math.max(getOrderDeliveryTime(tx), getOrderUpdatedTime(tx));
                     if (txTime <= 0) return;
 
-                    // Cek kesesuaian pelanggan khusus jika Non-Lampoh
+                    // Cek kesesuaian pelanggan: Jika Non-Lampoh, WAJIB outlet yang sama PERSIS!
                     const isDirectMatch = isLampoh || (txCustKey === custKey);
+                    if (!isDirectMatch) return;
 
                     tx.cart.forEach(it => {
                         const itUom = normalizeUom(it.uom);
@@ -6873,9 +7457,7 @@
                         const itName = (it.name || '').trim().toLowerCase();
 
                         if ((sku && itSku === sku) || (name && itName === name)) {
-                            if (isDirectMatch) {
-                                checkCandidate({ price: itPrice, date: txTime });
-                            }
+                            checkCandidate({ price: itPrice, date: txTime });
                         }
                     });
                 });
@@ -6888,16 +7470,11 @@
                 return bestEntry ? bestEntry.price : 0;
             }
 
-            // Non-Lampoh direct customer check
+            // Non-Lampoh: HANYA cari untuk outlet yang sama PERSIS (tanpa hierarki / tanpa fallback sesama non-lampoh)
             if (sku) checkCandidate(getPriceRecord(`${custKey}___SKU:${sku}___UOM:${uom}`));
             if (name) checkCandidate(getPriceRecord(`${custKey}___NAME:${name}___UOM:${uom}`));
 
-            if (bestEntry) return bestEntry.price;
-
-            // C. Fallback sesama Non-Lampoh (jika pelanggan belum ada riwayat sama sekali)
-            if (sku) checkCandidate(getPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${uom}`));
-            if (name) checkCandidate(getPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${uom}`));
-
+            // Jika outlet yang sama persis belum pernah memesan barang ini dengan satuan ini, harga TIDAK diisi (kembalikan 0)
             return bestEntry ? bestEntry.price : 0;
         }
 
@@ -6933,6 +7510,19 @@
             }
             if (activeAdminOrderIndex >= 0 && activeAdminOrderIndex < transactionHistory.length) {
                 renderAdminOrderPricingDetail(activeAdminOrderIndex);
+                if (window.innerWidth <= 900) {
+                    const sidebar = document.querySelector('.admin-sidebar-card');
+                    const detail = document.getElementById('adminOrderPricingContainer');
+                    if (sidebar) sidebar.classList.add('admin-mobile-hide');
+                    if (detail) detail.classList.add('admin-mobile-show');
+                }
+            } else {
+                if (window.innerWidth <= 900) {
+                    const sidebar = document.querySelector('.admin-sidebar-card');
+                    const detail = document.getElementById('adminOrderPricingContainer');
+                    if (sidebar) sidebar.classList.remove('admin-mobile-hide');
+                    if (detail) detail.classList.remove('admin-mobile-show');
+                }
             }
         }
 
@@ -7184,6 +7774,25 @@
             activeAdminOrderIndex = orderIndex;
             renderAdminOrdersList();
             renderAdminOrderPricingDetail(orderIndex);
+
+            // Master-Detail flow on mobile screens (<= 900px)
+            if (window.innerWidth <= 900) {
+                const sidebar = document.querySelector('.admin-sidebar-card');
+                const detail = document.getElementById('adminOrderPricingContainer');
+                if (sidebar) sidebar.classList.add('admin-mobile-hide');
+                if (detail) detail.classList.add('admin-mobile-show');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function backToAdminOrderList() {
+            activeAdminOrderIndex = -1;
+            const sidebar = document.querySelector('.admin-sidebar-card');
+            const detail = document.getElementById('adminOrderPricingContainer');
+            if (sidebar) sidebar.classList.remove('admin-mobile-hide');
+            if (detail) detail.classList.remove('admin-mobile-show');
+            renderAdminOrdersList();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function formatRupiahNumber(val) {
@@ -7355,6 +7964,7 @@
                                     <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
                                     <input type="text" 
                                         inputmode="numeric"
+                                        pattern="[0-9]*"
                                         id="admin-price-input-${i}" 
                                         class="admin-price-input ${isSuggested ? 'price-suggested' : ''}" 
                                         data-suggested="${isSuggested ? '1' : '0'}"
@@ -7388,6 +7998,12 @@
 
             container.innerHTML = `
                 <div class="admin-editor-card">
+                    <!-- Mobile Back Navigation Button (Screens <= 900px) -->
+                    <div class="admin-detail-mobile-header">
+                        <button type="button" class="admin-mobile-back-btn" onclick="backToAdminOrderList()">
+                            ← Kembali ke Daftar Pesanan
+                        </button>
+                    </div>
                     <!-- Order Header Info -->
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
                         <div>
@@ -7464,6 +8080,7 @@
                                             <span style="font-size: 0.72rem; color: var(--text-muted);">Rp</span>
                                             <input type="text" 
                                                 inputmode="numeric" 
+                                                pattern="[0-9]*"
                                                 id="adminNewItemPrice" 
                                                 class="admin-price-input" 
                                                 placeholder="0" 
@@ -8071,14 +8688,12 @@
                         if (sku) setPriceRecord(`LAMPOH___SKU:${sku}___UOM:${normUom}`, price, orderDate);
                         if (name) setPriceRecord(`LAMPOH___NAME:${name}___UOM:${normUom}`, price, orderDate);
                     } else {
-                        // STRICT ISOLATION: Update spesifik customer dan NON_LAMPOH fallback
+                        // STRICT ISOLATION: Hanya update spesifik customer yang sama persis (tanpa fallback)
                         if (sku) {
                             setPriceRecord(`${custKey}___SKU:${sku}___UOM:${normUom}`, price, orderDate);
-                            setPriceRecord(`NON_LAMPOH___SKU:${sku}___UOM:${normUom}`, price, orderDate);
                         }
                         if (name) {
                             setPriceRecord(`${custKey}___NAME:${name}___UOM:${normUom}`, price, orderDate);
-                            setPriceRecord(`NON_LAMPOH___NAME:${name}___UOM:${normUom}`, price, orderDate);
                         }
                     }
 
@@ -10566,6 +11181,7 @@
 
                 tbodyHtml += `
                     <tr>
+                        <td class="sticky-col-cell" style="position: sticky; left: 0; z-index: 3; background: #ffffff; font-weight: 700; color: var(--text-main); min-width: 150px; box-shadow: 2px 0 6px rgba(0,0,0,0.06);">${escapeHtml(r.name)}</td>
                         <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
                         <td style="font-weight: 600; white-space: nowrap;">${escapeHtml(r.deliveryDate)}</td>
                         <td style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">${escapeHtml(r.orderTime)}</td>
@@ -10577,7 +11193,6 @@
                             </span>
                         </td>
                         <td style="font-family: monospace; font-size: 0.7rem; color: var(--text-secondary);">${escapeHtml(r.sku)}</td>
-                        <td style="font-weight: 700; color: var(--text-main);">${escapeHtml(r.name)}</td>
                         <td style="color: var(--text-muted);">${escapeHtml(r.variant)}</td>
                         <td style="text-align: right; font-weight: 700;">${formatRupiahNumber(Math.round(r.qty * 10) / 10)}</td>
                         <td style="color: var(--text-secondary); font-size: 0.72rem;">${escapeHtml(r.uom)}</td>
@@ -10602,6 +11217,7 @@
                 <table class="report-data-table" id="reportActiveDataTable">
                     <thead>
                         <tr>
+                            <th class="sticky-col-header" style="position: sticky; left: 0; z-index: 5; background: #0f172a; min-width: 150px;">Nama Barang</th>
                             <th style="width: 35px; text-align: center;">No.</th>
                             <th style="width: 95px;">Tgl Kirim</th>
                             <th style="width: 85px;">Waktu Pesan</th>
@@ -10609,7 +11225,6 @@
                             <th>Nama Outlet</th>
                             <th style="width: 85px;">Tipe</th>
                             <th style="width: 80px;">SKU</th>
-                            <th>Nama Barang</th>
                             <th style="width: 75px;">Varian</th>
                             <th style="width: 70px; text-align: right;">Qty</th>
                             <th style="width: 55px;">Satuan</th>
@@ -10623,7 +11238,8 @@
                     <tbody>${tbodyHtml}</tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="9" style="text-align: right; font-weight: 700;">GRAND TOTAL (${filteredRows.length} Baris):</td>
+                            <td class="sticky-col-footer" style="position: sticky; left: 0; z-index: 3; background: #f8fafc; font-weight: 800; min-width: 150px; box-shadow: 2px 0 6px rgba(0,0,0,0.06);">GRAND TOTAL</td>
+                            <td colspan="8" style="text-align: right; font-weight: 700;">(${filteredRows.length} Baris):</td>
                             <td style="text-align: right; font-weight: 700;">${formatRupiahNumber(Math.round(sumQty * 10) / 10)}</td>
                             <td></td>
                             <td></td>
